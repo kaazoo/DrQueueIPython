@@ -44,7 +44,7 @@ def main():
     # prepare script input
     push_dict = {
     'DRQUEUE_OS' : get_osname(),
-    'DRQUEUE_ETC' : "/usr/local/drqueue/etc",
+    'DRQUEUE_ETC' : os.getenv('DRQUEUE_ROOT') + "/etc",
     'DRQUEUE_FRAME' : int(options.startframe),
     'DRQUEUE_BLOCKSIZE' : int(options.blocksize),
     'DRQUEUE_ENDFRAME' : int(options.endframe),
