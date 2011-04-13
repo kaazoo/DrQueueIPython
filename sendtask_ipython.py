@@ -1,8 +1,7 @@
 from optparse import OptionParser
 import platform
 import os
-from IPython.kernel import client
-from IPython.kernel.task import StringTask
+from IPython.parallel import Client
 
 
 def get_osname():
@@ -22,6 +21,17 @@ def get_rendertemplate(renderer):
     return filename    
 
 
+def run_script_with_env(script, env_dict):
+    DRQUEUE_OS = env_dict['DRQUEUE_OS']
+    DRQUEUE_ETC = env_dict['DRQUEUE_ETC']
+    DRQUEUE_FRAME = env_dict['DRQUEUE_FRAME']
+    DRQUEUE_BLOCKSIZE = env_dict['DRQUEUE_BLOCKSIZE']
+    DRQUEUE_ENDFRAME = env_dict['DRQUEUE_ENDFRAME']
+    SCENE = env_dict['SCENE']
+    RENDER_TYPE = env_dict['RENDER_TYPE']
+    return execfile(script)
+
+
 def main():
     # parse arguments
     parser = OptionParser()
@@ -36,20 +46,24 @@ def main():
                       help="path to scenefile")
     parser.add_option("-r", "--renderer", dest="renderer",
                       help="render type (maya|blender|mentalray)")
+    parser.add_option("-w", "--wait", dest="wait", default=False,
+                      help="wait for job to finish")
     parser.add_option("-v", "--verbose",
                       action="store_false", dest="verbose", default=True,
                       help="verbose output")
     (options, args) = parser.parse_args()
 
     # initialize IPython
-    tc = client.TaskClient()
+    client = Client()
+    dview = client[:]
+    lbview = client.load_balanced_view()
 
-    task_ids = list()
+    tasks = list()
     task_frames = range(int(options.startframe), int(options.endframe)+1, int(options.blocksize))
 
     for x in task_frames:
         # prepare script input
-        push_dict = {
+        env_dict = {
         'DRQUEUE_OS' : get_osname(),
         'DRQUEUE_ETC' : os.getenv('DRQUEUE_ROOT') + "/etc",
         'DRQUEUE_FRAME' : x,
@@ -59,22 +73,18 @@ def main():
         'RENDER_TYPE' : "animation"
         }
 
-        # prepare task
-        work = "execfile(\"" + os.getenv('DRQUEUE_ROOT') + "/etc/" + get_rendertemplate(options.renderer) + "\")"
-        mytask = StringTask(work, push=push_dict, clear_before=True)
-
         # run task on cluster
+        render_script = os.getenv('DRQUEUE_ROOT') + "/etc/" + get_rendertemplate(options.renderer)
+        ar = lbview.apply(run_script_with_env, render_script, env_dict)
+        tasks.append(ar)
 
-        task_id = tc.run(mytask)
-        task_ids.append(task_id)
-
-    for x in task_ids:
-        task_results = tc.get_task_result(x, True)
-        print("Task %i was running on %i and took %f seconds to run." % (x,task_results.engineid,task_results.duration))
-
-        if task_results.failure:
-            print("task failed:")
-            print(task_results.failure)
+    if options.wait:
+        for x in tasks:
+            x.wait()
+            cpl = x.metadata.completed
+            print("Task %s finished with status '%s' on engine %i at %i-%02i-%02i %02i:%02i:%02i." % (x.metadata.msg_id, x.status, x.metadata.engine_id, cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
+            #print(x.stderr)
+            #print(x.stdout)
 
 
 if __name__ == "__main__":
