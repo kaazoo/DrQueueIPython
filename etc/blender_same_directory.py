@@ -60,11 +60,13 @@ if float(version) > 2.5:
   # get scene settings
   scn = bpy.data.scenes[0]
 
-  # Set the start and end frame to the current frame.
-  curframe = int(os.getenv("curframe"))
-  scn.frame_start = curframe
-  scn.frame_end = curframe
-  print("curframe: " + str(curframe))
+  # Set the start and end frame
+  startframe = int(os.getenv("startframe"))
+  endframe = int(os.getenv("endframe"))
+  scn.frame_start = startframe
+  scn.frame_end = endframe
+  print("startframe: " + str(startframe))
+  print("endframe: " + str(endframe))
 
   # get scenefile from args
   scenefile = sys.argv[2]
@@ -89,11 +91,13 @@ elif float(version) > 2.4:
   scn = Scene.GetCurrent()
   context = scn.getRenderingContext()
 
-  # Set the start and end frame to the current frame.
-  curframe = int(os.getenv("curframe"))
-  context.startFrame(curframe)
-  context.endFrame(curframe)
-  print("curframe: " + str(curframe))
+  # Set the start and end frame
+  startframe = int(os.getenv("startframe"))
+  endframe = int(os.getenv("endframe"))
+  context.startFrame(startframe)
+  context.endFrame(endframe)
+  print("startframe: " + str(startframe))
+  print("endframe: " + str(endframe))
 
   # get scenefile from args
   scenefile = sys.argv[2]
