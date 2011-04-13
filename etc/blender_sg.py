@@ -56,7 +56,7 @@ if BLOCK > DRQUEUE_ENDFRAME:
 ENGINE_PATH="blender"
 
 if RENDER_TYPE == "animation":
-	command = "export curframe="+str(DRQUEUE_FRAME)+" && "+ENGINE_PATH+" -b "+SCENE+" -P "+DRQUEUE_ETC+"/blender_same_directory.py"
+	command = "export startframe="+str(DRQUEUE_FRAME)+" && export endframe="+str(BLOCK)+" && "+ENGINE_PATH+" -b "+SCENE+" -P "+DRQUEUE_ETC+"/blender_same_directory.py"
 else:
 	command = "curpart="+str(DRQUEUE_FRAME)+" maxparts="+str(DRQUEUE_ENDFRAME)+" "+ENGINE_PATH+" -b "+SCENE+" -P "+DRQUEUE_ETC+"/blender_region_rendering.py"
 
