@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #
 # THIS IS A PYTHON SCRIPT FILE
 # 

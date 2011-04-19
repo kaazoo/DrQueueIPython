@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from optparse import OptionParser
 import platform
 import os
@@ -46,7 +48,7 @@ def main():
                       help="path to scenefile")
     parser.add_option("-r", "--renderer", dest="renderer",
                       help="render type (maya|blender|mentalray)")
-    parser.add_option("-w", "--wait", dest="wait", default=False,
+    parser.add_option("-w", "--wait", action="store_true", dest="wait", default=False,
                       help="wait for job to finish")
     parser.add_option("-v", "--verbose",
                       action="store_false", dest="verbose", default=True,
