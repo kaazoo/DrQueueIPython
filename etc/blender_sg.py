@@ -58,9 +58,13 @@ if BLOCK > DRQUEUE_ENDFRAME:
 ENGINE_PATH="blender"
 
 if RENDER_TYPE == "animation":
-	command = "export startframe="+str(DRQUEUE_FRAME)+" && export endframe="+str(BLOCK)+" && "+ENGINE_PATH+" -b "+SCENE+" -P "+DRQUEUE_ETC+"/blender_same_directory.py"
+  os.putenv("startframe", str(DRQUEUE_FRAME))
+  os.putenv("endframe", str(BLOCK))
+  command = ENGINE_PATH+" -b "+SCENE+" -P "+DRQUEUE_ETC+"/blender_same_directory.py"
 else:
-	command = "curpart="+str(DRQUEUE_FRAME)+" maxparts="+str(DRQUEUE_ENDFRAME)+" "+ENGINE_PATH+" -b "+SCENE+" -P "+DRQUEUE_ETC+"/blender_region_rendering.py"
+  os.putenv("curpart", str(DRQUEUE_FRAME))
+  os.outenv("maxparts", str(DRQUEUE_ENDFRAME))
+  command = ENGINE_PATH+" -b "+SCENE+" -P "+DRQUEUE_ETC+"/blender_region_rendering.py"
 
 
 print(command)
