@@ -14,6 +14,7 @@ def get_osname():
 
 
 def get_rendertemplate(renderer):
+    filename = ""
     if renderer == 'blender':
         filename = 'blender_sg.py'
     if renderer == 'maya':
@@ -34,6 +35,12 @@ def run_script_with_env(script, env_dict):
     return execfile(script)
 
 
+def run_dummy():
+    import time
+    time.sleep(1)
+    return True
+
+
 def main():
     # parse arguments
     parser = OptionParser()
@@ -50,14 +57,12 @@ def main():
                       help="render type (maya|blender|mentalray)")
     parser.add_option("-w", "--wait", action="store_true", dest="wait", default=False,
                       help="wait for job to finish")
-    parser.add_option("-v", "--verbose",
-                      action="store_false", dest="verbose", default=True,
+    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
                       help="verbose output")
     (options, args) = parser.parse_args()
 
     # initialize IPython
     client = Client()
-    dview = client[:]
     lbview = client.load_balanced_view()
 
     tasks = list()
@@ -80,13 +85,22 @@ def main():
         ar = lbview.apply(run_script_with_env, render_script, env_dict)
         tasks.append(ar)
 
+    # make dummy task depend on the others
+    # we will track this one like a job
+    lbview.set_flags(after=tasks)
+    job = lbview.apply(run_dummy)
+
+    # wait for the job to finish
     if options.wait:
-        for x in tasks:
-            x.wait()
-            cpl = x.metadata.completed
-            print("Task %s finished with status '%s' on engine %i at %i-%02i-%02i %02i:%02i:%02i." % (x.metadata.msg_id, x.status, x.metadata.engine_id, cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
-            #print(x.stderr)
-            #print(x.stdout)
+        # wait for the tasks to finish
+        if options.verbose:
+            for x in tasks:
+                x.wait()
+                cpl = x.metadata.completed
+                print("Task %s finished with status '%s' on engine %i at %i-%02i-%02i %02i:%02i:%02i." % (x.metadata.msg_id, x.status, x.metadata.engine_id, cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
+        job.wait()
+        cpl = job.metadata.completed
+        print("Job %s finished with status '%s' at %i-%02i-%02i %02i:%02i:%02i." % (job.metadata.msg_id, job.status, cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
 
 
 if __name__ == "__main__":
