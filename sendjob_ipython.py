@@ -98,6 +98,8 @@ def main():
                 x.wait()
                 cpl = x.metadata.completed
                 print("Task %s finished with status '%s' on engine %i at %i-%02i-%02i %02i:%02i:%02i." % (x.metadata.msg_id, x.status, x.metadata.engine_id, cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
+                if x.pyerr != None:
+                    print(x.pyerr)
         job.wait()
         cpl = job.metadata.completed
         print("Job %s finished with status '%s' at %i-%02i-%02i %02i:%02i:%02i." % (job.metadata.msg_id, job.status, cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
