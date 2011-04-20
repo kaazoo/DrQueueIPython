@@ -1,0 +1,26 @@
+
+This is going to become a rewrite of DrQueue in Python. IPython will be used for network communication and task management.
+
+
+Design changes:
+
+* Master becomes ipcontroller
+* Slave becomes ipengine
+* Clients can use the IPython.parallel.Client class to talk to ipcontroller
+* No compiling needed anymore. Just Python code.
+* IPython becomes a dependency.
+* SQLite or MongoDB can be used for job/task information storage.
+
+
+Current problems:
+
+* IPython can't group tasks to jobs. So far we'll use dependent pseudo tasks as a workaround.
+* Ruby clients (DrQueueRubyBindings) will have to use a Web API or some kind of wrapper to be able to call Python code.
+* The terminal output is not yet piped into a logfile or a Python variable.
+* There not yet a way to group several computers to pools.
+
+
+TODO:
+
+* Create the classes: Job, ...
+* Create a DrQueue module
