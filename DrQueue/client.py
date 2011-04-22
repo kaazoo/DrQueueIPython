@@ -31,8 +31,29 @@ class Client():
             render_script = os.getenv('DRQUEUE_ROOT') + "/etc/" + DrQueue.get_rendertemplate(job['renderer'])
             ar = self.lbview.apply(DrQueue.run_script_with_env, render_script, env_dict)
             job['tasks'].append(ar)
-    
+
         # make dummy task depend on the others
         # we will track this one like a job
         self.lbview.set_flags(after=job['tasks'])
         job['dummy_task'] = self.lbview.apply(DrQueue.run_dummy)
+
+    """Query a list of all 'job' tasks"""
+    def query_all_jobs(self):
+        dict = {'msg_id': { '$ne' : '' }}
+        entries = self.ip_client.db_query(dict)
+        jobs = []
+
+        # fetch list of jobs
+        for entry in entries:
+            emsg_id = entry['msg_id']
+            eheader = entry['header']
+
+            if eheader['after'] != []:
+                jobs.append(entry)
+        return jobs
+
+    """Query a single task"""
+    def query_task(self, task_id):
+        dict = {'msg_id': task_id }
+        task = self.ip_client.db_query(dict)[0]
+        return task
