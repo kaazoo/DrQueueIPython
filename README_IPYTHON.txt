@@ -18,7 +18,8 @@ Current problems:
 * Ruby clients (DrQueueRubyBindings) will have to use a Web API or some kind of wrapper to be able to call Python code.
 * The terminal output is not yet piped into a logfile or a Python variable.
 * There is not yet a way to group several computers to pools.
-
+* Tasks are very early bound to existing engines. Engines which join later don't get any of the queued tasks.
+* It's unclear how to continue stopped jobs/tasks.
 
 TODO:
 
