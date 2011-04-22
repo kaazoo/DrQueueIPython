@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """DrQueue module"""
 
 from client import Client

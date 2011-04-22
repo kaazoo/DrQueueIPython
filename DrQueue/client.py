@@ -10,20 +10,19 @@ class Client():
         # initialize IPython
         self.ip_client = IPClient()
         self.lbview = self.ip_client.load_balanced_view()
-        
+
     """Wrapper for creating sub tasks and dummy task"""
     def run_job(self, job):
-        tasks = list()
-        task_frames = range(int(job['startframe']), int(job['endframe'])+1, int(job['blocksize']))
-    
+        task_frames = range(job['startframe'], job['endframe'] + 1, job['blocksize'])
+
         for x in task_frames:
             # prepare script input
             env_dict = {
             'DRQUEUE_OS' : DrQueue.get_osname(),
             'DRQUEUE_ETC' : os.getenv('DRQUEUE_ROOT') + "/etc",
             'DRQUEUE_FRAME' : x,
-            'DRQUEUE_BLOCKSIZE' : int(job['blocksize']),
-            'DRQUEUE_ENDFRAME' : int(job['endframe']),
+            'DRQUEUE_BLOCKSIZE' : job['blocksize'],
+            'DRQUEUE_ENDFRAME' : job['endframe'],
             'SCENE' : job['scene'],
             'RENDER_TYPE' : "animation"
             }
@@ -35,5 +34,5 @@ class Client():
     
         # make dummy task depend on the others
         # we will track this one like a job
-        self.lbview.set_flags(after=tasks)
+        self.lbview.set_flags(after=job['tasks'])
         job['dummy_task'] = self.lbview.apply(DrQueue.run_dummy)
