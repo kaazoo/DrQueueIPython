@@ -11,27 +11,27 @@ def main():
     # parse arguments
     parser = OptionParser()
     parser.usage = "%prog [options] -r renderer -f scenefile"
-    parser.add_option("-s", "--startframe", dest="startframe", default=1,
-                      help="first frame")
-    parser.add_option("-e", "--endframe", dest="endframe", default=1,
-                      help="last frame")
-    parser.add_option("-b", "--blocksize", dest="blocksize", default=1,
-                      help="size of block")
-    parser.add_option("-f", "--scenefile", dest="scenefile", default=1,
-                      help="path to scenefile")
-    parser.add_option("-r", "--renderer", dest="renderer",
-                      help="render type (maya|blender|mentalray)")
-    parser.add_option("-w", "--wait", action="store_true", dest="wait", default=False,
-                      help="wait for job to finish")
-    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
-                      help="verbose output")
+    parser.add_option("-s", "--startframe",
+                      dest="startframe", default=1, help="first frame")
+    parser.add_option("-e", "--endframe",
+                      dest="endframe", default=1, help="last frame")
+    parser.add_option("-b", "--blocksize",
+                      dest="blocksize", default=1, help="size of block")
+    parser.add_option("-f", "--scenefile",
+                      dest="scenefile", default=1, help="path to scenefile")
+    parser.add_option("-r", "--renderer",
+                      dest="renderer", help="render type (maya|blender|mentalray)")
+    parser.add_option("-w", "--wait",
+                      action="store_true", dest="wait", default=False, help="wait for job to finish")
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose", default=False, help="verbose output")
     (options, args) = parser.parse_args()
 
     # initialize DrQueue client
     client = DrQueueClient()
 
     # initialize DrQueue job
-    job = DrQueueJob(int(options.startframe), int(options.blocksize), int(options.endframe), options.scenefile, options.renderer)
+    job = DrQueueJob(int(options.startframe), int(options.endframe), int(options.blocksize), options.scenefile, options.renderer)
 
     # run job with client
     client.run_job(job)

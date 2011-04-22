@@ -4,7 +4,7 @@ import os
 
 class Job(dict):
     """Subclass of dict for Jobs."""
-    def __init__(self, startframe, blocksize, endframe, scene, renderer):
+    def __init__(self, startframe, endframe, blocksize, scene, renderer):
         dict.__init__(self)
         jb = {'startframe' : startframe,
               'blocksize' : blocksize,
