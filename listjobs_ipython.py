@@ -1,29 +1,17 @@
 # -*- coding: utf-8 -*-
 
 import string
-from IPython.parallel import Client
+import DrQueue
+from DrQueue import Job as DrQueueJob
+from DrQueue import Client as DrQueueClient
 
 
 def main():
-    # initialize IPython
-    client = Client()
-    
-    dict = {'msg_id': { '$ne' : '' }}
-    entries = client.db_query(dict)
-    jobs = []
-    
-    # fetch list of jobs
-    for entry in entries:
-        emsg_id = entry['msg_id']
-        eheader = entry['header']
+    # initialize DrQueue client
+    client = DrQueueClient()
+    # fetch a list of all jobs
+    jobs = client.query_all_jobs()
         
-        if eheader['after'] != []:
-            #print("%s is a job" % emsg_id)
-            jobs.append(entry)
-        else:
-            #print("%s is a task" % emsg_id)
-            continue
-    
     # walk through tasks of every job
     for job in jobs:
         jmsg_id = job['msg_id']
@@ -34,8 +22,7 @@ def main():
         print("msg_id                                 status    owner       completed at")
         
         for task_id in jheader['after']:
-            dict = {'msg_id': task_id }
-            task = client.db_query(dict)[0]
+            task = client.query_task(task_id)
             
             tmsg_id = task['msg_id']
             theader = task['header']
