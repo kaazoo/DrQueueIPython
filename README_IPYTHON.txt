@@ -12,6 +12,7 @@ Design changes:
 * SQLite or MongoDB can be used for job/task information storage.
 * There is no direct access to frame information anymore. Jobs can be devided into tasks. Depending on the blocksize, one task can consist of one or more frames.
 
+
 Current problems:
 
 * IPython can't group tasks to jobs. So far we'll use dependent pseudo tasks as a workaround.
@@ -20,8 +21,21 @@ Current problems:
 * There is not yet a way to group several computers to pools.
 * Tasks are very early bound to existing engines. Engines which join later don't get any of the queued tasks.
 * It's unclear how to continue stopped jobs/tasks.
+* It's unclear how to define the number of times a task should be requeued.
+
+
+Test setup:
+* install Git version of IPython 0.11dev
+* run MongoDB server: "mongod --dbpath ~/.config/ipython/db/"
+* run IPController: "ipcontroller"
+* run several IPEngines: "ipengine"
+* submit some tasks: "python2.6 sendjob_ipython.py -s 1 -e 20 -b 3 -r blender -f /usr/local/drqueue/tmp/icetest.blend"
+* list known jobs and their tasks: "python2.6 listjobs_ipython.py"
+
 
 TODO:
 
 * Create the classes: Job, ...
 * Create a DrQueue module
+
+
