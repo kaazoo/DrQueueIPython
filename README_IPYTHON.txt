@@ -17,7 +17,8 @@ Design changes:
 Current problems:
 
 * IPython can't group tasks to jobs. So far we'll use the session name for the job name as a workaround.
-* Ruby clients (DrQueueRubyBindings) will have to use a Web API or some kind of wrapper to be able to call Python code.
+* Ruby clients (DrQueueRubyBindings) will have to use a Web API or some kind of wrapper to be able to call Python code. It might be possible to use rubypython
+  (https://github.com/halostatue/rubypython) to use the DrQueue Python module from Ruby.
 * The terminal output is not yet piped into a logfile or a Python variable.
 * There is not yet a way to group several computers to pools.
 * It's unclear how to continue stopped jobs/tasks.
