@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import time
 from IPython.parallel import Client as IPClient
 import DrQueue
 
@@ -11,10 +12,13 @@ class Client():
         self.ip_client = IPClient()
         self.lbview = self.ip_client.load_balanced_view()
 
+
     """Wrapper for creating sub tasks and dummy task"""
     def run_job(self, job):
-        task_frames = range(job['startframe'], job['endframe'] + 1, job['blocksize'])
+        # set session name which will be used as job name
+        self.ip_client.session.session = job['name']
 
+        task_frames = range(job['startframe'], job['endframe'] + 1, job['blocksize'])
         for x in task_frames:
             # prepare script input
             env_dict = {
@@ -30,27 +34,27 @@ class Client():
             # run task on cluster
             render_script = os.getenv('DRQUEUE_ROOT') + "/etc/" + DrQueue.get_rendertemplate(job['renderer'])
             ar = self.lbview.apply(DrQueue.run_script_with_env, render_script, env_dict)
-            job['tasks'].append(ar)
+            # avoid race condition
+            time.sleep(0.5)
 
-        # make dummy task depend on the others
-        # we will track this one like a job
-        self.lbview.set_flags(after=job['tasks'])
-        job['dummy_task'] = self.lbview.apply(DrQueue.run_dummy)
 
-    """Query a list of all 'job' tasks"""
+    """Query a list of all jobs (IPython sessions)"""
     def query_all_jobs(self):
-        dict = {'msg_id': { '$ne' : '' }}
-        entries = self.ip_client.db_query(dict)
         jobs = []
-
-        # fetch list of jobs
-        for entry in entries:
-            msg_id = entry['msg_id']
-            header = entry['header']
-
-            if header['after'] != []:
-                jobs.append(entry)
+        query_data = self.ip_client.db_query({"header.session" : {"$ne" : ""}}, keys=["header.session"])
+        for entry in query_data:
+            jobs.append(entry['header']['session'])
+        jobs = set(jobs)
+        jobs = list(jobs)
+        jobs.sort()
         return jobs
+
+
+    """Query a list of tasks objects of certain job"""
+    def query_tasks_of_job(self, jobname):
+        tasks = self.ip_client.db_query({"header.session" : jobname})
+        return tasks
+
 
     """Query a single task"""
     def query_task(self, task_id):
@@ -58,56 +62,47 @@ class Client():
         task = self.ip_client.db_query(dict)[0]
         return task
 
+
     """Stop job and all tasks which are not currently running"""
-    def job_stop(self, job_id):
-        dict = {'msg_id': job_id }
-        job = self.ip_client.db_query(dict)[0]
-        header = job['header']
+    def job_stop(self, jobname):
+        tasks = self.query_tasks_of_job(jobname)
 
         # abort all queued tasks
-        for task_id in header['after']:
-            self.ip_client.abort(task_id)
+        for task in tasks:
+            self.ip_client.abort(task['msg_id'])
 
-        # abort job as well
-        self.ip_client.abort(job_id)
         return True
 
+
     """Stop job and all of it's tasks wether running or not"""
-    def job_kill(self, job_id):
-        dict = {'msg_id': job_id }
-        job = self.ip_client.db_query(dict)[0]
-        header = job['header']
+    def job_kill(self, jobname):
+        tasks = self.query_tasks_of_job(jobname)
 
         # abort all queued tasks
-        for task_id in header['after']:
-            self.lbview.abort(task_id)
+        for task in tasks:
+            self.lbview.abort(task['msg_id'])
 
-        # abort job as well
-        self.lbview.abort(job_id)
         return True
 
 
     """Delete job and all of it's tasks"""
-    def job_delete(self, job_id):
-        dict = {'msg_id': job_id }
-        job = self.ip_client.db_query(dict)[0]
-        header = job['header']
+    def job_delete(self, jobname):
+        tasks = self.query_tasks_of_job(jobname)
 
         # abort and delete all queued tasks
-        for task_id in header['after']:
-            self.lbview.abort(task_id)
-            self.ip_client.purge_results(task_id)
+        for task in tasks:
+            self.lbview.abort(task['msg_id'])
+            self.ip_client.purge_results(task['msg_id'])
 
-        # abort and delete job as well
-        self.lbview.abort(job_id)
-        self.ip_client.purge_results(job_id)
         return True
 
-    def job_continue(self, job_id):
+
+    def job_continue(self, jobname):
         return True
+
 
     """Return status string of job"""
-    def job_status(self, job_id):
+    def job_status(self, jobname):
         job = self.query_task(job_id)
 
         if job['completed'] == None:

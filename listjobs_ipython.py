@@ -14,16 +14,12 @@ def main():
         
     # walk through tasks of every job
     for job in jobs:
-        jmsg_id = job['msg_id']
-        jheader = job['header']
-        tasks = []
+        tasks = client.query_tasks_of_job(job)
         
-        print("\nTasks of job %s:" % jmsg_id)
+        print("\nTasks of job %s:" % job)
         print("msg_id                                 status    owner       completed at")
         
-        for task_id in jheader['after']:
-            task = client.query_task(task_id)
-            
+        for task in tasks:
             tmsg_id = task['msg_id']
             theader = task['header']
             username = theader['username']
@@ -34,16 +30,9 @@ def main():
                 result_header = task['result_header']
                 status = result_header['status']
                 cpl = task['completed']
-                result_content = eval(task['result_content'])
-                result_buffers = eval(task['result_content'])
-                buffers = task['buffers']
-                pyerr = task['pyout']
     
             print("%s   %s  %s  %i-%02i-%02i %02i:%02i:%02i" % (tmsg_id, string.ljust(status, 8), string.ljust(username, 10), cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
-        #print(result_content)
-        #print(result_buffers)
-        #print(buffers)
-        #print(pyerr)
+
     
 if __name__ == "__main__":
     main()

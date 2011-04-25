@@ -10,7 +10,7 @@ from DrQueue import Client as DrQueueClient
 def main():
     # parse arguments
     parser = OptionParser()
-    parser.usage = "%prog [options] -r renderer -f scenefile"
+    parser.usage = "%prog [options] -n name -r renderer -f scenefile"
     parser.add_option("-s", "--startframe",
                       dest="startframe", default=1, help="first frame")
     parser.add_option("-e", "--endframe",
@@ -19,6 +19,8 @@ def main():
                       dest="blocksize", default=1, help="size of block")
     parser.add_option("-f", "--scenefile",
                       dest="scenefile", default=1, help="path to scenefile")
+    parser.add_option("-n", "--name",
+                      dest="name", default="foobar", help="name of job")
     parser.add_option("-r", "--renderer",
                       dest="renderer", help="render type (maya|blender|mentalray)")
     parser.add_option("-w", "--wait",
@@ -31,7 +33,7 @@ def main():
     client = DrQueueClient()
 
     # initialize DrQueue job
-    job = DrQueueJob(int(options.startframe), int(options.endframe), int(options.blocksize), options.scenefile, options.renderer)
+    job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.scenefile, options.renderer)
 
     # run job with client
     client.run_job(job)

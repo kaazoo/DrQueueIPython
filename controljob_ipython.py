@@ -10,9 +10,9 @@ from DrQueue import Client as DrQueueClient
 def main():
     # parse arguments
     parser = OptionParser()
-    parser.usage = "%prog [options] -j job_id"
-    parser.add_option("-j", "--job_id ", 
-                      dest="job_id", help="job id")
+    parser.usage = "%prog [options] -n name"
+    parser.add_option("-n", "--name ",
+                      dest="name", help="name of job")
     parser.add_option("-s", "--stop", 
                       action="store_true", dest="stop", default=False, help="stop the job")
     parser.add_option("-k", "--kill", 
@@ -32,24 +32,24 @@ def main():
 
     # run specified action on job
     if options.stop:
-        client.job_stop(options.job_id)
-        print("Job %s has been stopped." % options.job_id)
+        client.job_stop(options.name)
+        print("Job %s has been stopped." % options.name)
         return
     if options.kill:
-        client.job_kill(options.job_id)
-        print("Job %s has been killed." % options.job_id)
+        client.job_kill(options.name)
+        print("Job %s has been killed." % options.name)
         return
     if options.delete:
-        client.job_delete(options.job_id)
-        print("Job %s has been deleted." % options.job_id)
+        client.job_delete(options.name)
+        print("Job %s has been deleted." % options.name)
         return
     if options.cont:
-        client.job_continue(options.job_id)
-        print("Job %s is running again." % options.job_id)
+        client.job_continue(options.name)
+        print("Job %s is running again." % options.name)
         return     
     if options.status:
-        status = client.job_status(options.job_id)
-        print("The status of job %s is \"%s\"" % (options.job_id, status))
+        status = client.job_status(options.name)
+        print("The status of job %s is \"%s\"" % (options.name, status))
         return
 
 if __name__ == "__main__":
