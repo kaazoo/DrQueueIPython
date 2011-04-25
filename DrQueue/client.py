@@ -38,6 +38,13 @@ class Client():
             time.sleep(0.5)
 
 
+    """Wait for task to finish"""
+    def wait_for_task(self, task_id):
+        ar = self.ip_client.get_result(task_id)
+        ar.wait()
+        return ar
+
+
     """Query a list of all jobs (IPython sessions)"""
     def query_all_jobs(self):
         jobs = []

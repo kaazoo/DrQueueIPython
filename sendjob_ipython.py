@@ -38,25 +38,23 @@ def main():
     # run job with client
     client.run_job(job)
 
-    # wait for the job to finish
-    if options.wait:
-        # wait for the tasks to finish
-        if options.verbose:
-            for task in job['tasks']:
-                task.wait()
-                cpl = task.metadata.completed
-                msg_id = task.metadata.msg_id
-                status = task.status
-                engine_id = task.metadata.engine_id
-                print("Task %s finished with status '%s' on engine %i at %i-%02i-%02i %02i:%02i:%02i." % (msg_id, status, engine_id, cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
-                if task.pyerr != None:
-                    print(task.pyerr)
-        job['dummy_task'].wait()
-        cpl = job['dummy_task'].metadata.completed
-        msg_id = job['dummy_task'].metadata.msg_id
-        status = job['dummy_task'].status
-        print("Job %s finished with status '%s' at %i-%02i-%02i %02i:%02i:%02i." % (msg_id, status, cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
+    # tasks which have been created
+    tasks = client.query_tasks_of_job(job['name'])
 
+    # wait for all tasks of job to finish
+    if options.wait:
+        for task in tasks:
+            ar = client.wait_for_task(task['msg_id'])
+            # add some verbose output
+            if options.verbose:
+                cpl = ar.metadata.completed
+                msg_id = ar.metadata.msg_id
+                status = ar.status
+                engine_id = ar.metadata.engine_id
+                print("Task %s finished with status '%s' on engine %i at %i-%02i-%02i %02i:%02i:%02i." % (msg_id, status, engine_id, cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
+                if ar.pyerr != None:
+                    print(ar.pyerr)
+        print("Job %s finished." % job['name'])
 
 if __name__ == "__main__":
     main()
