@@ -27,7 +27,7 @@ class Client():
             'DRQUEUE_FRAME' : x,
             'DRQUEUE_BLOCKSIZE' : job['blocksize'],
             'DRQUEUE_ENDFRAME' : job['endframe'],
-            'DRQUEUE_SCENE' : job['scenefile'],
+            'DRQUEUE_SCENEFILE' : job['scenefile'],
             }
 
             # optional elements
