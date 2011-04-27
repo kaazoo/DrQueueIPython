@@ -17,12 +17,14 @@ def main():
                       dest="endframe", default=1, help="last frame")
     parser.add_option("-b", "--blocksize",
                       dest="blocksize", default=1, help="size of block")
-    parser.add_option("-f", "--scenefile",
-                      dest="scenefile", default=1, help="path to scenefile")
     parser.add_option("-n", "--name",
-                      dest="name", default="foobar", help="name of job")
+                      dest="name", default=None, help="name of job")
     parser.add_option("-r", "--renderer",
                       dest="renderer", help="render type (maya|blender|mentalray)")
+    parser.add_option("-f", "--scenefile",
+                      dest="scenefile", default=None, help="path to scenefile")
+    parser.add_option("-o", "--options",
+                      dest="options", default="{}", help="specific options for renderer as Python dict")
     parser.add_option("-w", "--wait",
                       action="store_true", dest="wait", default=False, help="wait for job to finish")
     parser.add_option("-v", "--verbose",
@@ -33,7 +35,7 @@ def main():
     client = DrQueueClient()
 
     # initialize DrQueue job
-    job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.scenefile, options.renderer)
+    job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, eval(options.options))
 
     # run job with client
     client.run_job(job)
