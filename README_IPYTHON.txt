@@ -1,6 +1,9 @@
 
 This is going to become a rewrite of DrQueue in Python. IPython will be used for network communication and task management.
 
+See more information https://ssl.drqueue.org/redmine/projects/drqueueipython
+
+
 
 Design changes:
 
@@ -14,17 +17,6 @@ Design changes:
 * High water mark (HWM) can be set for IPEngines in order to always keep some tasks for late joining engines.
 
 
-Current problems:
-
-* IPython can't group tasks to jobs. So far we'll use the session name for the job name as a workaround.
-* Ruby clients (DrQueueRubyBindings) will have to use a Web API or some kind of wrapper to be able to call Python code. It might be possible to use rubypython
-  (https://github.com/halostatue/rubypython) to use the DrQueue Python module from Ruby.
-* The terminal output is not yet piped into a logfile or a Python variable.
-* There is not yet a way to group several computers to pools.
-* It's unclear how to continue stopped jobs/tasks.
-* It's unclear how to define the number of times a task should be requeued.
-
-
 Test setup:
 * install ZMQ 2.1.4 and pyzmq 2.1.4
 * install Git version of IPython 0.11dev from https://github.com/ipython/ipython
@@ -36,13 +28,7 @@ Test setup:
 * run MongoDB server: "mongod --dbpath ~/.config/ipython/db/"
 * run IPController: "ipcontroller"
 * run several IPEngines: "ipengine"
-* submit some tasks: "python2.6 sendjob_ipython.py -s 1 -e 20 -b 3 -r blender -f /usr/local/drqueue/tmp/icetest.blend -w -v"
+* submit some tasks:
+  python2.6 sendjob_ipython.py -s 1 -e 3 -b 1 -r blender -f /usr/local/drqueue/tmp/icetest.blend -n "Job 123" -o "{'rendertype':'animation'}" -w -v
 * list known jobs and their tasks: "python2.6 listjobs_ipython.py"
-
-
-TODO:
-
-* Enhance Job and Client classes.
-* Add utility functions to DrQueue module.
-
 
