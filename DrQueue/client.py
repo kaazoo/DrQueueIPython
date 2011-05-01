@@ -28,6 +28,7 @@ class Client():
             'DRQUEUE_BLOCKSIZE' : job['blocksize'],
             'DRQUEUE_ENDFRAME' : job['endframe'],
             'DRQUEUE_SCENEFILE' : job['scenefile'],
+            'DRQUEUE_LOGFILE' : os.getenv('DRQUEUE_ROOT') + "/logs/" + job['name'] + "-" + str(x) + "_" + str(x + job['blocksize'] -1) + ".log"
             }
 
             # optional elements
