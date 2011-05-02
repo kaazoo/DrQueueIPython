@@ -10,6 +10,7 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 """
 
 import os
+import os.path
 import time
 from IPython.parallel import Client as IPClient
 import DrQueue
@@ -32,12 +33,12 @@ class Client():
             # prepare script input
             env_dict = {
             'DRQUEUE_OS' : DrQueue.get_osname(),
-            'DRQUEUE_ETC' : os.getenv('DRQUEUE_ROOT') + "/etc",
+            'DRQUEUE_ETC' : os.path.join(os.getenv('DRQUEUE_ROOT'), "etc"),
             'DRQUEUE_FRAME' : x,
             'DRQUEUE_BLOCKSIZE' : job['blocksize'],
             'DRQUEUE_ENDFRAME' : job['endframe'],
             'DRQUEUE_SCENEFILE' : job['scenefile'],
-            'DRQUEUE_LOGFILE' : os.getenv('DRQUEUE_ROOT') + "/logs/" + job['name'] + "-" + str(x) + "_" + str(x + job['blocksize'] -1) + ".log"
+            'DRQUEUE_LOGFILE' : os.path.join(os.getenv('DRQUEUE_ROOT'), "logs", job['name'] + "-" + str(x) + "_" + str(x + job['blocksize'] -1) + ".log")
             }
 
             # optional elements
@@ -75,7 +76,7 @@ class Client():
                 env_dict['DRQUEUE_FILEEXTENSION'] = job['fileextension']
     
             # run task on cluster
-            render_script = os.getenv('DRQUEUE_ROOT') + "/etc/" + DrQueue.get_rendertemplate(job['renderer'])
+            render_script = os.path.join(os.getenv('DRQUEUE_ROOT'), "etc", DrQueue.get_rendertemplate(job['renderer']))
             ar = self.lbview.apply(DrQueue.run_script_with_env, render_script, env_dict)
             # avoid race condition
             time.sleep(0.5)
