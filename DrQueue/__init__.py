@@ -11,8 +11,16 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 
 
 import platform
+import os
 from client import Client
 from job import Job
+
+
+
+# check DrQueue environment
+if os.getenv('DRQUEUE_ROOT') is None:
+    print("DRQUEUE_ROOT environment variable not set")
+    exit(1)
 
 
 def get_rendertemplate(renderer):
