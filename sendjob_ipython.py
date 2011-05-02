@@ -38,10 +38,15 @@ def main():
     job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, eval(options.options))
 
     # run job with client
-    client.job_run(job)
+    try:
+        client.job_run(job)
+    except ValueError:
+        print "One of your the specified values produced an error:"
+        raise
+        exit(1)
 
     # tasks which have been created
-    tasks = client.query_tasks_of_job(job['name'])
+    tasks = client.query_task_list(job['name'])
 
     # wait for all tasks of job to finish
     if options.wait:

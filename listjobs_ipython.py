@@ -10,11 +10,11 @@ def main():
     # initialize DrQueue client
     client = DrQueueClient()
     # fetch a list of all jobs
-    jobs = client.query_all_jobs()
+    jobs = client.query_job_list()
         
     # walk through tasks of every job
     for job in jobs:
-        tasks = client.query_tasks_of_job(job)
+        tasks = client.query_task_list(job)
         
         print("\nTasks of job %s:" % job)
         print("msg_id                                 status    owner       completed at")

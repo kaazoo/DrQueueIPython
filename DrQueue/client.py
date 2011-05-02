@@ -25,8 +25,19 @@ class Client():
 
     def job_run(self, job):
         """Create and queue tasks from job object"""
+
+        # check job name
+        if job['name'] in self.query_job_list():
+            raise ValueError("Job name %s is already used!" % job['name'])
+            return False
+
         # set session name which will be used as job name
         self.ip_client.session.session = job['name']
+
+        # check frame numbers
+        if not (job['endframe'] >= job['blocksize'] >= job['startframe'] >= 1):
+            raise ValueError("Invalid values for frame numbers!")
+            return False
 
         task_frames = range(job['startframe'], job['endframe'] + 1, job['blocksize'])
         for x in task_frames:
@@ -89,7 +100,7 @@ class Client():
         return ar
 
 
-    def query_all_jobs(self):
+    def query_job_list(self):
         """Query a list of all jobs (IPython sessions)"""
         jobs = []
         query_data = self.ip_client.db_query({"header.session" : {"$ne" : ""}}, keys=["header.session"])
@@ -101,7 +112,7 @@ class Client():
         return jobs
 
 
-    def query_tasks_of_job(self, jobname):
+    def query_task_list(self, jobname):
         """Query a list of tasks objects of certain job"""
         tasks = self.ip_client.db_query({"header.session" : jobname})
         return tasks
@@ -112,6 +123,11 @@ class Client():
         dict = {'msg_id': task_id }
         task = self.ip_client.db_query(dict)[0]
         return task
+
+
+    def query_engine_list(self):
+        """Query a list of all engines"""
+        return self.ip_client.ids
 
 
     def job_stop(self, jobname):
@@ -163,5 +179,11 @@ class Client():
             result_header = job['result_header']
             status = result_header['status']
         return status
+
+
+    def engine_stop(self, engine_id):
+        """Stop a specific engine"""
+        self.ip_client.shutdown(engine_id, False, False, True)
+        return True
 
 
