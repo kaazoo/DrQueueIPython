@@ -1,11 +1,13 @@
+DrQueueIPython
+==============
 
 This is going to become a rewrite of DrQueue in Python. IPython will be used for network communication and task management.
 
 See more information https://ssl.drqueue.org/redmine/projects/drqueueipython
 
 
-
-Design changes:
+Design changes
+--------------
 
 * Master becomes IPController
 * Slave becomes IPEngine
@@ -17,7 +19,9 @@ Design changes:
 * High water mark (HWM) can be set for IPEngines in order to always keep some tasks for late joining engines.
 
 
-Test setup:
+Test setup
+----------
+
 * install ZMQ 2.1.4 and pyzmq 2.1.4
 * install Git version of IPython 0.11dev from https://github.com/ipython/ipython
 * install MongoDB and PyMongo
@@ -32,3 +36,10 @@ Test setup:
   python2.6 sendjob_ipython.py -s 1 -e 3 -b 1 -r blender -f /usr/local/drqueue/tmp/icetest.blend -n "Job 123" -o "{'rendertype':'animation'}" -w -v
 * list known jobs and their tasks: "python2.6 listjobs_ipython.py"
 
+
+License
+-------
+
+Copyright (C) 2011 Andreas Schroeder
+
+Licensed under GNU General Public License version 3. See LICENSE for details.

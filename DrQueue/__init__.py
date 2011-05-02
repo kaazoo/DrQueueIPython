@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*-
 
-"""DrQueue module"""
+"""
+DrQueue main module
+Copyright (C) 2011 Andreas Schroeder
+
+This file is part of DrQueue.
+
+Licensed under GNU General Public License version 3. See LICENSE for details.
+"""
+
 
 import platform
 from client import Client
@@ -60,14 +68,8 @@ def get_osname():
 
 
 def run_script_with_env(script, env_dict):
-    """Create variables and template script on engine"""
+    """Create variables in engine namespace from dictionary and run template script"""
     # load variables from dict
     locals().update(env_dict)
     return execfile(script)
-
-
-def run_dummy():
-    import time
-    time.sleep(1)
-    return True
 

@@ -1,20 +1,29 @@
 # -*- coding: utf-8 -*-
 
+"""
+DrQueue Client submodule
+Copyright (C) 2011 Andreas Schroeder
+
+This file is part of DrQueue.
+
+Licensed under GNU General Public License version 3. See LICENSE for details.
+"""
+
 import os
 import time
 from IPython.parallel import Client as IPClient
 import DrQueue
 
 class Client():
-    """Class for client actions"""
+    """DrQueue client actions"""
     def __init__(self):
         # initialize IPython
         self.ip_client = IPClient()
         self.lbview = self.ip_client.load_balanced_view()
 
 
-    def run_job(self, job):
-        """Create tasks for job"""
+    def job_run(self, job):
+        """Create and queue tasks from job object"""
         # set session name which will be used as job name
         self.ip_client.session.session = job['name']
 
@@ -72,7 +81,7 @@ class Client():
             time.sleep(0.5)
 
 
-    def wait_for_task(self, task_id):
+    def task_wait(self, task_id):
         """Wait for task to finish"""
         ar = self.ip_client.get_result(task_id)
         ar.wait()

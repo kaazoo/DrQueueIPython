@@ -1,9 +1,18 @@
 # -*- coding: utf-8 -*-
 
+"""
+DrQueue Job submodule
+Copyright (C) 2011 Andreas Schroeder
+
+This file is part of DrQueue.
+
+Licensed under GNU General Public License version 3. See LICENSE for details.
+"""
+
 import os
 
 class Job(dict):
-    """Subclass of dict for Jobs."""
+    """Subclass of dict for collecting Job attribute values."""
     def __init__(self, name, startframe, endframe, blocksize, renderer, scenefile, options={}):
         dict.__init__(self)
         # mandatory elements

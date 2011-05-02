@@ -38,7 +38,7 @@ def main():
     job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, eval(options.options))
 
     # run job with client
-    client.run_job(job)
+    client.job_run(job)
 
     # tasks which have been created
     tasks = client.query_tasks_of_job(job['name'])
@@ -46,7 +46,7 @@ def main():
     # wait for all tasks of job to finish
     if options.wait:
         for task in tasks:
-            ar = client.wait_for_task(task['msg_id'])
+            ar = client.task_wait(task['msg_id'])
             # add some verbose output
             if options.verbose:
                 cpl = ar.metadata.completed
