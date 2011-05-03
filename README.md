@@ -37,6 +37,12 @@ Test setup
 * list known jobs and their tasks: "python2.6 listjobs_ipython.py"
 
 
+Support development
+-------------------
+
+[![Flattr Button](http://api.flattr.com/button/button-static-50x60.png "Flattr This!")](http://flattr.com/thing/181901/DrQueueIPython-project "DrQueueIPython project")
+
+
 License
 -------
 
