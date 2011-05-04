@@ -13,6 +13,7 @@ import os
 import os.path
 import time
 from IPython.parallel import Client as IPClient
+from IPython.parallel.util import unpack_apply_message
 import DrQueue
 
 class Client():
@@ -112,6 +113,13 @@ class Client():
         return jobs
 
 
+    def query_jobname(self, task_id):
+        """Query jobname from task id"""
+        data = self.ip_client.db_query({"msg_id" : task_id})
+        jobname = data[0]['header']['session']
+        return jobname
+
+
     def query_task_list(self, jobname):
         """Query a list of tasks objects of certain job"""
         tasks = self.ip_client.db_query({"header.session" : jobname})
@@ -132,47 +140,80 @@ class Client():
 
     def job_stop(self, jobname):
         """Stop job and all tasks which are not currently running"""
-        tasks = self.query_tasks_of_job(jobname)
-
+        tasks = self.query_task_list(jobname)
         # abort all queued tasks
         for task in tasks:
             self.ip_client.abort(task['msg_id'])
-
         return True
 
 
     def job_kill(self, jobname):
         """Stop job and all of it's tasks wether running or not"""
-        tasks = self.query_tasks_of_job(jobname)
-
+        tasks = self.query_task_list(jobname)
+        running_engines = []
         # abort all queued tasks
         for task in tasks:
-            self.lbview.abort(task['msg_id'])
-
+            stats = self.ip_client.queue_status('all', True)
+            # check if tasks is already running on an engine
+            for key,status in stats.items():
+                if ('tasks' in status) and (task['msg_id'] in status['tasks']):
+                    print "found"
+                    running_engines.append(key)
+            self.ip_client.abort(task['msg_id'])
+        # restart all engines which still run a task
+        running_engines = set(running_engines)
+        print list(running_engines)
+        #for engine_id in running_engines:
+        #    self.ip_client(engine_id)
         return True
 
 
     def job_delete(self, jobname):
         """Delete job and all of it's tasks"""
-        tasks = self.query_tasks_of_job(jobname)
-
+        tasks = self.query_task_list(jobname)
         # abort and delete all queued tasks
         for task in tasks:
-            self.lbview.abort(task['msg_id'])
+            self.ip_client.abort(task['msg_id'])
             self.ip_client.purge_results(task['msg_id'])
+        return True
 
+
+    def task_continue(self, task_id):
+        """Continue aborted or failed task"""
+        task = self.query_task(task_id)
+        # check if action is needed
+        if (task['completed'] != None) and ((task['result_header']['status'] == "error") or (task['result_header']['status'] == "aborted")):
+            print "requeuing %s" % task_id
+            self.task_requeue(task_id)
+        return True
+
+
+    def task_requeue(self, task_id):
+        """Requeue task"""
+        # get the buffers from the Hub
+        rec = self.ip_client.db_query(dict(msg_id=task_id), keys=['buffers'])[0]
+        # reconstruct the arguments
+        f,args,kwargs = unpack_apply_message(rec['buffers'])
+        # resubmit to old session
+        self.ip_client.session.session = self.query_jobname(task_id)
+        self.lbview.apply_async(f,*args,**kwargs)
+        # remove old entry
+        self.ip_client.purge_results(task_id)
         return True
 
 
     def job_continue(self, jobname):
-        """Continue stopped job"""
+        """Continue stopped job and all of it's tasks"""
+        tasks = self.query_task_list(jobname)
+        # continue tasks
+        for task in tasks:
+            self.task_continue(task['msg_id'])
         return True
 
 
     def job_status(self, jobname):
         """Return status string of job"""
         job = self.query_task(job_id)
-
         if job['completed'] == None:
             status = "pending"
         else:
@@ -184,6 +225,12 @@ class Client():
     def engine_stop(self, engine_id):
         """Stop a specific engine"""
         self.ip_client.shutdown(engine_id, False, False, True)
+        return True
+
+
+    def engine_restart(self, engine_id):
+        """Restart a specific engine"""
+        self.ip_client.shutdown(engine_id, True, False, True)
         return True
 
 
