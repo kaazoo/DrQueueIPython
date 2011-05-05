@@ -37,7 +37,6 @@ def main():
     client = DrQueueClient()
 
     # initialize DrQueue job
-    print options.retries
     job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, options.retries, eval(options.options))
 
     # run job with client

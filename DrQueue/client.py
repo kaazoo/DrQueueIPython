@@ -36,7 +36,6 @@ class Client():
         self.ip_client.session.session = job['name']
 
         # set number of retries for each task
-        print job['retries']
         self.lbview.retries = job['retries']
 
         # check frame numbers
@@ -193,8 +192,6 @@ class Client():
 
     def task_requeue(self, task_id):
         """Requeue task"""
-        # resubmit to old session
-        self.ip_client.session.session = self.query_jobname(task_id)
         self.ip_client.resubmit(task_id)
         print "requeuing %s" % task_id
         return True

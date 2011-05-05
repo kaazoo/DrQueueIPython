@@ -32,7 +32,7 @@ def main():
                 cpl = task['completed']
     
             print("%s   %s  %s  %i-%02i-%02i %02i:%02i:%02i" % (tmsg_id, string.ljust(status, 8), string.ljust(username, 10), cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
-
+            print task
     
 if __name__ == "__main__":
     main()
