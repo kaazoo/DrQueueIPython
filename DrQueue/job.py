@@ -10,10 +10,12 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 """
 
 import os
+import getpass
+
 
 class Job(dict):
     """Subclass of dict for collecting Job attribute values."""
-    def __init__(self, name, startframe, endframe, blocksize, renderer, scenefile, retries, options={}):
+    def __init__(self, name, startframe, endframe, blocksize, renderer, scenefile, retries=1, owner=getpass.getuser(), options={}):
         dict.__init__(self)
         # mandatory elements
         jb = {'name' : name,
@@ -23,6 +25,7 @@ class Job(dict):
               'renderer' : renderer,
               'scenefile' : scenefile,
               'retries' : retries,
+              'owner' : owner,
              }
         # optional elements
         if 'renderdir' in options:

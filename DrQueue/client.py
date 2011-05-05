@@ -35,6 +35,9 @@ class Client():
         # set session name which will be used as job name
         self.ip_client.session.session = job['name']
 
+        # set owner of job
+        self.ip_client.session.username = job['owner']
+
         # set number of retries for each task
         self.lbview.retries = job['retries']
 

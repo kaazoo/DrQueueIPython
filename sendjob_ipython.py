@@ -5,6 +5,7 @@ import os
 import DrQueue
 from DrQueue import Job as DrQueueJob
 from DrQueue import Client as DrQueueClient
+import getpass
 
 
 def main():
@@ -27,6 +28,8 @@ def main():
                       dest="options", default="{}", help="specific options for renderer as Python dict")
     parser.add_option("--retries",
                       dest="retries", default=1, help="number of retries for every task")
+    parser.add_option("--owner",
+                      dest="owner", default=getpass.getuser(), help="Owner of job. Default is current username.")
     parser.add_option("-w", "--wait",
                       action="store_true", dest="wait", default=False, help="wait for job to finish")
     parser.add_option("-v", "--verbose",
@@ -37,7 +40,7 @@ def main():
     client = DrQueueClient()
 
     # initialize DrQueue job
-    job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, options.retries, eval(options.options))
+    job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, options.retries, options.owner, eval(options.options))
 
     # run job with client
     try:
