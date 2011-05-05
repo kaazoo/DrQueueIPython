@@ -13,7 +13,7 @@ import os
 
 class Job(dict):
     """Subclass of dict for collecting Job attribute values."""
-    def __init__(self, name, startframe, endframe, blocksize, renderer, scenefile, options={}):
+    def __init__(self, name, startframe, endframe, blocksize, renderer, scenefile, retries, options={}):
         dict.__init__(self)
         # mandatory elements
         jb = {'name' : name,
@@ -22,6 +22,7 @@ class Job(dict):
               'endframe' : endframe,
               'renderer' : renderer,
               'scenefile' : scenefile,
+              'retries' : retries,
              }
         # optional elements
         if 'renderdir' in options:
