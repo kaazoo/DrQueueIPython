@@ -2,8 +2,8 @@
 
 import os,signal,subprocess,sys
 import os.path
+from time import strftime,localtime
 
-os.umask(0)
 
 # external variables in upper case:
 # DRQUEUE_OS
@@ -34,11 +34,24 @@ else:
   command = engine_path+" -b "+DRQUEUE_SCENEFILE+" -P " + os.path.join(DRQUEUE_ETC, "blender_region_rendering.py")
 
 # write output to logfile
-logfile = open(DRQUEUE_LOGFILE,"wb")
-logfile.write(command)
+logfile = open(DRQUEUE_LOGFILE, "ab")
+logfile.write("Log started at " + strftime("%a, %d %b %Y %H:%M:%S", localtime()) + "\n\n")
+logfile.write(command+"\n")
 logfile.flush()
+
+# check scenefile
+if os.path.isfile(DRQUEUE_SCENEFILE) == False:
+    logfile.write("Scenefile was not found. Exiting with status 1.\n\n")
+    logfile.close()
+    exit(1)
 
 # run renderer and wait for finish
 p = subprocess.Popen(command, shell=True, stdout=logfile, stderr=subprocess.STDOUT)
 sts = os.waitpid(p.pid, 0)
+
+# return exit status to IPython
+logfile.write("Exiting with status " + str(sts[1]) + ".\n\n")
+logfile.close()
+if sts[1] > 0:
+    exit(sts[1])
 

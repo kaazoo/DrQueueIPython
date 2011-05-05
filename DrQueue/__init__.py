@@ -79,5 +79,6 @@ def run_script_with_env(script, env_dict):
     """Create variables in engine namespace from dictionary and run template script"""
     # load variables from dict
     locals().update(env_dict)
-    return execfile(script)
+    execfile(script)
+
 
