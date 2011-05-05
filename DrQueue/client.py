@@ -35,6 +35,10 @@ class Client():
         # set session name which will be used as job name
         self.ip_client.session.session = job['name']
 
+        # set number of retries for each task
+        print job['retries']
+        self.lbview.retries = job['retries']
+
         # check frame numbers
         if not (job['endframe'] >= job['blocksize'] >= job['startframe'] >= 1):
             raise ValueError("Invalid values for frame numbers!")
@@ -183,22 +187,16 @@ class Client():
         task = self.query_task(task_id)
         # check if action is needed
         if (task['completed'] != None) and ((task['result_header']['status'] == "error") or (task['result_header']['status'] == "aborted")):
-            print "requeuing %s" % task_id
             self.task_requeue(task_id)
         return True
 
 
     def task_requeue(self, task_id):
         """Requeue task"""
-        # get the buffers from the Hub
-        rec = self.ip_client.db_query(dict(msg_id=task_id), keys=['buffers'])[0]
-        # reconstruct the arguments
-        f,args,kwargs = unpack_apply_message(rec['buffers'])
         # resubmit to old session
         self.ip_client.session.session = self.query_jobname(task_id)
-        self.lbview.apply_async(f,*args,**kwargs)
-        # remove old entry
-        self.ip_client.purge_results(task_id)
+        self.ip_client.resubmit(task_id)
+        print "requeuing %s" % task_id
         return True
 
 
@@ -208,6 +206,15 @@ class Client():
         # continue tasks
         for task in tasks:
             self.task_continue(task['msg_id'])
+        return True
+
+
+    def job_rerun(self, jobname):
+        """Run all tasks of job another time"""
+        tasks = self.query_task_list(jobname)
+        # rerun tasks
+        for task in tasks:
+            self.task_requeue(task['msg_id'])
         return True
 
 
