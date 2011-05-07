@@ -2,6 +2,7 @@
 *.o
 *.a
 *.patch
+*.pyc
 .sconsign.dblite
 .sconf_temp
 config.log
