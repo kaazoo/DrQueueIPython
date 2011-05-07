@@ -20,8 +20,8 @@ class Job(dict):
         # mandatory elements
         jb = {'name' : name,
               'startframe' : startframe,
-              'blocksize' : blocksize,
               'endframe' : endframe,
+              'blocksize' : blocksize,
               'renderer' : renderer,
               'scenefile' : scenefile,
               'retries' : retries,

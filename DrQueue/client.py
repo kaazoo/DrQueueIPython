@@ -42,9 +42,23 @@ class Client():
         self.lbview.retries = job['retries']
 
         # check frame numbers
-        if not (job['endframe'] >= job['blocksize'] >= job['startframe'] >= 1):
-            raise ValueError("Invalid values for frame numbers!")
+        if not (job['startframe'] >= 1):
+            raise ValueError("Invalid value for startframe. Has to be equal or greater than 1.")
             return False
+        if not (job['endframe'] >= 1):
+            raise ValueError("Invalid value for endframe. Has to be equal or greater than 1.")
+            return False
+        if not (job['endframe'] >= job['startframe']):
+            raise ValueError("Invalid value for endframe. Has be to equal or greater than startframe.")
+            return False
+        if job['endframe'] > job['startframe']:
+            if not (job['endframe'] - job['startframe'] >= job['blocksize']):
+                raise ValueError("Invalid value for blocksize. Has to be equal or lower than endframe-startframe.")
+                return False
+        if job['endframe'] == job['startframe']:
+            if job['blocksize'] != 1:
+                raise ValueError("Invalid value for blocksize. Has to be equal 1 if endframe equals startframe.")
+                return False
 
         task_frames = range(job['startframe'], job['endframe'] + 1, job['blocksize'])
         for x in task_frames:
