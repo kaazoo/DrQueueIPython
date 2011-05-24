@@ -143,7 +143,7 @@ class Client():
     def query_task_list(self, jobname):
         """Query a list of tasks objects of certain job"""
         tasks = []
-        query_data = self.ip_client.db_query({"header" : {"$ne" : ""}}, keys=["header"])
+        query_data = self.ip_client.db_query({"header" : {"$ne" : ""}})
         for entry in query_data:
             if entry['header']['session'] == jobname:
                 tasks.append(entry)
