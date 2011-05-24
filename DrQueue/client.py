@@ -124,7 +124,7 @@ class Client():
     def query_job_list(self):
         """Query a list of all jobs (IPython sessions)"""
         jobs = []
-        query_data = self.ip_client.db_query({"header.session" : {"$ne" : ""}}, keys=["header.session"])
+        query_data = self.ip_client.db_query({"header" : {"$ne" : ""}}, keys=["header"])
         for entry in query_data:
             jobs.append(entry['header']['session'])
         jobs = set(jobs)
@@ -142,14 +142,17 @@ class Client():
 
     def query_task_list(self, jobname):
         """Query a list of tasks objects of certain job"""
-        tasks = self.ip_client.db_query({"header.session" : jobname})
+        tasks = []
+        query_data = self.ip_client.db_query({"header" : {"$ne" : ""}}, keys=["header"])
+        for entry in query_data:
+            if entry['header']['session'] == jobname:
+                tasks.append(entry)
         return tasks
 
 
     def query_task(self, task_id):
         """Query a single task"""
-        dict = {'msg_id': task_id }
-        task = self.ip_client.db_query(dict)[0]
+        task = self.ip_client.db_query({'msg_id' : task_id })[0]
         return task
 
 
