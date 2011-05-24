@@ -26,12 +26,12 @@ def main():
         
             if task['completed'] == None:
                 status = "pending"
+                print("%s   %s  %s" % (tmsg_id, string.ljust(status, 8), string.ljust(username, 10)))
             else:
                 result_header = task['result_header']
                 status = result_header['status']
                 cpl = task['completed']
-    
-            print("%s   %s  %s  %i-%02i-%02i %02i:%02i:%02i" % (tmsg_id, string.ljust(status, 8), string.ljust(username, 10), cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
+                print("%s   %s  %s  %i-%02i-%02i %02i:%02i:%02i" % (tmsg_id, string.ljust(status, 8), string.ljust(username, 10), cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
 
     
 if __name__ == "__main__":
