@@ -1,9 +1,10 @@
 DrQueueIPython
 ==============
 
-This is going to become a rewrite of DrQueue in Python. IPython will be used for network communication and task management.
-
+This is a port of DrQueue to Python. IPython will be used for network communication and task management.
 See more information https://ssl.drqueue.org/redmine/projects/drqueueipython
+
+DrQueue has been created by Jorge Daza Garcia-Blanes. See http://www.drqueue.org for more information.
 
 
 Design changes
