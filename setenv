@@ -1,2 +1,0 @@
-export DRQUEUE_MASTER=127.0.0.1
-export DRQUEUE_ROOT=/usr/local/drqueue
