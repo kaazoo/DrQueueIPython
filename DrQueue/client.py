@@ -110,8 +110,6 @@ class Client():
             # run task on cluster
             render_script = os.path.join(os.getenv('DRQUEUE_ROOT'), "etc", DrQueue.get_rendertemplate(job['renderer']))
             ar = self.lbview.apply(DrQueue.run_script_with_env, render_script, env_dict)
-            # avoid race condition
-            time.sleep(0.5)
 
 
     def task_wait(self, task_id):
