@@ -11,6 +11,12 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 
 import os
 import getpass
+import pymongo
+
+
+class Callable:
+    def __init__(self, anycallable):
+        self.__call__ = anycallable
 
 
 class Job(dict):
@@ -61,5 +67,25 @@ class Job(dict):
         if 'fileextension' in options:
             jb['fileextension'] = options['fileextension']
         self.update(jb)
-                
+
+
+    def save_to_db(job):
+        """store job information in MongoDB"""
+        connection = pymongo.Connection()
+        db = connection['ipythondb']
+        jobs = db['drqueue_jobs']
+        jobs.insert(job)
+        return True
+    save_to_db = Callable(save_to_db)
+
+
+    def get_from_db(job_id):
+        """get job information from MongoDB"""
+        connection = pymongo.Connection()
+        db = connection['ipythondb']
+        jobs = db['drqueue_jobs']
+        job = jobs.find_one({"_id": job_id})
+        return job
+    get_from_db = Callable(get_from_db)
+
         
