@@ -12,6 +12,7 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 import os
 import getpass
 import pymongo
+import bson
 
 
 class Callable:
@@ -74,8 +75,7 @@ class Job(dict):
         connection = pymongo.Connection()
         db = connection['ipythondb']
         jobs = db['drqueue_jobs']
-        jobs.insert(job)
-        return True
+        return jobs.insert(job)
     save_to_db = Callable(save_to_db)
 
 
@@ -84,7 +84,7 @@ class Job(dict):
         connection = pymongo.Connection()
         db = connection['ipythondb']
         jobs = db['drqueue_jobs']
-        job = jobs.find_one({"_id": job_id})
+        job = jobs.find_one({"_id": bson.ObjectId(job_id)})
         return job
     get_from_db = Callable(get_from_db)
 
