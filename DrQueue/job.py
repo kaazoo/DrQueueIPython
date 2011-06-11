@@ -70,22 +70,47 @@ class Job(dict):
         self.update(jb)
 
 
-    def save_to_db(job):
+    def store_db(job):
         """store job information in MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
         jobs = db['drqueue_jobs']
-        return jobs.insert(job)
-    save_to_db = Callable(save_to_db)
+        job_id = jobs.insert(job)
+        job['_id'] = str(job['_id'])
+        return job_id
+    store_db = Callable(store_db)
 
 
-    def get_from_db(job_id):
-        """get job information from MongoDB"""
+    def query_db(job_id):
+        """query job information from MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
         jobs = db['drqueue_jobs']
         job = jobs.find_one({"_id": bson.ObjectId(job_id)})
         return job
-    get_from_db = Callable(get_from_db)
+    query_db = Callable(query_db)
 
+
+    def query_jobnames():
+        """query job names from MongoDB"""
+        connection = pymongo.Connection()
+        db = connection['ipythondb']
+        jobs = db['drqueue_jobs']
+        names = []
+        for job in jobs.find():
+            names.append(job.name)
+        return names
+    query_jobnames = Callable(query_jobnames)
+
+
+    def query_job_list():
+        """query list of jobs from MongoDB"""
+        connection = pymongo.Connection()
+        db = connection['ipythondb']
+        jobs = db['drqueue_jobs']
+        job_arr = []
+        for job in jobs.find():
+            job_arr.append(job)
+        return job_arr
+    query_job_list = Callable(query_job_list)
         
