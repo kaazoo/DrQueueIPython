@@ -15,6 +15,8 @@ import time
 from IPython.parallel import Client as IPClient
 from IPython.parallel.util import unpack_apply_message
 import DrQueue
+from job import Job as DrQueueJob
+
 
 class Client():
     """DrQueue client actions"""
@@ -32,8 +34,11 @@ class Client():
             raise ValueError("Job name %s is already used!" % job['name'])
             return False
 
-        # set session name which will be used as job name
-        self.ip_client.session.session = job['name']
+        # save job in database
+        job_id = DrQueueJob.store_db(job)
+
+        # job_id from db is be used as session name
+        self.ip_client.session.session = str(job_id)
 
         # set owner of job
         self.ip_client.session.username = job['owner']
@@ -120,30 +125,24 @@ class Client():
 
 
     def query_job_list(self):
-        """Query a list of all jobs (IPython sessions)"""
-        jobs = []
-        query_data = self.ip_client.db_query({"header" : {"$ne" : ""}}, keys=["header"])
-        for entry in query_data:
-            jobs.append(entry['header']['session'])
-        jobs = set(jobs)
-        jobs = list(jobs)
-        jobs.sort()
-        return jobs
+        """Query a list of all jobs"""
+        return DrQueueJob.query_job_list()
 
 
     def query_jobname(self, task_id):
         """Query jobname from task id"""
         data = self.ip_client.db_query({"msg_id" : task_id})
-        jobname = data[0]['header']['session']
-        return jobname
+        job_id = data[0]['header']['session']
+        job = DrQueueJob.query_db(job_id)
+        return job.name
 
 
-    def query_task_list(self, jobname):
+    def query_task_list(self, job_id):
         """Query a list of tasks objects of certain job"""
         tasks = []
         query_data = self.ip_client.db_query({"header" : {"$ne" : ""}})
         for entry in query_data:
-            if entry['header']['session'] == jobname:
+            if str(entry['header']['session']) == str(job_id):
                 tasks.append(entry)
         return tasks
 
@@ -159,18 +158,18 @@ class Client():
         return self.ip_client.ids
 
 
-    def job_stop(self, jobname):
+    def job_stop(self, job_id):
         """Stop job and all tasks which are not currently running"""
-        tasks = self.query_task_list(jobname)
+        tasks = self.query_task_list(job_id)
         # abort all queued tasks
         for task in tasks:
             self.ip_client.abort(task['msg_id'])
         return True
 
 
-    def job_kill(self, jobname):
+    def job_kill(self, job_id):
         """Stop job and all of it's tasks wether running or not"""
-        tasks = self.query_task_list(jobname)
+        tasks = self.query_task_list(job_id)
         running_engines = []
         # abort all queued tasks
         for task in tasks:
@@ -189,9 +188,9 @@ class Client():
         return True
 
 
-    def job_delete(self, jobname):
+    def job_delete(self, job_id):
         """Delete job and all of it's tasks"""
-        tasks = self.query_task_list(jobname)
+        tasks = self.query_task_list(job_id)
         # abort and delete all queued tasks
         for task in tasks:
             self.ip_client.abort(task['msg_id'])
@@ -215,25 +214,25 @@ class Client():
         return True
 
 
-    def job_continue(self, jobname):
+    def job_continue(self, job_id):
         """Continue stopped job and all of it's tasks"""
-        tasks = self.query_task_list(jobname)
+        tasks = self.query_task_list(job_id)
         # continue tasks
         for task in tasks:
             self.task_continue(task['msg_id'])
         return True
 
 
-    def job_rerun(self, jobname):
+    def job_rerun(self, job_id):
         """Run all tasks of job another time"""
-        tasks = self.query_task_list(jobname)
+        tasks = self.query_task_list(job_id)
         # rerun tasks
         for task in tasks:
             self.task_requeue(task['msg_id'])
         return True
 
 
-    def job_status(self, jobname):
+    def job_status(self, job_id):
         """Return status string of job"""
         job = self.query_task(job_id)
         if job['completed'] == None:
