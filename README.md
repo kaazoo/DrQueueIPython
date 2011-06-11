@@ -14,7 +14,7 @@ Design changes
 * Slave becomes IPEngine
 * Clients can use the IPython.parallel.Client class to talk to IPController
 * No compiling needed anymore. Just Python code.
-* IPython and MongoDB become dependencies.
+* ZMQ, PyZMQ, MongoDB, mymongo and IPython become dependencies.
 * MongoDB is be used for job/task information storage.
 * There is no direct access to frame information anymore. Jobs can be devided into tasks. Depending on the blocksize, one task can consist of one or more frames.
 * High water mark (HWM) can be set for IPEngines in order to always keep some tasks for late joining engines.
