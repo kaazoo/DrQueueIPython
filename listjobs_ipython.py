@@ -14,9 +14,9 @@ def main():
         
     # walk through tasks of every job
     for job in jobs:
-        tasks = client.query_task_list(job)
+        tasks = client.query_task_list(job['_id'])
         
-        print("\nTasks of job %s:" % job)
+        print("\nTasks of job %s:" % job['name'])
         print("msg_id                                 status    owner       completed at")
         
         for task in tasks:

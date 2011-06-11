@@ -51,7 +51,7 @@ def main():
         exit(1)
 
     # tasks which have been created
-    tasks = client.query_task_list(job['name'])
+    tasks = client.query_task_list(job['_id'])
 
     # wait for all tasks of job to finish
     if options.wait:
