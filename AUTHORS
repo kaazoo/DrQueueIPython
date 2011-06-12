@@ -1,31 +1,20 @@
 
 
-DRQUEUE DEVELOPERS & CONTRIBUTORS
----------------------------------
+DrQueueIPython developers & contributors
+----------------------------------------
 
-+ DrQueue has been written and maintained by:
+DrQueueIPython has been created by Andreas Schroeder <andreas-AT-drqueue.org>.
 
-Jorge Daza Garcia-Blanes <jorge@drqueue.org>
+DrQueue has been created by Jorge Daza Garcia-Blanes <jorge-AT-drqueue.org>. See http://www.drqueue.org for more information.
 
-+ Only posible thanks to the contribution of:
 
-Andreas Schroeder <andreas@drqueue.org> developer: DrQueueOnRails webfrontend, Ruby bindings
-Carlos Oliva <carlos@drqueue.org> developer: Turtle renderder support, MacOS X Installer
-Brendan Orr <baorr@myrealbox.com> scripting-hacker: bmrt.sg, 3delight.sg and pixie.sg
-Christian Boustany (Noor Entertainment <noorentertainment@yahoo.com>) developer: Mental Ray standalone support
-Goran Kocov <gkocov@yahoo.com> developer/blender: Blender support on sendjob and the python script to send jobs directly from blender
-Kevin "Insane" Mahoney : how can I say "Thanks ! You the man"
-Marco Gaib <beowulf30@gmx.de> contributor/translator: German translation of drqman (version 0.44)
-Marc Ume <info@digitalgraphics.be> developer: Pixie renderer support
-Oliver Hotz <oliver@heimlich.net> developer: windows support; terragen support, nuke support
-Peter Riel <peter@basecampvfx.com> http://www.basecampvfx.com developer: houdini mantra support
-Shawn Parr <parrs@ipfw.edu> The most famous Mac OS X documentation online and best feedback.
-Theodore Schundler <tschundler@scu.edu> developer: FreeBSD support, tcpwrappers... and lot more.
-Tobias Sauerwein <cgTobi@gmail.com> developer: Aqsis support.
-Vincent Dedun (aka kraken) <kraken+spam@smousseland.com> developer: Windows Cygwin port.
-Gaute Neslein Korsnes <gaute@blender3d.no> developer: Luxrender integration in Drqman
+Special thanks to:
+Jorge Daza Garcia-Blanes <jorge-AT-drqueue.org> - DrQueue project
+Benjamin (Min) Ragan-Kelley <benjaminrk-AT-gmail.com> - great help for parallel computing with IPython
 
-DRQUEUE LOGO
+
+
+DrQueue logo
 ------------
 The weasel model used for the logo belongs to: 
 Gary Gegan <ggegan@mac.com>
