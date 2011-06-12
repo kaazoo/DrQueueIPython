@@ -13,6 +13,8 @@ def main():
     parser.usage = "%prog [options] -n name"
     parser.add_option("-n", "--name ",
                       dest="name", help="name of job")
+    parser.add_option("-i", "--id ",
+                      dest="id", default=0, help="id of job")
     parser.add_option("-s", "--stop",
                       action="store_true", dest="stop", default=False, help="stop the job")
     parser.add_option("-k", "--kill",
@@ -32,30 +34,38 @@ def main():
     # initialize DrQueue client
     client = DrQueueClient()
 
+    # get job information
+    if options.id == 0:
+        job_id = DrQueueJob.query_job_by_name(options.name)['_id']
+        job_name = options.name
+    else:
+        job_id = options.id
+        job_name = DrQueueJob.query_db(options.id)['name']
+
     # run specified action on job
     if options.stop:
-        client.job_stop(options.name)
-        print("Job %s has been stopped." % options.name)
+        client.job_stop(job_id)
+        print("Job %s has been stopped." % job_name)
         return
     if options.kill:
-        client.job_kill(options.name)
-        print("Job %s has been killed." % options.name)
+        client.job_kill(job_id)
+        print("Job %s has been killed." % job_name)
         return
     if options.delete:
-        client.job_delete(options.name)
-        print("Job %s has been deleted." % options.name)
+        client.job_delete(job_id)
+        print("Job %s has been deleted." % job_name)
         return
     if options.cont:
-        client.job_continue(options.name)
-        print("Job %s is running again." % options.name)
+        client.job_continue(job_id)
+        print("Job %s is running again." % job_name)
         return
     if options.rerun:
-        client.job_rerun(options.name)
-        print("Job %s is running another time." % options.name)
+        client.job_rerun(job_id)
+        print("Job %s is running another time." % job_name)
         return
     if options.status:
-        status = client.job_status(options.name)
-        print("The status of job %s is \"%s\"" % (options.name, status))
+        status = client.job_status(job_id)
+        print("The status of job %s is \"%s\"" % (job_name, status))
         return
 
 if __name__ == "__main__":
