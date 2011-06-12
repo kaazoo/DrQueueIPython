@@ -25,12 +25,15 @@ class Client():
         self.ip_client = IPClient()
         self.lbview = self.ip_client.load_balanced_view()
 
+        # enable tracking
+        self.lbview.track = True
+
 
     def job_run(self, job):
         """Create and queue tasks from job object"""
 
         # check job name
-        if job['name'] in self.query_job_list():
+        if job['name'] in DrQueueJob.query_jobnames():
             raise ValueError("Job name %s is already used!" % job['name'])
             return False
 
@@ -115,6 +118,8 @@ class Client():
             # run task on cluster
             render_script = os.path.join(os.getenv('DRQUEUE_ROOT'), "etc", DrQueue.get_rendertemplate(job['renderer']))
             ar = self.lbview.apply(DrQueue.run_script_with_env, render_script, env_dict)
+            # wait for pyzmq send to complete communication (avoid race condition)
+            ar.wait_for_send()
 
 
     def task_wait(self, task_id):
@@ -135,6 +140,11 @@ class Client():
         job_id = data[0]['header']['session']
         job = DrQueueJob.query_db(job_id)
         return job.name
+
+
+    def query_job_by_name(self, job_name):
+        """Query job from name"""
+        return DrQueueJob.query_job_by_name()
 
 
     def query_task_list(self, job_id):
@@ -195,6 +205,8 @@ class Client():
         for task in tasks:
             self.ip_client.abort(task['msg_id'])
             self.ip_client.purge_results(task['msg_id'])
+        # delete job itself
+        DrQueueJob.delete_from_db(job_id)
         return True
 
 
