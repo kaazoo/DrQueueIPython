@@ -91,6 +91,15 @@ class Job(dict):
     query_db = Callable(query_db)
 
 
+    def delete_from_db(job_id):
+        """query job information from MongoDB"""
+        connection = pymongo.Connection()
+        db = connection['ipythondb']
+        jobs = db['drqueue_jobs']
+        return jobs.remove({"_id": bson.ObjectId(job_id)})
+    delete_from_db = Callable(delete_from_db)
+
+
     def query_jobnames():
         """query job names from MongoDB"""
         connection = pymongo.Connection()
@@ -98,9 +107,19 @@ class Job(dict):
         jobs = db['drqueue_jobs']
         names = []
         for job in jobs.find():
-            names.append(job.name)
+            names.append(job['name'])
         return names
     query_jobnames = Callable(query_jobnames)
+
+
+    def query_job_by_name(job_name):
+        """query job information from MongoDB by name"""
+        connection = pymongo.Connection()
+        db = connection['ipythondb']
+        jobs = db['drqueue_jobs']
+        job = jobs.find_one({"name": job_name})
+        return job
+    query_job_by_name = Callable(query_job_by_name)
 
 
     def query_job_list():
