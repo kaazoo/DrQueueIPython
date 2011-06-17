@@ -142,9 +142,14 @@ class Client():
         return job.name
 
 
+    def query_job(self, job_id):
+        """Query job from id"""
+        return DrQueueJob.query_db(job_id)
+
+
     def query_job_by_name(self, job_name):
         """Query job from name"""
-        return DrQueueJob.query_job_by_name()
+        return DrQueueJob.query_job_by_name(job_name)
 
 
     def query_task_list(self, job_id):
