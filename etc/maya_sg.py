@@ -1,90 +1,62 @@
-#
-# THIS IS A PYTHON SCRIPT FILE
-# 
-# Default configuration for Maya script generator
-# 
-# Python variables
-# SCENE, RENDERDIR, PROJECTDIR, RF_OWNER, FFORMAT, RESX, RESY, CAMERA, DRQUEUE_IMAGE,
-# RENDERER, DRQUEUE_POST, DRQUEUE_PRE
-# 
-# shell variables
-# DRQUEUE_BLOCKSIZE, DRQUEUE_COMPID, DRQUEUE_ENDFRAME, DRQUEUE_ETC, DRQUEUE_FRAME,
-# DRQUEUE_JOBID, DRQUEUE_JOBNAME, DRQUEUE_OS, DRQUEUE_OWNER, DRQUEUE_PADFRAME, 
-# DRQUEUE_PADFRAMES, DRQUEUE_STARTFRAME, DRQUEUE_STEPFRAME
-#
-
-#
-# For platform dependend environment setting a form like this
-# can be used :
-#
-# if DRQUEUE_OS == "LINUX":
-#    # Environment for Linux
-# elsif DRQUEUE_OS == "IRIX":
-#    # Environment for Irix
-# else
-#    # Some error messages
-#
+# -*- coding: utf-8 -*-
 
 import os,signal,subprocess,sys
-
-os.umask(0)
-
-# fetch DrQueue environment
-DRQUEUE_BLOCKSIZE = int(os.getenv("DRQUEUE_BLOCKSIZE"))
-DRQUEUE_COMPID = int(os.getenv("DRQUEUE_COMPID"))
-DRQUEUE_ENDFRAME = int(os.getenv("DRQUEUE_ENDFRAME"))
-DRQUEUE_ETC = os.getenv("DRQUEUE_ETC")
-DRQUEUE_FRAME = int(os.getenv("DRQUEUE_FRAME"))
-DRQUEUE_JOBID = int(os.getenv("DRQUEUE_JOBID"))
-DRQUEUE_JOBNAME = os.getenv("DRQUEUE_JOBNAME")
-DRQUEUE_OS = os.getenv("DRQUEUE_OS")
-DRQUEUE_OWNER = os.getenv("DRQUEUE_OWNER")
-DRQUEUE_PADFRAME = int(os.getenv("DRQUEUE_PADFRAME"))
-DRQUEUE_PADFRAMES = int(os.getenv("DRQUEUE_PADFRAMES"))
-DRQUEUE_STARTFRAME = int(os.getenv("DRQUEUE_STARTFRAME"))
-DRQUEUE_STEPFRAME = int(os.getenv("DRQUEUE_STEPFRAME"))
+import os.path
+from time import strftime,localtime
 
 
-if DRQUEUE_OS == "WINDOWS":
-  # convert to windows path with drive letter
-  SCENE = subprocess.Popen(["cygpath.exe", "-w "+SCENE], stdout=subprocess.PIPE).communicate()[0]
-  RENDERDIR = subprocess.Popen(["cygpath.exe", "-w "+RENDERDIR], stdout=subprocess.PIPE).communicate()[0]
-  PROJECTDIR = subprocess.Popen(["cygpath.exe", "-w "+PROJECTDIR], stdout=subprocess.PIPE).communicate()[0]
-	
+# used external variables in upper case:
+# DRQUEUE_OS
+# DRQUEUE_ETC
+# DRQUEUE_FRAME
+# DRQUEUE_BLOCKSIZE
+# DRQUEUE_ENDFRAME
+# DRQUEUE_SCENEFILE
+# DRQUEUE_LOGFILE
+# DRQUEUE_IMAGEFILE
+# DRQUEUE_CAMERA
+# DRQUEUE_RESX
+# DRQUEUE_RESY
+# DRQUEUE_FILEFORMAT
+# DRQUEUE_RENDERER
+# DRQUEUE_PRECOMMAND
+# DRQUEUE_POSTCOMMAND
+# DRQUEUE_RENDERDIR
+# DRQUEUE_PROJECTDIR
 
-BLOCK = DRQUEUE_FRAME + DRQUEUE_BLOCKSIZE - 1
 
-if BLOCK > DRQUEUE_ENDFRAME:
-  BLOCK = DRQUEUE_ENDFRAME
+# range to render
+block = DRQUEUE_FRAME + DRQUEUE_BLOCKSIZE - 1
+if block > DRQUEUE_ENDFRAME:
+	block = DRQUEUE_ENDFRAME
 
-
-if ("DRQUEUE_IMAGE" in locals()) and (DRQUEUE_IMAGE != ""):
-  image_args="-im "+DRQUEUE_IMAGE
+if ("DRQUEUE_IMAGEFILE" in locals()) and (DRQUEUE_IMAGEFILE != ""):
+  image_args="-im "+DRQUEUE_IMAGEFILE
 else:
   image_args=""
 
-if ("CAMERA" in locals()) and (CAMERA != ""):
-  camera_args="-cam "+CAMERA
+if ("DRQUEUE_CAMERA" in locals()) and (DRQUEUE_CAMERA != ""):
+  camera_args="-cam "+DRQUEUE_CAMERA
 else:
   camera_args=""
 
-if ("RESX" in locals()) and ("RESX" in locals()) and (int(RESX) > 0) and (int(RESY) > 0):
-  res_args="-x "+RESX+" -y "+RESY
+if ("DRQUEUE_RESX" in locals()) and ("DRQUEUE_RESX" in locals()) and (int(DRQUEUE_RESX) > 0) and (int(DRQUEUE_RESY) > 0):
+  res_args="-x "+DRQUEUE_RESX+" -y "+DRQUEUE_RESY
 else:
   res_args=""
 
-if ("FFORMAT" in locals()) and (FFORMAT != ""):
-  format_args="-of "+FFORMAT
+if ("DRQUEUE_FILEFORMAT" in locals()) and (DRQUEUE_FILEFORMAT != ""):
+  format_args="-of "+DRQUEUE_FILEFORMAT
 else:
   format_args=""
 
-if ("RENDERER" in locals()) and (RENDERER == "mr"):
+if ("DRQUEUE_RENDERER" in locals()) and (DRQUEUE_RENDERER == "mr"):
   ## number of processors/cores to use
   #proc_args="-rt 2"
 
   ## use Maya's automatic detection
   proc_args="-art"
-elif ("RENDERER" in locals()) and (RENDERER == "sw"):
+elif ("DRQUEUE_RENDERER" in locals()) and (DRQUEUE_RENDERER == "sw"):
   ## number of processors/cores to use
   #proc_args="-n 2"
 
@@ -94,43 +66,40 @@ else:
   ## don't add something
   proc_args=""
 
-
-if ("DRQUEUE_PRE" in locals()) and (DRQUEUE_PRE != ""):
-  pre_args="-preRender \""+DRQUEUE_PRE+"\""
+if ("DRQUEUE_PRECOMMAND" in locals()) and (DRQUEUE_PRECOMMAND != ""):
+  pre_args="-preRender \""+DRQUEUE_PRECOMMAND+"\""
 else:
   pre_args=""
 	
-if ("DRQUEUE_POST" in locals()) and (DRQUEUE_POST != ""):
-  post_args="-postRender \""+DRQUEUE_POST+"\""
+if ("DRQUEUE_POSTCOMMAND" in locals()) and (DRQUEUE_POSTCOMMAND != ""):
+  post_args="-postRender \""+DRQUEUE_POSTCOMMAND+"\""
 else:
   post_args=""
 
+# renderer path/executable
+engine_path="Render"
 
-ENGINE_PATH="Render"
+command = engine_path+" "+pre_args+" "+post_args+" "+proc_args+" -s "+str(DRQUEUE_FRAME)+" -e "+str(block)+" "+res_args+" "+format_args+" -rd "+DRQUEUE_RENDERDIR+" -proj "+DRQUEUE_PROJECTDIR+" -r "+DRQUEUE_RENDERER+" "+image_args+" "+camera_args+" "+DRQUEUE_SCENEFILE
 
-command = ENGINE_PATH+" "+pre_args+" "+post_args+" "+proc_args+" -s "+str(DRQUEUE_FRAME)+" -e "+str(BLOCK)+" "+res_args+" "+format_args+" -rd "+RENDERDIR+" -proj "+PROJECTDIR+" -r "+RENDERER+" "+image_args+" "+camera_args+" "+SCENE
+# write output to logfile
+logfile = open(DRQUEUE_LOGFILE, "ab")
+logfile.write("Log started at " + strftime("%a, %d %b %Y %H:%M:%S", localtime()) + "\n\n")
+logfile.write(command+"\n")
+logfile.flush()
 
+# check scenefile
+if os.path.isfile(DRQUEUE_SCENEFILE) == False:
+    logfile.write("Scenefile was not found. Exiting with status 1.\n\n")
+    logfile.close()
+    exit(1)
 
-print(command)
-sys.stdout.flush()
-
-p = subprocess.Popen(command, shell=True)
+# run renderer and wait for finish
+p = subprocess.Popen(command, shell=True, stdout=logfile, stderr=subprocess.STDOUT)
 sts = os.waitpid(p.pid, 0)
 
-# This should requeue the frame if failed
-if sts[1] != 0:
-  print("Requeueing frame...")
-  os.kill(os.getppid(), signal.SIGINT)
-  exit(1)
-else:
-  #if DRQUEUE_OS != "WINDOWS" then:
-  # The frame was rendered properly
-  # We don't know the output image name. If we knew we could set this correctly
-  # chown_block RF_OWNER RD/IMAGE DRQUEUE_FRAME BLOCK 
+# return exit status to IPython
+logfile.write("Exiting with status " + str(sts[1]) + ".\n\n")
+logfile.close()
+if sts[1] > 0:
+    exit(sts[1])
 
-  # change userid and groupid
-  #chown 1002:1004 $SCENE:h/*
-  print("Finished.")
-#
-# Notice that the exit code of the last command is received by DrQueue
-#
