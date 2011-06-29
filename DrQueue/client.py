@@ -92,6 +92,10 @@ class Client():
                 env_dict['DRQUEUE_IMAGEFILE'] = job['imagefile']
             if 'precommand' in job:
                 env_dict['DRQUEUE_PRECOMMAND'] = job['precommand']
+            if 'renderer' in job:
+                env_dict['DRQUEUE_RENDERER'] = job['renderer']
+            if 'fileformat' in job:
+                env_dict['DRQUEUE_FILEFORMAT'] = job['fileformat']
             if 'postcommand' in job:
                 env_dict['DRQUEUE_POSTCOMMAND'] = job['postcommand']
             if 'viewcommand' in job:
@@ -157,7 +161,7 @@ class Client():
         tasks = []
         query_data = self.ip_client.db_query({"header" : {"$ne" : ""}})
         for entry in query_data:
-            if str(entry['header']['session']) == str(job_id):
+            if (entry['header'] != None) and (str(entry['header']['session']) == str(job_id)):
                 tasks.append(entry)
         return tasks
 
