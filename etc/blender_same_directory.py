@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 #
-# Copyright (C) 2007,2010 Andreas Schroeder
+# Copyright (C) 2007,2010,2011 Andreas Schroeder
 #
 # This file is part of DrQueue
 #
@@ -26,23 +26,23 @@
 
 import os
 import subprocess
+import sys
 
 def get_version():
   try:
-    proc1 = subprocess.Popen(["blender", "-v"], stdout=subprocess.PIPE)
-    proc2 = subprocess.Popen(["grep", "Blender"], stdin=proc1.stdout, stdout=subprocess.PIPE)
+    proc = subprocess.Popen(["blender -v"], stdout=subprocess.PIPE, shell=True)
   except OSError:
     version_string = "0"
     print("Could not determine version.\n")
-    exit(1)
+    sys.exit(1)
   else:
-    output = proc2.communicate()[0]
-    if proc2.returncode > 0:
+    output = proc.communicate()[0]
+    if proc.returncode > 0:
       version_string = "0"
       print("Could not determine version.\n")
-      exit(1)
+      sys.exit(1)
     else:
-      version_string = str(output).split(" ")[1]
+      version_string = str(output).split("\n")[0].split(" ")[1]
       print("Found version " + version_string + "\n")
   return version_string
 
@@ -55,7 +55,6 @@ version = get_version()
 if float(version) > 2.5:
   # load libs
   import bpy
-  import sys
 
   # get scene settings
   scn = bpy.data.scenes[0]
@@ -85,7 +84,6 @@ elif float(version) > 2.4:
   # load libs
   import Blender
   from Blender import Scene, Get, Noise, Load, sys, BGL, Draw, Window, Camera
-  import sys
 
   # get scene settings
   scn = Scene.GetCurrent()
@@ -114,5 +112,5 @@ elif float(version) > 2.4:
 
 else:
   print("Incompatible Blender version.")
-  exit(1)
+  sys.exit(1)
 
