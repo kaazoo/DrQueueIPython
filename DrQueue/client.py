@@ -126,9 +126,19 @@ class Client():
             ar.wait_for_send()
 
 
+    def identify_computer(self, engine_id):
+        """Gather information about computer"""
+        # run command only on specific computer
+        dview = self.ip_client[engine_id]
+        dview.block = True
+        dview.execute("import DrQueue\nfrom DrQueue import Computer as DrQueueComputer\nc = DrQueueComputer("+str(engine_id)+")")
+        return dview['c']
+
+
     def task_wait(self, task_id):
         """Wait for task to finish"""
         ar = self.ip_client.get_result(task_id)
+        ar.wait_for_send()
         ar.wait()
         return ar
 
