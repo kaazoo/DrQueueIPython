@@ -15,7 +15,7 @@ import os
 from client import Client
 from job import Job
 from computer import Computer
-
+from computer_pool import ComputerPool
 
 
 # check DrQueue environment
