@@ -22,7 +22,7 @@ class Callable:
 
 class Job(dict):
     """Subclass of dict for collecting Job attribute values."""
-    def __init__(self, name, startframe, endframe, blocksize, renderer, scenefile, retries=1, owner=getpass.getuser(), options={}):
+    def __init__(self, name, startframe, endframe, blocksize, renderer, scenefile, retries=1, owner=getpass.getuser(), pool=None, options={}):
         dict.__init__(self)
         # mandatory elements
         jb = {'name' : name,
@@ -33,6 +33,7 @@ class Job(dict):
               'scenefile' : scenefile,
               'retries' : retries,
               'owner' : owner,
+              'pool' : pool
              }
         # optional elements
         if 'renderdir' in options:
