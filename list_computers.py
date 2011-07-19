@@ -23,5 +23,7 @@ for comp_id in c.ip_client.ids:
     print(" procspeed: "+comp['procspeed'])
     print(" ncpus: "+str(comp['ncpus']))
     print(" ncorescpu: "+str(comp['ncorescpu']))
-    print(" memory: "+comp['memory']+"\n")
+    print(" memory: "+comp['memory'])
+    print(" load: "+comp['load']+"\n")
+
 

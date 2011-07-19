@@ -12,6 +12,8 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 import os
 import platform
 import sys
+from computer_pool import ComputerPool
+
 
 class Callable:
     def __init__(self, anycallable):
@@ -33,6 +35,7 @@ class Computer(dict):
               'ncpus' : Computer.get_ncpus(),
               'ncorescpu' : Computer.get_ncorescpu(),
               'memory' : Computer.get_memory(),
+              'load' : Computer.get_load(),
              }
         self.update(comp)
 
@@ -150,4 +153,45 @@ class Computer(dict):
             memory = None
         return memory
     get_memory = Callable(get_memory)
+
+
+    def get_load():
+        """get load of computer"""
+        load = None
+        if (platform.system() == "Darwin") or (platform.system() == "Linux"):
+            import subprocess
+            proc = subprocess.Popen(["uptime"], shell=True, stdout=subprocess.PIPE)
+            output = proc.communicate()[0]
+            load = output.split(":")[3].split("\n")[0].lstrip()
+        if platform.system() == "Win32":
+            load = None
+        return load
+    get_load = Callable(get_load)
+
+
+    def set_pools(self, pool_list):
+        """add computer to list of pools"""
+        if type(pool_list).__name__ != 'list':
+            raise ValueError("argument is not of type list")
+            return False
+        for pool_name in pool_list:
+            # look if pool is already existing
+            pool = ComputerPool.query_pool_by_name(pool_name)
+            # create new pool if not existing
+            if pool == None:
+                pool = ComputerPool(pool_name, [self['engine_id']])
+                # store information in db
+                ComputerPool.store_db(pool)
+            # pool is already existing
+            else:
+                # look if computer is already in pool
+                if self['engine_id'] in pool['engine_ids']:
+                    print("computer %i is already in pool %s" % (self['engine_id'], pool_name))
+                else:
+                    # add computer to pool
+                    pool['engine_ids'].append(self['engine_id'])
+                # update information in db
+                ComputerPool.update_db(pool)
+        return True
+
 

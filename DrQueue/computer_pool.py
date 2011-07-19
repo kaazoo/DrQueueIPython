@@ -22,8 +22,13 @@ class Callable:
 
 class ComputerPool(dict):
     """Subclass of dict for collecting Pool attribute values."""
-    def __init__(self, name, engine_ids={}):
+    def __init__(self, name, engine_ids=[]):
         dict.__init__(self)
+
+        if type(engine_ids).__name__ != 'list':
+            raise ValueError("argument is not of type list")
+            return False
+
         # mandatory elements
         pool = {
               'name' : name,
@@ -37,10 +42,21 @@ class ComputerPool(dict):
         connection = pymongo.Connection()
         db = connection['ipythondb']
         pools = db['drqueue_pools']
-        pool_id = jobs.insert(pool)
+        pool_id = pools.insert(pool)
         pool['_id'] = str(pool['_id'])
         return pool_id
     store_db = Callable(store_db)
+
+
+    def update_db(pool):
+        """update pool information in MongoDB"""
+        connection = pymongo.Connection()
+        db = connection['ipythondb']
+        pools = db['drqueue_pools']
+        pool_id = pools.save(pool)
+        pool['_id'] = str(pool['_id'])
+        return pool_id
+    update_db = Callable(update_db)
 
 
     def query_db(pool_id):
@@ -85,7 +101,7 @@ class ComputerPool(dict):
 
 
     def query_pool_list():
-        """query list of jobs from MongoDB"""
+        """query list of pools from MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
         pools = db['drqueue_pools']
@@ -95,3 +111,13 @@ class ComputerPool(dict):
         return pool_arr
     query_pool_list = Callable(query_pool_list)
         
+
+    def query_pool_members(pool_name):
+        """query list of members of pool from MongoDB"""
+        connection = pymongo.Connection()
+        db = connection['ipythondb']
+        pools = db['drqueue_pools']
+        pool = pools.find_one({"name": pool_name})
+        return pool['engine_id']
+    query_pool_members = Callable(query_pool_members)
+
