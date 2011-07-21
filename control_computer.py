@@ -67,6 +67,13 @@ def main():
             print(" pools: "+str(DrQueueComputer(computer).get_pools())+"\n")
         return True
     if options.status:
+        for computer in computers:
+            print("Engine "+str(computer)+ ":")
+            status = client.ip_client.queue_status(computer, verbose=True)
+            print(" status:")
+            print("  in queue: "+str(status['queue']))
+            print("  completed: "+str(status['completed']))
+            print("  tasks: "+str(status['tasks']))
         return True
 
 if __name__ == "__main__":
