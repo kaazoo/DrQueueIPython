@@ -24,6 +24,8 @@ def main():
                       dest="renderer", help="render type (maya|blender|mentalray)")
     parser.add_option("-f", "--scenefile",
                       dest="scenefile", default=None, help="path to scenefile")
+    parser.add_option("-p", "--pool",
+                      dest="pool", default=None, help="pool of computers")
     parser.add_option("-o", "--options",
                       dest="options", default="{}", help="specific options for renderer as Python dict")
     parser.add_option("--retries",
@@ -40,7 +42,7 @@ def main():
     client = DrQueueClient()
 
     # initialize DrQueue job
-    job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, options.retries, options.owner, eval(options.options))
+    job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, options.retries, options.owner, options.pool, eval(options.options))
 
     # run job with client
     try:
