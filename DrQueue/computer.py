@@ -169,12 +169,29 @@ class Computer(dict):
     get_load = Callable(get_load)
 
 
+    def get_pools(self):
+        """list pools to which computer belongs"""
+        engine_pools = []
+        pools = ComputerPool.query_pool_list()
+        for pool in pools:
+            if type(pool['engine_ids']).__name__ == 'list':
+                if self['engine_id'] in pool['engine_ids']:
+                    engine_pools.append(pool['name'])
+        return engine_pools
+
+
     def set_pools(self, pool_list):
         """add computer to list of pools"""
         if type(pool_list).__name__ != 'list':
             raise ValueError("argument is not of type list")
             return False
+        # prepare list of pools of which computer should be taken out
+        old_pools = self.get_pools()
+        old_pools_to_delete = old_pools
         for pool_name in pool_list:
+            # remove name from list
+            if pool_name in old_pools_to_delete:
+                old_pools_to_delete.remove(pool_name)
             # look if pool is already existing
             pool = ComputerPool.query_pool_by_name(pool_name)
             # create new pool if not existing
@@ -186,12 +203,21 @@ class Computer(dict):
             else:
                 # look if computer is already in pool
                 if self['engine_id'] in pool['engine_ids']:
-                    print("computer %i is already in pool %s" % (self['engine_id'], pool_name))
+                    print("Computer %i is already in pool %s" % (self['engine_id'], pool_name))
                 else:
                     # add computer to pool
+                    print("Computer %i added to pool %s" % (self['engine_id'], pool_name))
                     pool['engine_ids'].append(self['engine_id'])
                 # update information in db
                 ComputerPool.update_db(pool)
+        # work on list of old pools
+        for pool_name in old_pools_to_delete:
+            pool = ComputerPool.query_pool_by_name(pool_name)
+            if pool != None:
+                print("Computer %i removed from pool %s" % (self['engine_id'], pool_name))
+                pool['engine_ids'].remove(self['engine_id'])
+            # update information in db
+            ComputerPool.update_db(pool)
         return True
 
 
