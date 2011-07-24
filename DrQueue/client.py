@@ -16,7 +16,7 @@ from IPython.parallel import Client as IPClient
 from IPython.parallel.util import unpack_apply_message
 import DrQueue
 from job import Job as DrQueueJob
-
+from computer_pool import ComputerPool as DrQueueComputerPool
 
 class Client():
     """DrQueue client actions"""
@@ -35,6 +35,10 @@ class Client():
         # check job name
         if job['name'] in DrQueueJob.query_jobnames():
             raise ValueError("Job name %s is already used!" % job['name'])
+            return False
+
+        # only work on available engines
+        if self.query_ready_engines_of_pool(job['pool']) == False:
             return False
 
         # save job in database
@@ -186,6 +190,24 @@ class Client():
         """Query a list of all engines"""
         return self.ip_client.ids
 
+
+    def query_ready_engines_of_pool(self, pool_name):
+        """Query list of pool members and return only available engines"""
+        ready_computers = []
+        # update LoadBalancedView if pool is set
+        if pool_name != None:
+            computers = list(DrQueueComputerPool.query_pool_members(pool_name))
+            for comp in computers:
+                if comp in self.query_engine_list():
+                    ready_computers.append(comp)
+            if ready_computers == []:
+                raise ValueError("No computer of pool %s is available!" % pool_name)
+                return False
+            self.lbview = self.ip_client.load_balanced_view(ready_computers)
+        # load balance on all existing computers
+        else:
+            self.lbview = self.ip_client.load_balanced_view()
+        return True
 
     def job_stop(self, job_id):
         """Stop job and all tasks which are not currently running"""
