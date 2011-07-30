@@ -170,6 +170,16 @@ class Client():
         return DrQueueJob.query_job_by_name(job_name)
 
 
+    def query_job_tasks_left(self, job_id):
+        """Query left frames of job"""
+        left = 0
+        tasks = self.query_task_list(job_id)
+        for task in tasks:
+            if task['completed'] == None:
+                left += 1
+        return left
+
+
     def query_task_list(self, job_id):
         """Query a list of tasks objects of certain job"""
         tasks = []
@@ -287,12 +297,44 @@ class Client():
 
     def job_status(self, job_id):
         """Return status string of job"""
-        job = self.query_task(job_id)
-        if job['completed'] == None:
+        tasks = self.query_task_list(job_id)
+        status = None
+        status_pending = 0
+        status_ok = 0
+        status_aborted = 0
+        status_resubmitted = 0
+        status_error = 0
+        for task in tasks:
+            # look for pending tasks
+            if task['completed'] == None:
+                status_pending += 1
+            else:
+                if 'result_header' in task.keys():
+                    result_header = task['result_header']
+                    # look for done tasks
+                    if ('status' in result_header.keys()) and (result_header['status'] == "ok"):
+                        status_ok += 1
+                    # look for aborted tasks
+                    if ('status' in result_header.keys()) and (result_header['status'] == "aborted"):
+                        status_aborted += 1
+                    # look for done tasks
+                    if ('status' in result_header.keys()) and (result_header['status'] == "resubmitted"):
+                        status_resubmitted += 1
+                    # look for tasks with error
+                    if ('status' in result_header.keys()) and (result_header['status'] == "error"):
+                        status_error += 1
+        # if at least 1 task is ok, job status is ok
+        if status_ok > 0:
+            status = "ok"
+        # if at least 1 task is pending, job status is pending
+        if status_pending > 0:
             status = "pending"
-        else:
-            result_header = job['result_header']
-            status = result_header['status']
+        # if at least 1 task is aborted, job status is aborted
+        if status_aborted > 0:
+            status = "aborted"
+        # if at least 1 task has an error, job status is error
+        if status_error > 0:
+            status = "error"
         return status
 
 
