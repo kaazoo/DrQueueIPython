@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-List information about connected computers
+Create new job
 Copyright (C) 2011 Andreas Schroeder
 
 This file is part of DrQueue.
