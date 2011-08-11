@@ -25,4 +25,7 @@ python/ez_setup.pyc
 python/src/drqueue.egg-info/
 python/src/drqueue/base/libdrqueue.py
 python/src/drqueue/base/libdrqueue_wrap.c
+DrQueueIPython.egg-info/*
+build/*
+dist/*
 
