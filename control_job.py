@@ -1,5 +1,14 @@
 # -*- coding: utf-8 -*-
 
+"""
+List information about connected computers
+Copyright (C) 2011 Andreas Schroeder
+
+This file is part of DrQueue.
+
+Licensed under GNU General Public License version 3. See LICENSE for details.
+"""
+
 from optparse import OptionParser
 import os
 import DrQueue

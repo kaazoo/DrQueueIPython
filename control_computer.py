@@ -1,5 +1,14 @@
 # -*- coding: utf-8 -*-
 
+"""
+List information about connected computers
+Copyright (C) 2011 Andreas Schroeder
+
+This file is part of DrQueue.
+
+Licensed under GNU General Public License version 3. See LICENSE for details.
+"""
+
 from optparse import OptionParser
 import os
 import DrQueue
@@ -47,8 +56,7 @@ def main():
         return True
     if options.pools:
         for computer in computers:
-            comp = DrQueueComputer(computer)
-            comp.set_pools(options.pools.split(","))
+            DrQueueComputer.set_pools(computer, options.pools.split(","))
             print("Computer %i has been added to pools %s." % (computer, options.pools.split(",")))
         return True
     if options.info:
@@ -64,7 +72,7 @@ def main():
             print(" ncorescpu: "+str(comp['ncorescpu']))
             print(" memory: "+comp['memory'])
             print(" load: "+comp['load'])
-            print(" pools: "+str(DrQueueComputer(computer).get_pools())+"\n")
+            print(" pools: "+str(DrQueueComputer.get_pools(computer))+"\n")
         return True
     if options.status:
         for computer in computers:

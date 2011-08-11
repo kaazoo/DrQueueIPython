@@ -16,6 +16,7 @@ from IPython.parallel import Client as IPClient
 from IPython.parallel.util import unpack_apply_message
 import DrQueue
 from job import Job as DrQueueJob
+from computer import Computer as DrQueueComputer
 from computer_pool import ComputerPool as DrQueueComputerPool
 
 class Client():
