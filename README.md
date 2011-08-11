@@ -1,8 +1,8 @@
 DrQueueIPython
 ==============
 
-This is a port of DrQueue to Python. IPython will be used for network communication and task management.
-See more information https://ssl.drqueue.org/redmine/projects/drqueueipython
+This is a port of DrQueue to Python. IPython is used for network communication and task management.
+See more information at https://ssl.drqueue.org/redmine/projects/drqueueipython .
 
 DrQueue has been created by Jorge Daza Garcia-Blanes. See http://www.drqueue.org for more information.
 
@@ -10,32 +10,29 @@ DrQueue has been created by Jorge Daza Garcia-Blanes. See http://www.drqueue.org
 Design changes
 --------------
 
-* Master becomes IPController
-* Slave becomes IPEngine
+* Master runs IPController
+* Slave runs IPEngine
 * Clients can use the IPython.parallel.Client class to talk to IPController
 * No compiling needed anymore. Just Python code.
-* ZMQ, PyZMQ, MongoDB, mymongo and IPython become dependencies.
-* MongoDB is be used for job/task information storage.
+* ZMQ, PyZMQ, MongoDB, PyMongo and IPython become dependencies.
+* MongoDB is be used for information storage of tasks, jobs, pools, ... .
 * There is no direct access to frame information anymore. Jobs can be devided into tasks. Depending on the blocksize, one task can consist of one or more frames.
-* High water mark (HWM) can be set for IPEngines in order to always keep some tasks for late joining engines.
+* High water mark (HWM) can be set for IPEngines in order to control how many tasks are queued to each engine and to always keep some tasks for late joining engines.
+* DrQueueIPython provides a Python module for easy accces to the underlying technology. This makes integration into other software which uses Python possible.
 
 
-Test setup
-----------
+Requirements
+------------
 
-* install ZMQ 2.1.4 and pyzmq 2.1.4
-* install Git version of IPython 0.11dev from https://github.com/ipython/ipython
-* install MongoDB and PyMongo
-* edit ~/.config/ipython/cluster_default/ipcontroller_config.py:
-  c.HubFactory.db_class = 'IPython.parallel.controller.mongodb.MongoDB'
-  c.MongoDB.database = 'ipythondb'
-  c.TaskScheduler.hwm = 2
-* run MongoDB server: "mongod --dbpath ~/.config/ipython/db/"
-* run IPController: "ipcontroller"
-* run several IPEngines: "ipengine"
-* submit some tasks:
-  python2.6 sendjob_ipython.py -s 1 -e 3 -b 1 -r blender -f /usr/local/drqueue/tmp/icetest.blend -n "Job 123" -o "{'rendertype':'animation'}" -w -v
-* list known jobs and their tasks: "python2.6 listjobs_ipython.py"
+* ZMQ >= 2.1.4 and pyzmq >= 2.1.4 from http://www.zeromq.org
+* IPython 0.11 from http://www.ipython.org
+* MongoDB >= 1.8 and PyMongo >= 1.10 from http://www.mongodb.org
+
+
+Installation
+------------
+
+See the DrQueueIPython wiki at https://ssl.drqueue.org/redmine/projects/drqueueipython/wiki .
 
 
 Support development
@@ -50,3 +47,4 @@ License
 Copyright (C) 2011 Andreas Schroeder
 
 Licensed under GNU General Public License version 3. See LICENSE for details.
+
