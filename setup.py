@@ -1,3 +1,6 @@
+import ez_setup
+ez_setup.use_setuptools()
+
 import os
 from setuptools import setup
 
