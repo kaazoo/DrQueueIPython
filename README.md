@@ -32,7 +32,8 @@ Requirements
 Installation
 ------------
 
-See the DrQueueIPython wiki at https://ssl.drqueue.org/redmine/projects/drqueueipython/wiki .
+* Run "python setup.py install" to install DrQueue module and scripts.
+* For more information, see the DrQueueIPython wiki at https://ssl.drqueue.org/redmine/projects/drqueueipython/wiki .
 
 
 Support development
