@@ -123,6 +123,8 @@ class Client():
                 env_dict['DRQUEUE_RENDERTYPE'] = job['rendertype']
             if 'fileextension' in job:
                 env_dict['DRQUEUE_FILEEXTENSION'] = job['fileextension']
+            if 'stepframe' in job:
+                env_dict['DRQUEUE_STEPFRAME'] = job['stepframe']
     
             # run task on cluster
             render_script = os.path.join(os.getenv('DRQUEUE_ROOT'), "etc", DrQueue.get_rendertemplate(job['renderer']))
