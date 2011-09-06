@@ -12,6 +12,7 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 import os
 import platform
 import sys
+import fileinput
 from computer_pool import ComputerPool
 
 
@@ -95,11 +96,9 @@ class Computer(dict):
             output = proc.communicate()[0]
             speed = output.split(":")[1].split("\n")[0].lstrip()
         if platform.system() == "Linux":
-            f = os.open('/proc/cpuinfo', 'r')
-            for line in f.readlines():
+            for line in fileinput.input('/proc/cpuinfo'):
                 if 'MHz' in line:
                     speed = line.split(':')[1].strip() + " " + "MHz"
-            f.close()
         if platform.system() == "Win32":
             import _winreg
             key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0")
@@ -140,7 +139,7 @@ class Computer(dict):
     get_ncorescpu = Callable(get_ncorescpu)
 
     def get_memory():
-        """get number of CPUs of computer"""
+        """get amount of memory of computer"""
         memory = None
         if platform.system() == "Darwin":
             import subprocess
@@ -148,7 +147,10 @@ class Computer(dict):
             output = proc.communicate()[0]
             memory = output.split(":")[1].split("\n")[0].lstrip()
         if platform.system() == "Linux":
-            memory = None
+            for line in fileinput.input('/proc/meminfo'):
+                if 'MemTotal' in line:
+                    memory = line.split(':')[1].strip().split(' ')[0].strip()
+                    memory = str(round(float(memory)/1024/1024, 2)) + " " + "GB"
         if platform.system() == "Win32":
             memory = None
         return memory
