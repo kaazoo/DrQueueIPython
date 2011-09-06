@@ -161,10 +161,8 @@ class Computer(dict):
         """get load of computer"""
         load = None
         if (platform.system() == "Darwin") or (platform.system() == "Linux"):
-            import subprocess
-            proc = subprocess.Popen(["uptime"], shell=True, stdout=subprocess.PIPE)
-            output = proc.communicate()[0]
-            load = output.split(":")[3].split("\n")[0].lstrip()
+            loads = os.getloadavg()
+            load = str(round(loads[0],2)) + " " + str(round(loads[1], 2)) + " " + str(round(loads[2], 2))
         if platform.system() == "Win32":
             load = None
         return load
