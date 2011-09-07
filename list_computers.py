@@ -19,6 +19,7 @@ for comp_id in c.ip_client.ids:
     print(" hostname: "+comp['hostname'])
     print(" arch: "+comp['arch'])
     print(" os: "+comp['os'])
+    print(" proctype: "+comp['proctype'])
     print(" nbits: "+str(comp['nbits']))
     print(" procspeed: "+comp['procspeed'])
     print(" ncpus: "+str(comp['ncpus']))
