@@ -12,6 +12,7 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 
 import platform
 import os
+import sys
 from client import Client
 from job import Job
 from computer import Computer
@@ -21,7 +22,7 @@ from computer_pool import ComputerPool
 # check DrQueue environment
 if os.getenv('DRQUEUE_ROOT') is None:
     print("DRQUEUE_ROOT environment variable not set")
-    exit(1)
+    sys.exit(1)
 
 
 def get_rendertemplate(renderer):
