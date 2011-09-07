@@ -11,8 +11,6 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 
 import os
 import getpass
-import pymongo
-import bson
 
 
 class Callable:
@@ -72,6 +70,7 @@ class Job(dict):
 
 
     def store_db(job):
+        import pymongo
         """store job information in MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
@@ -83,6 +82,8 @@ class Job(dict):
 
 
     def query_db(job_id):
+        import pymongo
+        import bson
         """query job information from MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
@@ -93,6 +94,8 @@ class Job(dict):
 
 
     def delete_from_db(job_id):
+        import pymongo
+        import bson
         """query job information from MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
@@ -102,6 +105,7 @@ class Job(dict):
 
 
     def query_jobnames():
+        import pymongo
         """query job names from MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
@@ -114,6 +118,7 @@ class Job(dict):
 
 
     def query_job_by_name(job_name):
+        import pymongo
         """query job information from MongoDB by name"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
@@ -124,6 +129,7 @@ class Job(dict):
 
 
     def query_job_list():
+        import pymongo
         """query list of jobs from MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']

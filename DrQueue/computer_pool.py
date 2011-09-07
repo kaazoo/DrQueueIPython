@@ -11,8 +11,6 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 
 import os
 import getpass
-import pymongo
-import bson
 
 
 class Callable:
@@ -38,6 +36,7 @@ class ComputerPool(dict):
 
 
     def store_db(pool):
+        import pymongo
         """store pool information in MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
@@ -49,6 +48,7 @@ class ComputerPool(dict):
 
 
     def update_db(pool):
+        import pymongo
         """update pool information in MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
@@ -60,6 +60,8 @@ class ComputerPool(dict):
 
 
     def query_db(pool_id):
+        import pymongo
+        import bson
         """query pool information from MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
@@ -70,6 +72,8 @@ class ComputerPool(dict):
 
 
     def delete_from_db(pool_id):
+        import pymongo
+        import bson
         """delete pool information from MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
@@ -79,6 +83,7 @@ class ComputerPool(dict):
 
 
     def query_poolnames():
+        import pymongo
         """query pool names from MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
@@ -91,6 +96,7 @@ class ComputerPool(dict):
 
 
     def query_pool_by_name(pool_name):
+        import pymongo
         """query pool information from MongoDB by name"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
@@ -101,6 +107,7 @@ class ComputerPool(dict):
 
 
     def query_pool_list():
+        import pymongo
         """query list of pools from MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
@@ -113,6 +120,7 @@ class ComputerPool(dict):
         
 
     def query_pool_members(pool_name):
+        import pymongo
         """query list of members of pool from MongoDB"""
         connection = pymongo.Connection()
         db = connection['ipythondb']
