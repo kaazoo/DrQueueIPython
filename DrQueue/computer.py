@@ -57,7 +57,7 @@ class Computer(dict):
         if osname == "Darwin":
             osname = "Mac OSX"
             osver = platform.mac_ver()[0]
-        if osname == "Win32":
+        if osname in ["Windows", "Win32"]:
             osver = platform.win32_ver()[0] + " " + platform.win32_ver()[1]
         if osname == "Linux":
             osver = platform.linux_distribution()[0] + " " + platform.linux_distribution()[1]
@@ -66,15 +66,14 @@ class Computer(dict):
 
     def get_proctype():
         """get CPU type of computer"""
-        proctype = None
-        if platform.system() == "Darwin":
+        osname = platform.system()
+        proctype = ""
+        if osname == "Darwin":
             import subprocess
             proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Processor Name\""], shell=True, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
             proctype = output.split(":")[1].split("\n")[0].lstrip()
-        if platform.system() == "Linux":
-            proctype = platform.processor()
-        if platform.system() == "Win32":
+        if osname == ["Linux", "Windows", "Win32"]:
             proctype = platform.processor()
         return proctype
     get_proctype = Callable(get_proctype)
@@ -89,92 +88,118 @@ class Computer(dict):
 
     def get_procspeed():
         """get CPU speed of computer"""
-        speed = None
-        if platform.system() == "Darwin":
+        osname = platform.system()
+        speed = ""
+        if osname == "Darwin":
             import subprocess
             proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Processor Speed\""], shell=True, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
             speed = output.split(":")[1].split("\n")[0].lstrip()
-        if platform.system() == "Linux":
+        if osname == "Linux":
             for line in fileinput.input('/proc/cpuinfo'):
                 if 'MHz' in line:
-                    speed = line.split(':')[1].strip() + " " + "MHz"
-        if platform.system() == "Win32":
+                    speed = line.split(':')[1].strip() + " MHz"
+        if osname in ["Windows", "Win32"]:
             import _winreg
             key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0")
             speed, type = _winreg.QueryValueEx(key, "~MHz")
-            speed = speed + " " + "MHz"
+            speed = str(speed) + " MHz"
         return speed
     get_procspeed = Callable(get_procspeed)
 
     def get_ncpus():
         """get number of CPUs of computer"""
-        ncpus = None
-        if platform.system() == "Darwin":
+        osname = platform.system()
+        ncpus = 0
+        if osname == "Darwin":
             import subprocess
             proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Number Of Processors\""], shell=True, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
             ncpus = int(output.split(":")[1].split("\n")[0])
-        if platform.system() == "Linux":
+        if osname == "Linux":
             phyids = []
             for line in fileinput.input('/proc/cpuinfo'):
                 if 'physical id' in line:
                     phyids.append(line)
             uniq = set(phyids)
             ncpus = len(uniq)
-        if platform.system() == "Win32":
-            ncpus = None
+        if osname in ["Windows", "Win32"]:
+            ncpus = int(os.environ['NUMBER_OF_PROCESSORS'])
         return ncpus
     get_ncpus = Callable(get_ncpus)
 
     def get_ncorescpu():
         """get number of cores in CPU of computer"""
-        ncorescpu = None
-        if platform.system() == "Darwin":
+        osname = platform.system()
+        ncorescpu = 0
+        if osname == "Darwin":
             import subprocess
             proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Total Number Of Cores\""], shell=True, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
             total_cores = output.split(":")[1].split("\n")[0]
             ncorescpu = int(total_cores) / Computer.get_ncpus()
-        if platform.system() == "Linux":
+        if osname == "Linux":
             phyids = [] 
             for line in fileinput.input('/proc/cpuinfo'):
                 if 'physical id' in line:
                     phyids.append(line)
             uniq = set(phyids)
             ncorescpu = len(phyids) / len(uniq)
-        if platform.system() == "Win32":
-            ncorescpu = None
+        if osname in ["Windows", "Win32"]:
+            ncorescpu = 1
         return ncorescpu
     get_ncorescpu = Callable(get_ncorescpu)
 
     def get_memory():
         """get amount of memory of computer"""
-        memory = None
-        if platform.system() == "Darwin":
+        osname = platform.system()
+        memory = ""
+        if osname == "Darwin":
             import subprocess
             proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Memory\""], shell=True, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
             memory = output.split(":")[1].split("\n")[0].lstrip()
-        if platform.system() == "Linux":
+        if osname == "Linux":
             for line in fileinput.input('/proc/meminfo'):
                 if 'MemTotal' in line:
                     memory = line.split(':')[1].strip().split(' ')[0].strip()
-                    memory = str(round(float(memory)/1024/1024, 2)) + " " + "GB"
-        if platform.system() == "Win32":
-            memory = None
+                    memory = str(round(float(memory)/1024/1024, 2)) + " GB"
+        if osname in ["Windows", "Win32"]:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            c_ulong = ctypes.c_ulong
+            class MEMORYSTATUS(ctypes.Structure):
+                _fields_ = [
+                    ('dwLength', c_ulong),
+                    ('dwMemoryLoad', c_ulong),
+                    ('dwTotalPhys', c_ulong),
+                    ('dwAvailPhys', c_ulong),
+                    ('dwTotalPageFile', c_ulong),
+                    ('dwAvailPageFile', c_ulong),
+                    ('dwTotalVirtual', c_ulong),
+                    ('dwAvailVirtual', c_ulong)
+                ]
+            memoryStatus = MEMORYSTATUS()
+            memoryStatus.dwLength = ctypes.sizeof(MEMORYSTATUS)
+            kernel32.GlobalMemoryStatus(ctypes.byref(memoryStatus))
+            mem = memoryStatus.dwTotalPhys / (1024*1024)
+            mem = mem / 1000
+            memory = str(mem) + " GB"
         return memory
     get_memory = Callable(get_memory)
 
 
     def get_load():
         """get load of computer"""
-        load = None
-        if (platform.system() == "Darwin") or (platform.system() == "Linux"):
+        osname = platform.system()
+        load = ""
+        if osname in ["Darwin", "Linux"]:
             loads = os.getloadavg()
             load = str(round(loads[0],2)) + " " + str(round(loads[1], 2)) + " " + str(round(loads[2], 2))
-        if platform.system() == "Win32":
-            load = None
+        if osname in ["Windows", "Win32"]:
+            cmd = "WMIC CPU GET LoadPercentage "
+            response = os.popen(cmd + ' 2>&1','r').read().strip().split("\r\n")
+            load = response[1]
         return load
     get_load = Callable(get_load)
 
