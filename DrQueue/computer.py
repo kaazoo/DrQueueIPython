@@ -116,7 +116,12 @@ class Computer(dict):
             output = proc.communicate()[0]
             ncpus = int(output.split(":")[1].split("\n")[0])
         if platform.system() == "Linux":
-            ncpus = None
+            phyids = []
+            for line in fileinput.input('/proc/cpuinfo'):
+                if 'physical id' in line:
+                    phyids.append(line)
+            uniq = set(phyids)
+            ncpus = len(uniq)
         if platform.system() == "Win32":
             ncpus = None
         return ncpus
@@ -132,7 +137,12 @@ class Computer(dict):
             total_cores = output.split(":")[1].split("\n")[0]
             ncorescpu = int(total_cores) / Computer.get_ncpus()
         if platform.system() == "Linux":
-            ncorescpu = None
+            phyids = [] 
+            for line in fileinput.input('/proc/cpuinfo'):
+                if 'physical id' in line:
+                    phyids.append(line)
+            uniq = set(phyids)
+            ncorescpu = len(phyids) / len(uniq)
         if platform.system() == "Win32":
             ncorescpu = None
         return ncorescpu
