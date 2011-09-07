@@ -18,7 +18,7 @@ setup(
     url = "http://packages.python.org/DrQueueIPython",
     packages = ['DrQueue'],
     scripts = ['control_computer.py', 'control_job.py', 'list_computers.py', 'list_jobs.py', 'send_job.py'],
-    install_requires = ['ipython>=0.11'],
+    install_requires = ['ipython>=0.11', 'pyzmq>=2.1.4'],
     long_description = read('README.md'),
     classifiers = [
         "Development Status :: 3 - Alpha",
