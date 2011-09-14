@@ -30,7 +30,7 @@ import sys
 
 def get_version():
   try:
-    proc = subprocess.Popen(["blender -v"], stdout=subprocess.PIPE, shell=True)
+    proc = subprocess.Popen("blender -v", stdout=subprocess.PIPE, shell=True)
   except OSError:
     version_string = "0"
     print("Could not determine version.\n")
