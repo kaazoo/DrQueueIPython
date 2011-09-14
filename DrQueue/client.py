@@ -77,13 +77,11 @@ class Client():
         for x in task_frames:
             # prepare script input
             env_dict = {
-            'DRQUEUE_OS' : DrQueue.get_osname(),
-            'DRQUEUE_ETC' : os.path.join(os.getenv('DRQUEUE_ROOT'), "etc"),
             'DRQUEUE_FRAME' : x,
             'DRQUEUE_BLOCKSIZE' : job['blocksize'],
             'DRQUEUE_ENDFRAME' : job['endframe'],
             'DRQUEUE_SCENEFILE' : job['scenefile'],
-            'DRQUEUE_LOGFILE' : os.path.join(os.getenv('DRQUEUE_ROOT'), "logs", job['name'] + "-" + str(x) + "_" + str(x + job['blocksize'] -1) + ".log")
+            'DRQUEUE_LOGFILE' : job['name'] + "-" + str(x) + "_" + str(x + job['blocksize'] -1) + ".log"
             }
 
             # optional elements
@@ -127,7 +125,7 @@ class Client():
                 env_dict['DRQUEUE_STEPFRAME'] = job['stepframe']
     
             # run task on cluster
-            render_script = os.path.join(os.getenv('DRQUEUE_ROOT'), "etc", DrQueue.get_rendertemplate(job['renderer']))
+            render_script = DrQueue.get_rendertemplate(job['renderer'])
             ar = self.lbview.apply(DrQueue.run_script_with_env, render_script, env_dict)
             # wait for pyzmq send to complete communication (avoid race condition)
             ar.wait_for_send()
@@ -255,9 +253,11 @@ class Client():
     def job_delete(self, job_id):
         """Delete job and all of it's tasks"""
         tasks = self.query_task_list(job_id)
+        engines = self.query_engine_list()
         # abort and delete all queued tasks
         for task in tasks:
-            self.ip_client.abort(task['msg_id'])
+            if len(engines) > 0:
+                self.ip_client.abort(task['msg_id'])
             self.ip_client.purge_results(task['msg_id'])
         # delete job itself
         DrQueueJob.delete_from_db(job_id)

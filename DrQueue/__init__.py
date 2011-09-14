@@ -21,8 +21,7 @@ from computer_pool import ComputerPool
 
 # check DrQueue environment
 if os.getenv('DRQUEUE_ROOT') is None:
-    print("DRQUEUE_ROOT environment variable not set")
-    sys.exit(1)
+    raise ValueError("DRQUEUE_ROOT environment variable not set")
 
 
 def get_rendertemplate(renderer):
@@ -77,10 +76,19 @@ def get_osname():
     return osname
 
 
-def run_script_with_env(script, env_dict):
-    """Create variables in engine namespace from dictionary and run template script"""
-    # load variables from dict
-    locals().update(env_dict)
-    execfile(script)
+def run_script_with_env(render_script, env_dict):
+    """Run template script on IPython engine"""
+    import platform, os, sys
+    # set some variables on target machine
+    env_dict['DRQUEUE_OS'] = platform.system()
+    env_dict['DRQUEUE_ETC'] = os.path.join(os.getenv('DRQUEUE_ROOT'), "etc")
+    env_dict['DRQUEUE_LOGFILE'] = os.path.join(os.getenv('DRQUEUE_ROOT'), "logs", env_dict['DRQUEUE_LOGFILE'])
+    # import specific render template
+    sys.path.append(env_dict['DRQUEUE_ETC'])
+    exec("import " + render_script.replace('.py', '') + " as template")
+    # run template with env_dict
+    status = template.run_renderer(env_dict)
+    return status
+
 
 
