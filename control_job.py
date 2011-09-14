@@ -9,8 +9,8 @@ This file is part of DrQueue.
 Licensed under GNU General Public License version 3. See LICENSE for details.
 """
 
+import os, sys
 from optparse import OptionParser
-import os
 import DrQueue
 from DrQueue import Job as DrQueueJob
 from DrQueue import Client as DrQueueClient
@@ -45,11 +45,19 @@ def main():
 
     # get job information
     if options.id == 0:
-        job_id = DrQueueJob.query_job_by_name(options.name)['_id']
+        job = DrQueueJob.query_job_by_name(options.name)
+        if job == None:
+            print("Specified job does not exist.")
+            sys.exit(1)
+        job_id = job['_id']
         job_name = options.name
     else:
         job_id = options.id
-        job_name = DrQueueJob.query_db(options.id)['name']
+        job = DrQueueJob.query_db(job_id)
+        if job == None:
+            print("Specified job does not exist.")
+            sys.exit(1)
+        job_name = job['name']
 
     # run specified action on job
     if options.stop:
