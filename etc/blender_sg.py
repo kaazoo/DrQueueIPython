@@ -35,7 +35,7 @@ def run_renderer(env_dict):
 
     # replace paths on Windows
     if DRQUEUE_OS in ["Windows", "Win32"]:
-        DRQUEUE_SCENEFILE = replace_stdpath_with_driveletter(DRQUEUE_SCENEFILE, 'n:')
+        DRQUEUE_SCENEFILE = helper.replace_stdpath_with_driveletter(DRQUEUE_SCENEFILE, 'n:')
 
     # distinguish between animation and distributed single frame rendering
     if DRQUEUE_RENDERTYPE == "animation":
