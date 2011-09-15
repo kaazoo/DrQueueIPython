@@ -1,7 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import os, signal, subprocess, sys, platform
-from time import strftime,localtime
+"""
+DrQueue render template for Blender
+Copyright (C) 2011 Andreas Schroeder
+
+This file is part of DrQueue.
+
+Licensed under GNU General Public License version 3. See LICENSE for details.
+"""
+
+import os
+import DrQueue
+from DrQueue import engine_helpers as helper
 
 
 def run_renderer(env_dict):
@@ -18,61 +28,36 @@ def run_renderer(env_dict):
     global DRQUEUE_LOGFILE
 
     # range to render
-    block = DRQUEUE_FRAME + DRQUEUE_BLOCKSIZE - 1
-    if block > DRQUEUE_ENDFRAME:
-    	  block = DRQUEUE_ENDFRAME
+    block = helper.calc_block(DRQUEUE_FRAME, DRQUEUE_ENDFRAME, DRQUEUE_BLOCKSIZE)
 
     # renderer path/executable
     engine_path="blender"
 
     # replace paths on Windows
     if DRQUEUE_OS in ["Windows", "Win32"]:
-        # replace DrQueue standard Unix path with specific Windows drive letter
-        DRQUEUE_SCENEFILE = DRQUEUE_SCENEFILE.replace('/usr/local/drqueue', 'n:')
-        DRQUEUE_SCENEFILE = DRQUEUE_SCENEFILE.replace('/', '\\')
+        DRQUEUE_SCENEFILE = replace_stdpath_with_driveletter(DRQUEUE_SCENEFILE, 'n:')
 
+    # distinguish between animation and distributed single frame rendering
     if DRQUEUE_RENDERTYPE == "animation":
         os.putenv("startframe", str(DRQUEUE_FRAME))
         os.putenv("endframe", str(block))
-        command = engine_path+" -b "+DRQUEUE_SCENEFILE+" -P " + os.path.join(DRQUEUE_ETC, "blender_same_directory.py")
+        command = engine_path + " -b " + DRQUEUE_SCENEFILE + " -P " + os.path.join(DRQUEUE_ETC, "blender_same_directory.py")
     else:
         os.putenv("curpart", str(DRQUEUE_FRAME))
         os.outenv("maxparts", str(DRQUEUE_ENDFRAME))
-        command = engine_path+" -b "+DRQUEUE_SCENEFILE+" -P " + os.path.join(DRQUEUE_ETC, "blender_region_rendering.py")
+        command = engine_path + " -b " + DRQUEUE_SCENEFILE + " -P " + os.path.join(DRQUEUE_ETC, "blender_region_rendering.py")
 
-    # write output to logfile
-    logfile = open(DRQUEUE_LOGFILE, "ab")
-    logfile.write("Log started at " + strftime("%a, %d %b %Y %H:%M:%S", localtime()) + ".\n")
-    logfile.write("Running on " + platform.node() + " under " + DRQUEUE_OS + ".\n\n")
+    # open logfile and write header and command line
+    logfile = helper.openlog(DRQUEUE_LOGFILE)
     logfile.write(command + "\n")
     logfile.flush()
 
     # check scenefile
-    if os.path.isfile(DRQUEUE_SCENEFILE) == False:
-        message = "Scenefile was not found."
-        logfile.write(message)
-        logfile.close()
-        raise ValueError(message)
-        return False
+    helper.check_scenefile(logfile, DRQUEUE_SCENEFILE)
 
     # run renderer and wait for finish
-    try:
-        p = subprocess.Popen(command, shell=True, stdout=logfile, stderr=subprocess.STDOUT)
-    except OSError as (errno, strerror):
-        message = "OSError({0}) while executing renderer: {1}\n".format(errno, strerror)
-        logfile.write(message)
-        logfile.close()
-        raise OSError(message)
-        return False
-    p.wait()
+    ret = helper.run_command(logfile, command)
 
     # return exit status to IPython
-    logfile.write("Exiting with status " + str(p.returncode) + ".\n\n")
-    logfile.close()
-    if p.returncode > 0:
-        return False
-    else:
-        return True
-
-
+    return helper.return_to_ipython(logfile, ret)
 
