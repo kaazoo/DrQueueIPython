@@ -23,7 +23,10 @@ class Client():
     """DrQueue client actions"""
     def __init__(self):
         # initialize IPython
-        self.ip_client = IPClient()
+        try:
+            self.ip_client = IPClient()
+        except Exception:
+            raise Exception("Could not connect to IPython controller.")
         self.lbview = self.ip_client.load_balanced_view()
 
         # enable tracking
@@ -40,6 +43,7 @@ class Client():
 
         # only work on available engines
         if self.query_ready_engines_of_pool(job['pool']) == False:
+            raise ValueError("There are no computers in pool %s!" % job['pool'])
             return False
 
         # save job in database
@@ -129,6 +133,7 @@ class Client():
             ar = self.lbview.apply(DrQueue.run_script_with_env, render_script, env_dict)
             # wait for pyzmq send to complete communication (avoid race condition)
             ar.wait_for_send()
+        return True
 
 
     def identify_computer(self, engine_id):
