@@ -24,6 +24,13 @@ if os.getenv('DRQUEUE_ROOT') is None:
     raise ValueError("DRQUEUE_ROOT environment variable not set")
 
 
+def check_renderer_support(renderer):
+    """Check if renderer is supported."""
+    if renderer in ['3delight', '3dsmax', 'aftereffects', 'aqsis', 'blender', 'cinema4d', 'general', 'lightwave', 'luxrender', 'mantra', 'maya', 'mentalray', 'nuke', 'shake', 'terragen', 'turtle', 'vray', 'xsi']:
+        return True
+    else:
+        return False
+
 def get_rendertemplate(renderer):
     """Return template filename from renderer name"""
     filename = ""
