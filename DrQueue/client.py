@@ -158,6 +158,16 @@ class Client():
         return DrQueueJob.query_job_list()
 
 
+    def query_running_job_list(self):
+        """Query a list of all running jobs"""
+        jobs = DrQueueJob.query_job_list()
+        running_jobs = []
+        for job in jobs:
+            if self.query_job_tasks_left(job) > 0:
+                running_jobs.append(job)
+        return running_jobs
+
+
     def query_jobname(self, task_id):
         """Query jobname from task id"""
         data = self.ip_client.db_query({"msg_id" : task_id})
