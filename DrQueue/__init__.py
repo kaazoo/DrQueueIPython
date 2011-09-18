@@ -18,6 +18,9 @@ from job import Job
 from computer import Computer
 from computer_pool import ComputerPool
 
+supported_renderers = ['3delight', '3dsmax', 'aftereffects', 'aqsis', 'blender', 'cinema4d', 'general', 'lightwave', 'luxrender', 'mantra', 'maya', 'mentalray', 'nuke', 'shake', 'terragen', 'turtle', 'vray', 'xsi']
+
+supported_os = ['Windows', 'Mac OSX', 'Linux', 'FreeBSD', 'NetBSD', 'OpenBSD', 'AIX', 'Solaris']
 
 # check DrQueue environment
 if os.getenv('DRQUEUE_ROOT') is None:
@@ -26,7 +29,7 @@ if os.getenv('DRQUEUE_ROOT') is None:
 
 def check_renderer_support(renderer):
     """Check if renderer is supported."""
-    if renderer in ['3delight', '3dsmax', 'aftereffects', 'aqsis', 'blender', 'cinema4d', 'general', 'lightwave', 'luxrender', 'mantra', 'maya', 'mentalray', 'nuke', 'shake', 'terragen', 'turtle', 'vray', 'xsi']:
+    if renderer in supported_renderers:
         return True
     else:
         return False
@@ -79,7 +82,7 @@ def get_osname():
     """Return operating system name"""
     osname = platform.system()
     if osname == 'Darwin':
-        osname = 'OSX'
+        osname = 'Mac OSX'
     return osname
 
 
