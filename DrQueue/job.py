@@ -37,7 +37,7 @@ class Job(dict):
         if name == "":
             raise ValueError("No name of job given!")
             return False
-        if not (startframe >= endframe >= 1):
+        if not (endframe >= startframe >= 1):
             raise ValueError("Startframe and endframe need to be at least 1!")
             return False
         if blocksize < 1:
@@ -82,6 +82,18 @@ class Job(dict):
             jb['rendertype'] = options['rendertype']
         if 'fileextension' in options:
             jb['fileextension'] = options['fileextension']
+        if 'os' in options:
+            jb['os'] = options['os']
+        if 'depend' in options:
+            jb['depend'] = options['depend']
+        if 'minram' in options:
+            jb['minram'] = options['minram']
+        if 'mincores' in options:
+            jb['mincores'] = options['mincores']
+        if 'send_email' in options:
+            jb['send_email'] = options['send_email']
+        if 'email_recipients' in options:
+            jb['email_recipients'] = options['email_recipients']
         self.update(jb)
 
 
