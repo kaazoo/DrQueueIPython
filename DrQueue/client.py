@@ -58,6 +58,15 @@ class Client():
         # set number of retries for each task
         self.lbview.retries = job['retries']
 
+        # depend on another job (it's tasks)
+        if 'depend' in job:
+            depend_job = self.query_job_by_name(job['depend'])
+            depend_tasks = self.query_task_list(depend_job['_id'])
+            task_ids = []
+            for task in depend_tasks:
+                task_ids.append(task['msg_id'])
+            self.lbview.after = task_ids
+
         # check frame numbers
         if not (job['startframe'] >= 1):
             raise ValueError("Invalid value for startframe. Has to be equal or greater than 1.")
@@ -163,7 +172,7 @@ class Client():
         jobs = DrQueueJob.query_job_list()
         running_jobs = []
         for job in jobs:
-            if self.query_job_tasks_left(job) > 0:
+            if self.query_job_tasks_left(job['_id']) > 0:
                 running_jobs.append(job)
         return running_jobs
 
