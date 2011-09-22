@@ -100,7 +100,7 @@ class Job(dict):
     def store_db(job):
         import pymongo
         """store job information in MongoDB"""
-        connection = pymongo.Connection()
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
         db = connection['ipythondb']
         jobs = db['drqueue_jobs']
         job_id = jobs.insert(job)
@@ -113,7 +113,7 @@ class Job(dict):
         import pymongo
         import bson
         """query job information from MongoDB"""
-        connection = pymongo.Connection()
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
         db = connection['ipythondb']
         jobs = db['drqueue_jobs']
         job = jobs.find_one({"_id": bson.ObjectId(job_id)})
@@ -125,7 +125,7 @@ class Job(dict):
         import pymongo
         import bson
         """query job information from MongoDB"""
-        connection = pymongo.Connection()
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
         db = connection['ipythondb']
         jobs = db['drqueue_jobs']
         return jobs.remove({"_id": bson.ObjectId(job_id)})
@@ -135,7 +135,7 @@ class Job(dict):
     def query_jobnames():
         import pymongo
         """query job names from MongoDB"""
-        connection = pymongo.Connection()
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
         db = connection['ipythondb']
         jobs = db['drqueue_jobs']
         names = []
@@ -148,7 +148,7 @@ class Job(dict):
     def query_job_by_name(job_name):
         import pymongo
         """query job information from MongoDB by name"""
-        connection = pymongo.Connection()
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
         db = connection['ipythondb']
         jobs = db['drqueue_jobs']
         job = jobs.find_one({"name": job_name})
@@ -159,7 +159,7 @@ class Job(dict):
     def query_job_list():
         import pymongo
         """query list of jobs from MongoDB"""
-        connection = pymongo.Connection()
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
         db = connection['ipythondb']
         jobs = db['drqueue_jobs']
         job_arr = []
