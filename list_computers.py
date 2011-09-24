@@ -13,9 +13,11 @@ from DrQueue import Client
 
 c = Client()
 
+cache_time = 60
+
 for comp_id in c.ip_client.ids:
     print("Engine "+str(comp_id)+ ":")
-    comp = c.identify_computer(comp_id)
+    comp = c.identify_computer(comp_id, cache_time)
     print(" hostname: "+comp['hostname'])
     print(" arch: "+comp['arch'])
     print(" os: "+comp['os'])

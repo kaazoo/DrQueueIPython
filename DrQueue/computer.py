@@ -257,3 +257,32 @@ class Computer(dict):
         return True
     set_pools = Callable(set_pools)
 
+
+    def query_db(engine_id):
+        import pymongo
+        #import bson
+        """query computer information from MongoDB"""
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        db = connection['ipythondb']
+        computers = db['drqueue_computers']
+        computer = computers.find_one({"engine_id" : engine_id})
+        return computer
+    query_db = Callable(query_db)
+
+
+    def store_db(engine):
+        import pymongo
+        """store computer information in MongoDB"""
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        db = connection['ipythondb']
+        computers = db['drqueue_computers']
+        # remove old entry
+        computers.remove({"engine_id" : engine['engine_id']})
+        computer_id = computers.insert(engine)
+        engine['_id'] = str(engine['_id'])
+        return computer_id
+    store_db = Callable(store_db)
+
+
+
+

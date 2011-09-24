@@ -162,9 +162,6 @@ class Job(dict):
         connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
         db = connection['ipythondb']
         jobs = db['drqueue_jobs']
-        job_arr = []
-        for job in jobs.find():
-            job_arr.append(job)
-        return job_arr
+        return list(jobs.find())
     query_job_list = Callable(query_job_list)
         

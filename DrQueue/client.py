@@ -59,7 +59,7 @@ class Client():
         self.lbview.retries = job['retries']
 
         # depend on another job (it's tasks)
-        if 'depend' in job:
+        if ('depend' in job) and (job['depend'] != None):
             depend_job = self.query_job_by_name(job['depend'])
             depend_tasks = self.query_task_list(depend_job['_id'])
             task_ids = []
@@ -145,13 +145,25 @@ class Client():
         return True
 
 
-    def identify_computer(self, engine_id):
+    def identify_computer(self, engine_id, cache_time):
         """Gather information about computer"""
-        # run command only on specific computer
-        dview = self.ip_client[engine_id]
-        dview.block = True
-        dview.execute("import DrQueue\nfrom DrQueue import Computer as DrQueueComputer\nc = DrQueueComputer("+str(engine_id)+")")
-        return dview['c']
+        # look if engine info is already stored
+        engine = DrQueueComputer.query_db(engine_id)
+        now = int(time.time())
+        # check existence and age of info
+        if (engine != None) and (now <= engine['date'] + cache_time):
+            print("DEBUG: Engine %i was found in DB" % engine_id)
+        # store new info
+        else:
+            print("DEBUG: Engine %i was not found in DB" % engine_id)
+            # run command only on specific computer
+            dview = self.ip_client[engine_id]
+            dview.block = True
+            dview.execute("import DrQueue\nfrom DrQueue import Computer as DrQueueComputer\nengine = DrQueueComputer(" + str(engine_id) + ")")
+            engine = dview['engine']
+            engine['date'] = int(time.time())
+            DrQueueComputer.store_db(engine)
+        return engine
 
 
     def task_wait(self, task_id):
@@ -207,12 +219,7 @@ class Client():
 
     def query_task_list(self, job_id):
         """Query a list of tasks objects of certain job"""
-        tasks = []
-        query_data = self.ip_client.db_query({"header" : {"$ne" : ""}})
-        for entry in query_data:
-            if (entry['header'] != None) and (str(entry['header']['session']) == str(job_id)):
-                tasks.append(entry)
-        return tasks
+        return self.ip_client.db_query({'header.session' : str(job_id)})
 
 
     def query_task(self, task_id):

@@ -41,6 +41,8 @@ def main():
     # initialize DrQueue client
     client = DrQueueClient()
 
+    cache_time = 60
+
     # engines to work on
     if options.id != None:
         computers = []
@@ -62,7 +64,7 @@ def main():
     if options.info:
         for computer in computers:
             print("Engine "+str(computer)+ ":")
-            comp = client.identify_computer(computer)
+            comp = client.identify_computer(computer, cache_time)
             print(" hostname: "+comp['hostname'])
             print(" arch: "+comp['arch'])
             print(" os: "+comp['os'])
