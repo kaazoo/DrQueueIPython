@@ -190,6 +190,8 @@ class Client():
                 env_dict['DRQUEUE_CUSTOM_TYPE'] = job['custom_type']
             if 'ctype' in job:
                 env_dict['DRQUEUE_CTYPE'] = job['ctype']
+            if 'skipframes' in job:
+                env_dict['DRQUEUE_SKIPFRAMES'] = job['skipframes']
     
             # run task on cluster
             render_script = DrQueue.get_rendertemplate(job['renderer'])
