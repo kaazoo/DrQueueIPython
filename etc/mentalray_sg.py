@@ -1,140 +1,112 @@
-#
-# THIS IS A PYTHON SCRIPT FILE
-# 
-# Default configuration for MentalRay script generator
-# 
-# Python variables
-# SCENE, RENDERDIR, RF_OWNER, FFORMAT, RESX, RESY, CAMERA, DRQUEUE_IMAGE, RENDER_TYPE
-# 
-# shell variables
-# DRQUEUE_BLOCKSIZE, DRQUEUE_COMPID, DRQUEUE_ENDFRAME, DRQUEUE_ETC, DRQUEUE_FRAME,
-# DRQUEUE_JOBID, DRQUEUE_JOBNAME, DRQUEUE_OS, DRQUEUE_OWNER, DRQUEUE_PADFRAME, 
-# DRQUEUE_PADFRAMES, DRQUEUE_STARTFRAME, DRQUEUE_STEPFRAME
-#
+# -*- coding: utf-8 -*-
 
-#
-# For platform dependend environment setting a form like this
-# can be used :
-#
-# if DRQUEUE_OS == "LINUX":
-#    # Environment for Linux
-# elsif DRQUEUE_OS == "IRIX":
-#    # Environment for Irix
-# else
-#    # Some error messages
-#
+"""
+DrQueue render template for Mental Ray
+Copyright (C) 2011 Andreas Schroeder
 
-import os,signal,subprocess,sys
+This file is part of DrQueue.
 
-os.umask(0)
+Licensed under GNU General Public License version 3. See LICENSE for details.
+"""
 
-# fetch DrQueue environment
-DRQUEUE_BLOCKSIZE = int(os.getenv("DRQUEUE_BLOCKSIZE"))
-DRQUEUE_COMPID = int(os.getenv("DRQUEUE_COMPID"))
-DRQUEUE_ENDFRAME = int(os.getenv("DRQUEUE_ENDFRAME"))
-DRQUEUE_ETC = os.getenv("DRQUEUE_ETC")
-DRQUEUE_FRAME = int(os.getenv("DRQUEUE_FRAME"))
-DRQUEUE_JOBID = int(os.getenv("DRQUEUE_JOBID"))
-DRQUEUE_JOBNAME = os.getenv("DRQUEUE_JOBNAME")
-DRQUEUE_OS = os.getenv("DRQUEUE_OS")
-DRQUEUE_OWNER = os.getenv("DRQUEUE_OWNER")
-DRQUEUE_PADFRAME = int(os.getenv("DRQUEUE_PADFRAME"))
-DRQUEUE_PADFRAMES = int(os.getenv("DRQUEUE_PADFRAMES"))
-DRQUEUE_STARTFRAME = int(os.getenv("DRQUEUE_STARTFRAME"))
-DRQUEUE_STEPFRAME = int(os.getenv("DRQUEUE_STEPFRAME"))
+import os
+import DrQueue
+from DrQueue import engine_helpers as helper
 
 
-if DRQUEUE_OS == "WINDOWS":
-	# convert to windows path with drive letter
-	SCENE = subprocess.Popen(["cygpath.exe", "-w "+SCENE], stdout=subprocess.PIPE).communicate()[0]
-	RENDERDIR = subprocess.Popen(["cygpath.exe", "-w "+RENDERDIR], stdout=subprocess.PIPE).communicate()[0]
-	
+def run_renderer(env_dict):
 
-BLOCK = DRQUEUE_FRAME + DRQUEUE_BLOCKSIZE - 1
+    # define external variables as global
+    globals().update(env_dict)
+    global DRQUEUE_OS
+    global DRQUEUE_ETC
+    global DRQUEUE_SCENEFILE
+    global DRQUEUE_FRAME
+    global DRQUEUE_BLOCKSIZE
+    global DRQUEUE_ENDFRAME
+    global DRQUEUE_RENDERDIR
+    global DRQUEUE_IMAGE
+    global DRQUEUE_CAMERA
+    global DRQUEUE_RESX
+    global DRQUEUE_RESY
+    global DRQUEUE_FILEFORMAT
+    global DRQUEUE_RENDERTYPE
+    global DRQUEUE_LOGFILE
 
-if BLOCK > DRQUEUE_ENDFRAME:
-	BLOCK = DRQUEUE_ENDFRAME
+    # range to render
+    block = helper.calc_block(DRQUEUE_FRAME, DRQUEUE_ENDFRAME, DRQUEUE_BLOCKSIZE)
 
+    # renderer path/executable
+    engine_path = "ray"
 
-if ("DRQUEUE_IMAGE" in locals()) and (DRQUEUE_IMAGE != ""):
-	image_args="-im "+DRQUEUE_IMAGE
-else:
-	image_args=""
+    # replace paths on Windows
+    if DRQUEUE_OS in ["Windows", "Win32"]:
+        DRQUEUE_SCENEFILE = helper.replace_stdpath_with_driveletter(DRQUEUE_SCENEFILE, 'n:')
+        DRQUEUE_RENDERDIR = helper.replace_stdpath_with_driveletter(DRQUEUE_RENDERDIR, 'n:')
 
-if ("CAMERA" in locals()) and (CAMERA != ""):
-	camera_args="-cam "+CAMERA
-else:
-	camera_args=""
+    if ("DRQUEUE_IMAGEFILE" in globals()) and (DRQUEUE_IMAGEFILE != ""):
+        image_args = "-im " + DRQUEUE_IMAGEFILE
+    else:
+        image_args = ""
 
-if ("RESX" in locals()) and ("RESX" in locals()) and (int(RESX) > 0) and (int(RESY) > 0):
-	res_args="-x "+RESX+" -y "+RESY
-else:
-	res_args=""
+    if ("DRQUEUE_CAMERA" in globals()) and (DRQUEUE_CAMERA != ""):
+        camera_args = "-cam " + DRQUEUE_CAMERA
+    else:
+        camera_args=""
 
-if ("FFORMAT" in locals()) and (FFORMAT != ""):
-	format_args="-of "+FFORMAT
-else:
-	format_args=""
+    if ("DRQUEUE_RESX" in globals()) and ("DRQUEUE_RESX" in globals()) and (int(DRQUEUE_RESX) > 0) and (int(DRQUEUE_RESY) > 0):
+        res_args = "-x " + DRQUEUE_RESX + " -y " + DRQUEUE_RESY
+    else:
+        res_args = ""
 
-if ("RENDERDIR" in locals()) and (RENDERDIR != ""):
-	os.chdir(RENDERDIR)
+    if ("DRQUEUE_FILEFORMAT" in globals()) and (DRQUEUE_FILEFORMAT != ""):
+        format_args = "-of " + DRQUEUE_FILEFORMAT
+    else:
+        format_args = ""
 
+    if ("DRQUEUE_RENDERDIR" in globals()) and (DRQUEUE_RENDERDIR != ""):
+        os.chdir(DRQUEUE_RENDERDIR)
 
-ENGINE_PATH="ray"
+    # extra stuff for rendering single images in a couple of parts
+    if DRQUEUE_RENDERTYPE == "single image":
+        # calculate parts to render
+        for line in open(DRQUEUE_SCENEFILE):
+            if "resolution" in line:
+                res_arr = line.split()
+                if res_arr[0] == "resolution":
+                    scene_height = res_arr[2]
+                    scene_width = res_arr[1]
 
+        part_height = scene_height / (DRQUEUE_ENDFRAME + 1)
+        height_high = scene_height - (DRQUEUE_FRAME * part_height)
+        height_low = height_high - part_height
 
-# extra stuff for rendering single images in a couple of parts
-if RENDER_TYPE == "single image":
-	# calculate parts to render
-	for line in open(SCENE):
-		if "resolution" in line:
-			res_arr = line.split()
-			if res_arr[0] == "resolution":
-				scene_height = res_arr[2]
-				scene_width = res_arr[1]
-	
-	part_height = scene_height / (DRQUEUE_ENDFRAME + 1)
-	height_high = scene_height - (DRQUEUE_FRAME * part_height)
-	height_low = height_high - part_height
+        print("rendering dimensions: 0 " + height_low + " " + scene_width + " " + height_high)
 
-	print("rendering dimensions: 0 "+height_low+" "+scene_width+" "+height_high)
+        # generate frame filename
+        for line in open(DRQUEUE_SCENEFILE):
+            if "resolution" in line:
+                if "." in line:
+                    res_arr = line.split()
+                    outputname = string.replace(res_arr[3], "\"", "")
 
-	# generate frame filename
-	for line in open(SCENE):
-		if "resolution" in line:
-			if "." in line:
-				res_arr = line.split()
-				outputname = string.replace(res_arr[3], "\"", "")
-	
-	basename, extension = os.path.splitext(outputname)
-	framename = basename+"_"+string.zfill(DRQUEUE_FRAME, 4)+"."+extension
-	
-	command = ENGINE_PATH+" -window 0 "+str(height_low)+" "+str(scene_width)+" "+str(height_high)+" "+SCENE+" -file_name "+framename
+        basename, extension = os.path.splitext(outputname)
+        framename = basename + "_" + string.zfill(DRQUEUE_FRAME, 4) + "." + extension
+        command = engine_path + " -window 0 " + str(height_low) + " " + str(scene_width) + " " + str(height_high) + " " + DRQUEUE_SCENEFILE + " -file_name " + framename 
+    else:
+        command = engine_path + " " + DRQUEUE_SCENEFILE + " -render " + str(DRQUEUE_FRAME) + " " + str(block)
 
-else:
-	command = ENGINE_PATH+" "+SCENE+" -render "+str(DRQUEUE_FRAME)+" "+str(BLOCK)
+    # open logfile and write header and command line
+    logfile = helper.openlog(DRQUEUE_LOGFILE)
+    logfile.write(command + "\n")
+    logfile.flush()
 
+    # check scenefile
+    helper.check_scenefile(logfile, DRQUEUE_SCENEFILE)
 
-print(command)
-sys.stdout.flush()
+    # run renderer and wait for finish
+    ret = helper.run_command(logfile, command)
 
-p = subprocess.Popen(command, shell=True)
-sts = os.waitpid(p.pid, 0)
+    # return exit status to IPython
+    return helper.return_to_ipython(logfile, ret)
 
-# This should requeue the frame if failed
-if sts[1] != 0:
-	print("Requeueing frame...")
-	os.kill(os.getppid(), signal.SIGINT)
-	exit(1)
-else:
-	#if DRQUEUE_OS != "WINDOWS" then:
-	# The frame was rendered properly
-	# We don't know the output image name. If we knew we could set this correctly
-	# chown_block RF_OWNER RD/IMAGE DRQUEUE_FRAME BLOCK 
-
-	# change userid and groupid
-	#chown 1002:1004 $SCENE:h/*
-	print("Finished.")
-#
-# Notice that the exit code of the last command is received by DrQueue
-#

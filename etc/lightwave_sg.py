@@ -1,53 +1,59 @@
 # -*- coding: utf-8 -*-
 
-import os,signal,subprocess,sys
-import os.path
-from time import strftime,localtime
+"""
+DrQueue render template for Lightwave
+Copyright (C) 2011 Andreas Schroeder
+
+This file is part of DrQueue.
+
+Licensed under GNU General Public License version 3. See LICENSE for details.
+"""
+
+import os
+import DrQueue
+from DrQueue import engine_helpers as helper
 
 
-# external variables in upper case:
-# DRQUEUE_OS
-# DRQUEUE_ETC
-# DRQUEUE_SCENEFILE
-# DRQUEUE_FRAME
-# DRQUEUE_BLOCKSIZE
-# DRQUEUE_ENDFRAME
-# DRQUEUE_RENDERTYPE
-# DRQUEUE_LOGFILE
-# DRQUEUE_PROJECTDIR
-# DRQUEUE_CONFIGDIR
-# DRQUEUE_STEPFRAME
+def run_renderer(env_dict):
 
+    # define external variables as global
+    globals().update(env_dict)
+    global DRQUEUE_OS
+    global DRQUEUE_ETC
+    global DRQUEUE_SCENEFILE
+    global DRQUEUE_FRAME
+    global DRQUEUE_BLOCKSIZE
+    global DRQUEUE_ENDFRAME
+    global DRQUEUE_CONFIGDIR
+    global DRQUEUE_PROJECTDIR
+    global DRQUEUE_STEPFRAME
+    global DRQUEUE_LOGFILE
 
-# range to render
-block = DRQUEUE_FRAME + DRQUEUE_BLOCKSIZE - 1
-if block > DRQUEUE_ENDFRAME:
-	block = DRQUEUE_ENDFRAME
+    # range to render
+    block = helper.calc_block(DRQUEUE_FRAME, DRQUEUE_ENDFRAME, DRQUEUE_BLOCKSIZE)
 
-# renderer path/executable
-engine_path="lwsn"
+    # renderer path/executable
+    engine_path = "lwsn"
 
-command = engine_path+" -3 -c " + DRQUEUE_CONFIGDIR + " -d " + DRQUEUE_PROJECTDIR + " -q " + DRQUEUE_SCENEFILE + " " + str(DRQUEUE_FRAME) + " " + str(block) + " " + str(DRQUEUE_STEPFRAME)
+    # replace paths on Windows
+    if DRQUEUE_OS in ["Windows", "Win32"]:
+        DRQUEUE_SCENEFILE = helper.replace_stdpath_with_driveletter(DRQUEUE_SCENEFILE, 'n:')
+        DRQUEUE_PROJECTDIR = helper.replace_stdpath_with_driveletter(DRQUEUE_PROJECTDIR, 'n:')
+        DRQUEUE_CONFIGDIR = helper.replace_stdpath_with_driveletter(DRQUEUE_CONFIGDIR, 'n:')
 
-# write output to logfile
-logfile = open(DRQUEUE_LOGFILE, "ab")
-logfile.write("Log started at " + strftime("%a, %d %b %Y %H:%M:%S", localtime()) + "\n\n")
-logfile.write(command+"\n")
-logfile.flush()
+    command = engine_path + " -3 -c " + DRQUEUE_CONFIGDIR + " -d " + DRQUEUE_PROJECTDIR + " -q " + DRQUEUE_SCENEFILE + " " + str(DRQUEUE_FRAME) + " " + str(block) + " " + str(DRQUEUE_STEPFRAME)
 
-# check scenefile
-if os.path.isfile(DRQUEUE_SCENEFILE) == False:
-    logfile.write("Scenefile was not found. Exiting with status 1.\n\n")
-    logfile.close()
-    exit(1)
+    # open logfile and write header and command line
+    logfile = helper.openlog(DRQUEUE_LOGFILE)
+    logfile.write(command + "\n")
+    logfile.flush()
 
-# run renderer and wait for finish
-p = subprocess.Popen(command, shell=True, stdout=logfile, stderr=subprocess.STDOUT)
-sts = os.waitpid(p.pid, 0)
+    # check scenefile
+    helper.check_scenefile(logfile, DRQUEUE_SCENEFILE)
 
-# return exit status to IPython
-logfile.write("Exiting with status " + str(sts[1]) + ".\n\n")
-logfile.close()
-if sts[1] > 0:
-    exit(sts[1])
+    # run renderer and wait for finish
+    ret = helper.run_command(logfile, command)
+
+    # return exit status to IPython
+    return helper.return_to_ipython(logfile, ret)
 

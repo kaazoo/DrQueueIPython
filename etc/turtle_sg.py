@@ -1,112 +1,83 @@
-#
-# THIS IS A PYTHON SCRIPT FILE
-# 
-# Default configuration for Turtle script generator
-# 
-# Python variables
-# SCENE, RENDERDIR, PROJECTDIR, RF_OWNER, FFORMAT, RESX, RESY, CAMERA, DRQUEUE_IMAGE,
-# USEMAYA70
-# 
-# shell variables
-# DRQUEUE_BLOCKSIZE, DRQUEUE_COMPID, DRQUEUE_ENDFRAME, DRQUEUE_ETC, DRQUEUE_FRAME,
-# DRQUEUE_JOBID, DRQUEUE_JOBNAME, DRQUEUE_OS, DRQUEUE_OWNER, DRQUEUE_PADFRAME, 
-# DRQUEUE_PADFRAMES, DRQUEUE_STARTFRAME, DRQUEUE_STEPFRAME
-#
+# -*- coding: utf-8 -*-
 
-#
-# For platform dependend environment setting a form like this
-# can be used :
-#
-# if DRQUEUE_OS == "LINUX":
-#    # Environment for Linux
-# elsif DRQUEUE_OS == "IRIX":
-#    # Environment for Irix
-# else
-#    # Some error messages
-#
+"""
+DrQueue render template for Turtle
+Copyright (C) 2011 Andreas Schroeder
 
-import os,signal,subprocess,sys
+This file is part of DrQueue.
 
-os.umask(0)
+Licensed under GNU General Public License version 3. See LICENSE for details.
+"""
 
-# fetch DrQueue environment
-DRQUEUE_BLOCKSIZE = int(os.getenv("DRQUEUE_BLOCKSIZE"))
-DRQUEUE_COMPID = int(os.getenv("DRQUEUE_COMPID"))
-DRQUEUE_ENDFRAME = int(os.getenv("DRQUEUE_ENDFRAME"))
-DRQUEUE_ETC = os.getenv("DRQUEUE_ETC")
-DRQUEUE_FRAME = int(os.getenv("DRQUEUE_FRAME"))
-DRQUEUE_JOBID = int(os.getenv("DRQUEUE_JOBID"))
-DRQUEUE_JOBNAME = os.getenv("DRQUEUE_JOBNAME")
-DRQUEUE_OS = os.getenv("DRQUEUE_OS")
-DRQUEUE_OWNER = os.getenv("DRQUEUE_OWNER")
-DRQUEUE_PADFRAME = int(os.getenv("DRQUEUE_PADFRAME"))
-DRQUEUE_PADFRAMES = int(os.getenv("DRQUEUE_PADFRAMES"))
-DRQUEUE_STARTFRAME = int(os.getenv("DRQUEUE_STARTFRAME"))
-DRQUEUE_STEPFRAME = int(os.getenv("DRQUEUE_STEPFRAME"))
+import os
+import DrQueue
+from DrQueue import engine_helpers as helper
 
 
-if DRQUEUE_OS == "WINDOWS":
-	# convert to windows path with drive letter
-	SCENE = subprocess.Popen(["cygpath.exe", "-w "+SCENE], stdout=subprocess.PIPE).communicate()[0]
-	RENDERDIR = subprocess.Popen(["cygpath.exe", "-w "+RENDERDIR], stdout=subprocess.PIPE).communicate()[0]
-	PROJECTDIR = subprocess.Popen(["cygpath.exe", "-w "+PROJECTDIR], stdout=subprocess.PIPE).communicate()[0]
-	
+def run_renderer(env_dict):
 
-BLOCK = DRQUEUE_FRAME + DRQUEUE_BLOCKSIZE - 1
+    # define external variables as global
+    globals().update(env_dict)
+    global DRQUEUE_OS
+    global DRQUEUE_ETC
+    global DRQUEUE_SCENEFILE
+    global DRQUEUE_FRAME
+    global DRQUEUE_BLOCKSIZE
+    global DRQUEUE_ENDFRAME
+    global DRQUEUE_RENDERDIR
+    global DRQUEUE_PROJECTDIR
+    global DRQUEUE_IMAGEFILE
+    global DRQUEUE_CAMERA
+    global DRQUEUE_RESX
+    global DRQUEUE_RESY
+    global DRQUEUE_FILEFORMAT
+    global DRQUEUE_LOGFILE
 
-if BLOCK > DRQUEUE_ENDFRAME:
-	BLOCK = DRQUEUE_ENDFRAME
+    # range to render
+    block = helper.calc_block(DRQUEUE_FRAME, DRQUEUE_ENDFRAME, DRQUEUE_BLOCKSIZE)
 
+    # renderer path/executable
+    engine_path = "Turtle70"
 
-if ("DRQUEUE_IMAGE" in locals()) and (DRQUEUE_IMAGE != ""):
-	image_args="-imageName "+DRQUEUE_IMAGE
-else:
-	image_args=""
+    # replace paths on Windows
+    if DRQUEUE_OS in ["Windows", "Win32"]:
+        DRQUEUE_SCENEFILE = helper.replace_stdpath_with_driveletter(DRQUEUE_SCENEFILE, 'n:')
+        DRQUEUE_RENDERDIR = helper.replace_stdpath_with_driveletter(DRQUEUE_RENDERDIR, 'n:')
+        DRQUEUE_PROJECTDIR = helper.replace_stdpath_with_driveletter(DRQUEUE_PROJECTDIR, 'n:')
 
-if ("CAMERA" in locals()) and (CAMERA != ""):
-	camera_args="-camera "+CAMERA
-else:
-	camera_args=""
+    if ("DRQUEUE_IMAGEFILE" in globals()) and (DRQUEUE_IMAGEFILE != ""):
+        image_args = "-imageName " + DRQUEUE_IMAGEFILE
+    else:
+        image_args = ""
 
-if ("RESX" in locals()) and ("RESX" in locals()) and (int(RESX) > 0) and (int(RESY) > 0):
-	res_args="-resolution "+RESX+" "+RESY
-else:
-	res_args=""
+    if ("DRQUEUE_CAMERA" in globals()) and (DRQUEUE_CAMERA != ""):
+        camera_args = "-camera " + DRQUEUE_CAMERA
+    else:
+        camera_args=""
 
-if ("FFORMAT" in locals()) and (FFORMAT != ""):
-	format_args="-of "+FFORMAT
-else:
-	format_args=""
+    if ("DRQUEUE_RESX" in globals()) and ("DRQUEUE_RESX" in globals()) and (int(DRQUEUE_RESX) > 0) and (int(DRQUEUE_RESY) > 0):
+        res_args = "-resolution " + DRQUEUE_RESX + " " + DRQUEUE_RESY
+    else:
+        res_args = ""
 
-if ("USEMAYA70" in locals()) and (USEMAYA70 != ""):
-	ENGINE_PATH="Turtle70"
-else:
-	ENGINE_PATH="Turtle65"
+    if ("DRQUEUE_FILEFORMAT" in globals()) and (DRQUEUE_FILEFORMAT != ""):
+        format_args = "-of " + DRQUEUE_FILEFORMAT
+    else:
+        format_args = ""
 
+    command = engine_path + " -geometry " + DRQUEUE_SCENEFILE + " -imageOutputPath " + DRQUEUE_RENDERDIR + " -projectPath " + DRQUEUE_PROJECTDIR + " -renderThreads 2 -display off -startframe " + str(DRQUEUE_FRAME) + " -endframe " + str(block) + " " + image_args + " " + camera_args + " " + res_args
 
-command = ENGINE_PATH+" -geometry "+SCENE+ " -imageOutputPath "+RENDERDIR+" -projectPath "+PROJECTDIR+" -renderThreads 2 -display off -startframe "+str(DRQUEUE_FRAME)+" -endframe "+str(BLOCK)+" "+image_args+" "+camera_args+" "+res_args
+    # open logfile and write header and command line
+    logfile = helper.openlog(DRQUEUE_LOGFILE)
+    logfile.write(command + "\n")
+    logfile.flush()
 
+    # check scenefile
+    helper.check_scenefile(logfile, DRQUEUE_SCENEFILE)
 
-print(command)
-sys.stdout.flush()
+    # run renderer and wait for finish
+    ret = helper.run_command(logfile, command)
 
-p = subprocess.Popen(command, shell=True)
-sts = os.waitpid(p.pid, 0)
+    # return exit status to IPython
+    return helper.return_to_ipython(logfile, ret)
 
-# This should requeue the frame if failed
-if sts[1] != 0:
-	print("Requeueing frame...")
-	os.kill(os.getppid(), signal.SIGINT)
-	exit(1)
-else:
-	#if DRQUEUE_OS != "WINDOWS" then:
-	# The frame was rendered properly
-	# We don't know the output image name. If we knew we could set this correctly
-	# chown_block RF_OWNER RD/IMAGE DRQUEUE_FRAME BLOCK 
-
-	# change userid and groupid
-	#chown 1002:1004 $SCENE:h/*
-	print("Finished.")
-#
-# Notice that the exit code of the last command is received by DrQueue
-#

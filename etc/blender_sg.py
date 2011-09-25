@@ -31,7 +31,7 @@ def run_renderer(env_dict):
     block = helper.calc_block(DRQUEUE_FRAME, DRQUEUE_ENDFRAME, DRQUEUE_BLOCKSIZE)
 
     # renderer path/executable
-    engine_path="blender"
+    engine_path = "blender"
 
     # replace paths on Windows
     if DRQUEUE_OS in ["Windows", "Win32"]:

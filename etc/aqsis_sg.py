@@ -1,87 +1,54 @@
-#
-# THIS IS A PYTHON SCRIPT FILE
-# 
-# Default configuration for Aqsis script generator
-# 
-# Python variables
-# SCENE, RF_OWNER, CUSTOM_CROP, CROP_XMIN, CROP_XMAX, CROP_YMIN, CROP_YMAX
-# 
-# shell variables
-# DRQUEUE_BLOCKSIZE, DRQUEUE_COMPID, DRQUEUE_ENDFRAME, DRQUEUE_ETC, DRQUEUE_FRAME,
-# DRQUEUE_JOBID, DRQUEUE_JOBNAME, DRQUEUE_OS, DRQUEUE_OWNER, DRQUEUE_PADFRAME, 
-# DRQUEUE_PADFRAMES, DRQUEUE_STARTFRAME, DRQUEUE_STEPFRAME
-#
+# -*- coding: utf-8 -*-
 
-#
-# For platform dependend environment setting a form like this
-# can be used :
-#
-# if DRQUEUE_OS == "LINUX":
-#    # Environment for Linux
-# elsif DRQUEUE_OS == "IRIX":
-#    # Environment for Irix
-# else
-#    # Some error messages
-#
+"""
+DrQueue render template for Aqsis
+Copyright (C) 2011 Andreas Schroeder
 
-import os,signal,subprocess,sys
+This file is part of DrQueue.
 
-os.umask(0)
+Licensed under GNU General Public License version 3. See LICENSE for details.
+"""
 
-# fetch DrQueue environment
-DRQUEUE_BLOCKSIZE = int(os.getenv("DRQUEUE_BLOCKSIZE"))
-DRQUEUE_COMPID = int(os.getenv("DRQUEUE_COMPID"))
-DRQUEUE_ENDFRAME = int(os.getenv("DRQUEUE_ENDFRAME"))
-DRQUEUE_ETC = os.getenv("DRQUEUE_ETC")
-DRQUEUE_FRAME = int(os.getenv("DRQUEUE_FRAME"))
-DRQUEUE_JOBID = int(os.getenv("DRQUEUE_JOBID"))
-DRQUEUE_JOBNAME = os.getenv("DRQUEUE_JOBNAME")
-DRQUEUE_OS = os.getenv("DRQUEUE_OS")
-DRQUEUE_OWNER = os.getenv("DRQUEUE_OWNER")
-DRQUEUE_PADFRAME = int(os.getenv("DRQUEUE_PADFRAME"))
-DRQUEUE_PADFRAMES = int(os.getenv("DRQUEUE_PADFRAMES"))
-DRQUEUE_STARTFRAME = int(os.getenv("DRQUEUE_STARTFRAME"))
-DRQUEUE_STEPFRAME = int(os.getenv("DRQUEUE_STEPFRAME"))
+import os
+import DrQueue
+from DrQueue import engine_helpers as helper
 
 
-if DRQUEUE_OS == "WINDOWS":
-	# convert to windows path with drive letter
-	SCENE = subprocess.Popen(["cygpath.exe", "-w "+SCENE], stdout=subprocess.PIPE).communicate()[0]
+def run_renderer(env_dict):
 
-BLOCK = DRQUEUE_FRAME + DRQUEUE_BLOCKSIZE - 1
+    # define external variables as global
+    globals().update(env_dict)
+    global DRQUEUE_OS
+    global DRQUEUE_ETC
+    global DRQUEUE_SCENEFILE
+    global DRQUEUE_FRAME
+    global DRQUEUE_BLOCKSIZE
+    global DRQUEUE_ENDFRAME
+    global DRQUEUE_LOGFILE
 
-if BLOCK > DRQUEUE_ENDFRAME:
-	BLOCK = DRQUEUE_ENDFRAME
+    # range to render
+    block = helper.calc_block(DRQUEUE_FRAME, DRQUEUE_ENDFRAME, DRQUEUE_BLOCKSIZE)
 
-if ("CUSTOM_CROP" in locals()) and (CUSTOM_CROP == "yes"):
-	crop_args="-crop "+CROP_XMIN+" "+CROP_XMAX+" "+CROP_YMIN+" "+CROP_YMAX
-else:
-	crop_args=""
+    # renderer path/executable
+    engine_path = "aqsis"
 
-ENGINE_PATH="aqsis"
+    # replace paths on Windows
+    if DRQUEUE_OS in ["Windows", "Win32"]:
+        DRQUEUE_SCENEFILE = helper.replace_stdpath_with_driveletter(DRQUEUE_SCENEFILE, 'n:')
 
-command = ENGINE_PATH+" -frames "+str(DRQUEUE_FRAME)+" "+str(BLOCK)+" "+crop_args+" "+SCENE
+    command = engine_path + " -frames " + str(DRQUEUE_FRAME) + " " + str(block) + " " + DRQUEUE_SCENEFILE
 
-print(command)
-sys.stdout.flush()
+    # open logfile and write header and command line
+    logfile = helper.openlog(DRQUEUE_LOGFILE)
+    logfile.write(command + "\n")
+    logfile.flush()
 
-p = subprocess.Popen(command, shell=True)
-sts = os.waitpid(p.pid, 0)
+    # check scenefile
+    helper.check_scenefile(logfile, DRQUEUE_SCENEFILE)
 
-# This should requeue the frame if failed
-if sts[1] != 0:
-	print("Requeueing frame...")
-	os.kill(os.getppid(), signal.SIGINT)
-	exit(1)
-else:
-	#if DRQUEUE_OS != "WINDOWS" then:
-	# The frame was rendered properly
-	# We don't know the output image name. If we knew we could set this correctly
-	# chown_block RF_OWNER RD/IMAGE DRQUEUE_FRAME BLOCK 
+    # run renderer and wait for finish
+    ret = helper.run_command(logfile, command)
 
-	# change userid and groupid
-	#chown 1002:1004 $SCENE:h/*
-	print("Finished.")
-#
-# Notice that the exit code of the last command is received by DrQueue
-#
+    # return exit status to IPython
+    return helper.return_to_ipython(logfile, ret)
+

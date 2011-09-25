@@ -1,105 +1,110 @@
 # -*- coding: utf-8 -*-
 
-import os,signal,subprocess,sys
-import os.path
-from time import strftime,localtime
+"""
+DrQueue render template for Maya
+Copyright (C) 2011 Andreas Schroeder
+
+This file is part of DrQueue.
+
+Licensed under GNU General Public License version 3. See LICENSE for details.
+"""
+
+import os
+import DrQueue
+from DrQueue import engine_helpers as helper
 
 
-# used external variables in upper case:
-# DRQUEUE_OS
-# DRQUEUE_ETC
-# DRQUEUE_FRAME
-# DRQUEUE_BLOCKSIZE
-# DRQUEUE_ENDFRAME
-# DRQUEUE_SCENEFILE
-# DRQUEUE_LOGFILE
-# DRQUEUE_IMAGEFILE
-# DRQUEUE_CAMERA
-# DRQUEUE_RESX
-# DRQUEUE_RESY
-# DRQUEUE_FILEFORMAT
-# DRQUEUE_RENDERER
-# DRQUEUE_PRECOMMAND
-# DRQUEUE_POSTCOMMAND
-# DRQUEUE_RENDERDIR
-# DRQUEUE_PROJECTDIR
+def run_renderer(env_dict):
 
+    # define external variables as global
+    globals().update(env_dict)
+    global DRQUEUE_OS
+    global DRQUEUE_ETC
+    global DRQUEUE_SCENEFILE
+    global DRQUEUE_FRAME
+    global DRQUEUE_BLOCKSIZE
+    global DRQUEUE_ENDFRAME
+    global DRQUEUE_IMAGEFILE
+    global DRQUEUE_CAMERA
+    global DRQUEUE_RESX
+    global DRQUEUE_RESY
+    global DRQUEUE_FILEFORMAT
+    global DRQUEUE_RENDERER
+    global DRQUEUE_PRECOMMAND
+    global DRQUEUE_POSTCOMMAND
+    global DRQUEUE_LOGFILE
 
-# range to render
-block = DRQUEUE_FRAME + DRQUEUE_BLOCKSIZE - 1
-if block > DRQUEUE_ENDFRAME:
-	block = DRQUEUE_ENDFRAME
+    # range to render
+    block = helper.calc_block(DRQUEUE_FRAME, DRQUEUE_ENDFRAME, DRQUEUE_BLOCKSIZE)
 
-if ("DRQUEUE_IMAGEFILE" in locals()) and (DRQUEUE_IMAGEFILE != ""):
-  image_args="-im "+DRQUEUE_IMAGEFILE
-else:
-  image_args=""
+    # renderer path/executable
+    engine_path = "Render"
 
-if ("DRQUEUE_CAMERA" in locals()) and (DRQUEUE_CAMERA != ""):
-  camera_args="-cam "+DRQUEUE_CAMERA
-else:
-  camera_args=""
+    # replace paths on Windows
+    if DRQUEUE_OS in ["Windows", "Win32"]:
+        DRQUEUE_SCENEFILE = helper.replace_stdpath_with_driveletter(DRQUEUE_SCENEFILE, 'n:')
+        DRQUEUE_RENDERDIR = helper.replace_stdpath_with_driveletter(DRQUEUE_RENDERDIR, 'n:')
+        DRQUEUE_PROJECTDIR = helper.replace_stdpath_with_driveletter(DRQUEUE_PROJECTDIR, 'n:')
 
-if ("DRQUEUE_RESX" in locals()) and ("DRQUEUE_RESX" in locals()) and (int(DRQUEUE_RESX) > 0) and (int(DRQUEUE_RESY) > 0):
-  res_args="-x "+DRQUEUE_RESX+" -y "+DRQUEUE_RESY
-else:
-  res_args=""
+    if ("DRQUEUE_IMAGEFILE" in globals()) and (DRQUEUE_IMAGEFILE != ""):
+        image_args = "-im " + DRQUEUE_IMAGEFILE
+    else:
+        image_args = ""
 
-if ("DRQUEUE_FILEFORMAT" in locals()) and (DRQUEUE_FILEFORMAT != ""):
-  format_args="-of "+DRQUEUE_FILEFORMAT
-else:
-  format_args=""
+    if ("DRQUEUE_CAMERA" in globals()) and (DRQUEUE_CAMERA != ""):
+        camera_args = "-cam " + DRQUEUE_CAMERA
+    else:
+        camera_args = ""
 
-if ("DRQUEUE_RENDERER" in locals()) and (DRQUEUE_RENDERER == "mr"):
-  ## number of processors/cores to use
-  #proc_args="-rt 2"
+    if ("DRQUEUE_RESX" in globals()) and ("DRQUEUE_RESX" in globals()) and (int(DRQUEUE_RESX) > 0) and (int(DRQUEUE_RESY) > 0):
+        res_args = "-x " + DRQUEUE_RESX + " -y " + DRQUEUE_RESY
+    else:
+        res_args = ""
 
-  ## use Maya's automatic detection
-  proc_args="-art"
-elif ("DRQUEUE_RENDERER" in locals()) and (DRQUEUE_RENDERER == "sw"):
-  ## number of processors/cores to use
-  #proc_args="-n 2"
+    if ("DRQUEUE_FILEFORMAT" in globals()) and (DRQUEUE_FILEFORMAT != ""):
+        format_args = "-of " + DRQUEUE_FILEFORMAT
+    else:
+        format_args = ""
 
-  ## use Maya's automatic detection
-  proc_args="-n 0"
-else:
-  ## don't add something
-  proc_args=""
+    if ("DRQUEUE_RENDERER" in globals()) and (DRQUEUE_RENDERER == "mr"):
+        ## number of processors/cores to use
+        #proc_args = "-rt 2"
 
-if ("DRQUEUE_PRECOMMAND" in locals()) and (DRQUEUE_PRECOMMAND != ""):
-  pre_args="-preRender \""+DRQUEUE_PRECOMMAND+"\""
-else:
-  pre_args=""
-	
-if ("DRQUEUE_POSTCOMMAND" in locals()) and (DRQUEUE_POSTCOMMAND != ""):
-  post_args="-postRender \""+DRQUEUE_POSTCOMMAND+"\""
-else:
-  post_args=""
+        ## use Maya's automatic detection
+        proc_args = "-art"
+    elif ("DRQUEUE_RENDERER" in globals()) and (DRQUEUE_RENDERER == "sw"):
+        ## number of processors/cores to use
+        #proc_args = "-n 2"
 
-# renderer path/executable
-engine_path="Render"
+        ## use Maya's automatic detection
+        proc_args = "-n 0"
+    else:
+        ## don't add something
+        proc_args = ""
 
-command = engine_path+" "+pre_args+" "+post_args+" "+proc_args+" -s "+str(DRQUEUE_FRAME)+" -e "+str(block)+" "+res_args+" "+format_args+" -rd "+DRQUEUE_RENDERDIR+" -proj "+DRQUEUE_PROJECTDIR+" -r "+DRQUEUE_RENDERER+" "+image_args+" "+camera_args+" "+DRQUEUE_SCENEFILE
+    if ("DRQUEUE_PRECOMMAND" in globals()) and (DRQUEUE_PRECOMMAND != ""):
+        pre_args = "-preRender \"" + DRQUEUE_PRECOMMAND + "\""
+    else:
+        pre_args = ""
 
-# write output to logfile
-logfile = open(DRQUEUE_LOGFILE, "ab")
-logfile.write("Log started at " + strftime("%a, %d %b %Y %H:%M:%S", localtime()) + "\n\n")
-logfile.write(command+"\n")
-logfile.flush()
+    if ("DRQUEUE_POSTCOMMAND" in globals()) and (DRQUEUE_POSTCOMMAND != ""):
+        post_args = "-postRender \"" + DRQUEUE_POSTCOMMAND + "\""
+    else:
+        post_args = ""
 
-# check scenefile
-if os.path.isfile(DRQUEUE_SCENEFILE) == False:
-    logfile.write("Scenefile was not found. Exiting with status 1.\n\n")
-    logfile.close()
-    exit(1)
+    command = engine_path + " " + pre_args + " " + post_args + " " + proc_args + " -s " + str(DRQUEUE_FRAME) + " -e " + str(block) + " " + res_args + " " + format_args + " -rd " + DRQUEUE_RENDERDIR + " -proj " + DRQUEUE_PROJECTDIR + " -r " + DRQUEUE_RENDERER + " " + image_args + " " + camera_args + " " + DRQUEUE_SCENEFILE
 
-# run renderer and wait for finish
-p = subprocess.Popen(command, shell=True, stdout=logfile, stderr=subprocess.STDOUT)
-sts = os.waitpid(p.pid, 0)
+    # open logfile and write header and command line
+    logfile = helper.openlog(DRQUEUE_LOGFILE)
+    logfile.write(command + "\n")
+    logfile.flush()
 
-# return exit status to IPython
-logfile.write("Exiting with status " + str(sts[1]) + ".\n\n")
-logfile.close()
-if sts[1] > 0:
-    exit(sts[1])
+    # check scenefile
+    helper.check_scenefile(logfile, DRQUEUE_SCENEFILE)
+
+    # run renderer and wait for finish
+    ret = helper.run_command(logfile, command)
+
+    # return exit status to IPython
+    return helper.return_to_ipython(logfile, ret)
 
