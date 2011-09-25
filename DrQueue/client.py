@@ -136,6 +136,60 @@ class Client():
                 env_dict['DRQUEUE_FILEEXTENSION'] = job['fileextension']
             if 'stepframe' in job:
                 env_dict['DRQUEUE_STEPFRAME'] = job['stepframe']
+            if 'custom_bucket' in job:
+                env_dict['DRQUEUE_CUSTOM_BUCKET'] = job['custom_bucket']
+            if 'bucketsize' in job:
+                env_dict['DRQUEUE_BUCKETSIZE'] = job['bucketsize']
+            if 'custom_lod' in job:
+                env_dict['DRQUEUE_CUSTOM_LOD'] = job['custom_lod']
+            if 'lod' in job:
+                env_dict['DRQUEUE_LOD'] = job['lod']
+            if 'custom_varyaa' in job:
+                env_dict['DRQUEUE_CUSTOM_VARYAA'] = job['custom_varyaa']
+            if 'varyaa' in job:
+                env_dict['DRQUEUE_VARYAA'] = job['varyaa']
+            if 'raytrace' in job:
+                env_dict['DRQUEUE_RAYTRACE'] = job['raytrace']
+            if 'antialias' in job:
+                env_dict['DRQUEUE_ANTIALIAS'] = job['antialias']
+            if 'custom_bdepth' in job:
+                env_dict['DRQUEUE_CUSTOM_BDEPTH'] = job['custom_bdepth']
+            if 'bdepth' in job:
+                env_dict['DRQUEUE_BDEPTH'] = job['bdepth']
+            if 'custom_zdepth' in job:
+                env_dict['DRQUEUE_CUSTOM_ZDEPTH'] = job['custom_zdepth']
+            if 'zdepth' in job:
+                env_dict['DRQUEUE_ZDEPTH'] = job['zdepth']
+            if 'custom_cracks' in job:
+                env_dict['DRQUEUE_CUSTOM_CRACKS'] = job['custom_cracks']
+            if 'cracks' in job:
+                env_dict['DRQUEUE_CRACKS'] = job['cracks']
+            if 'custom_quality' in job:
+                env_dict['DRQUEUE_CUSTOM_QUALITY'] = job['custom_quality']
+            if 'quality' in job:
+                env_dict['DRQUEUE_QUALITY'] = job['quality']
+            if 'custom_qfiner' in job:
+                env_dict['DRQUEUE_CUSTOM_QFINER'] = job['custom_qfiner']
+            if 'qfiner' in job:
+                env_dict['DRQUEUE_QFINER'] = job['qfiner']
+            if 'custom_smultiplier' in job:
+                env_dict['DRQUEUE_CUSTOM_SMULTIPLIER'] = job['custom_smultiplier']
+            if 'smultiplier' in job:
+                env_dict['DRQUEUE_SMULTIPLIER'] = job['smultiplier']
+            if 'custom_mpcache' in job:
+                env_dict['DRQUEUE_CUSTOM_MPCACHE'] = job['custom_mpcache']
+            if 'mpcache' in job:
+                env_dict['DRQUEUE_MPCACHE'] = job['mpcache']
+            if 'custom_smpolygon' in job:
+                env_dict['DRQUEUE_CUSTOM_SMPOLYGON'] = job['custom_smpolygon']
+            if 'smpolygon' in job:
+                env_dict['DRQUEUE_SMPOLYGON'] = job['smpolygon']
+            if 'custom_wh' in job:
+                env_dict['DRQUEUE_CUSTOM_WH'] = job['custom_wh']
+            if 'custom_type' in job:
+                env_dict['DRQUEUE_CUSTOM_TYPE'] = job['custom_type']
+            if 'ctype' in job:
+                env_dict['DRQUEUE_CTYPE'] = job['ctype']
     
             # run task on cluster
             render_script = DrQueue.get_rendertemplate(job['renderer'])
