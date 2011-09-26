@@ -21,7 +21,7 @@ class Callable:
 
 class Job(dict):
     """Subclass of dict for collecting Job attribute values."""
-    def __init__(self, name, startframe, endframe, blocksize, renderer, scenefile, retries=1, owner=getpass.getuser(), pool=None, options={}):
+    def __init__(self, name, startframe, endframe, blocksize, renderer, scenefile, retries=1, owner=getpass.getuser(), pool=None, options={}, limits={}):
         dict.__init__(self)
         # mandatory elements
         jb = {'name' : name,
@@ -32,7 +32,8 @@ class Job(dict):
               'scenefile' : scenefile,
               'retries' : retries,
               'owner' : owner,
-              'pool' : pool
+              'pool' : pool,
+              'limits' : {}
              }
         if name == "":
             raise ValueError("No name of job given!")
@@ -82,18 +83,20 @@ class Job(dict):
             jb['rendertype'] = options['rendertype']
         if 'fileextension' in options:
             jb['fileextension'] = options['fileextension']
-        if 'os' in options:
-            jb['os'] = options['os']
-        if 'depend' in options:
-            jb['depend'] = options['depend']
-        if 'minram' in options:
-            jb['minram'] = options['minram']
-        if 'mincores' in options:
-            jb['mincores'] = options['mincores']
         if 'send_email' in options:
             jb['send_email'] = options['send_email']
         if 'email_recipients' in options:
             jb['email_recipients'] = options['email_recipients']
+        # limits
+        if 'os' in limits:
+            jb['limits']['os'] = limits['os']
+        if 'depend' in limits:
+            jb['limits']['depend'] = limits['depend']
+        if 'minram' in limits:
+            jb['limits']['minram'] = limits['minram']
+        if 'mincores' in limits:
+            jb['limits']['mincores'] = limits['mincores']
+
         self.update(jb)
 
 

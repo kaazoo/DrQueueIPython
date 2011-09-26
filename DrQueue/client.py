@@ -59,13 +59,57 @@ class Client():
         self.lbview.retries = job['retries']
 
         # depend on another job (it's tasks)
-        if ('depend' in job) and (job['depend'] != None):
-            depend_job = self.query_job_by_name(job['depend'])
+        if ('depend' in job['limits']) and (job['limits']['depend'] != None):
+            depend_job = self.query_job_by_name(job['limits']['depend'])
             depend_tasks = self.query_task_list(depend_job['_id'])
             task_ids = []
             for task in depend_tasks:
                 task_ids.append(task['msg_id'])
             self.lbview.after = task_ids
+
+        # run job only on matching os
+        matching_os = []
+        if ('os' in job['limits']) and (job['limits']['os'] != None):
+            for engine_id in self.ip_client.ids:
+                engine = self.identify_computer(engine_id, 1000)
+                    if engine['os'] == job['limits']['os']:
+                        matching_os.append(engine_id)
+            print("DEBUG: matching os:")
+            print(matching_os)
+
+        # run job only on matching minram
+        matching_minram = []
+        if ('minram' in job['limits']) and (job['limits']['minram'] != None):
+            for engine_id in self.ip_client.ids:
+                engine = self.identify_computer(engine_id, 1000)
+                    if engine['memory'] >= job['limits']['minram']:
+                        matching_minram.append(engine_id)
+            print("DEBUG: matching minram:")
+            print(matching_minram)
+
+        # run job only on matching mincores
+        matching_mincores = []
+        if ('mincores' in job['limits']) and (job['limits']['mincores'] != None):
+            for engine_id in self.ip_client.ids:
+                engine = self.identify_computer(engine_id, 1000)
+                    if engine['ncorescpu'] * engine['ncpus'] >= job['limits']['mincores']:
+                        matching_mincores.append(engine_id)
+            print("DEBUG: matching mincores:")
+            print(matching_mincores)
+
+        # check limits
+        matching_limits = []
+        matching_limits.append(matching_os)
+        matching_limits.append(matching_minram)
+        matching_limits.append(matching_mincores)
+        matching_limits = set(matching_limits)
+        print("DEBUG: matching limits:")
+        print(matching_limits)
+        if len(matching_limits) > 0:
+            # only run on matching engines
+            self.lbview = self.ip_client.load_balanced_view(matching_limits)
+        else:
+            self.lbview = self.ip_client.load_balanced_view()
 
         # check frame numbers
         if not (job['startframe'] >= 1):
