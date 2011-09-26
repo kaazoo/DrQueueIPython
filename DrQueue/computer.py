@@ -151,19 +151,19 @@ class Computer(dict):
     get_ncorescpu = Callable(get_ncorescpu)
 
     def get_memory():
-        """get amount of memory of computer"""
+        """get amount of memory of computer in GB"""
         osname = platform.system()
-        memory = ""
+        memory = 0.0
         if osname == "Darwin":
             import subprocess
             proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Memory\""], shell=True, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
-            memory = output.split(":")[1].split("\n")[0].lstrip()
+            memory = float(output.split(":")[1].split("\n")[0].lstrip().split(" ")[0])
         if osname == "Linux":
             for line in fileinput.input('/proc/meminfo'):
                 if 'MemTotal' in line:
                     memory = line.split(':')[1].strip().split(' ')[0].strip()
-                    memory = str(round(float(memory)/1024/1024, 2)) + " GB"
+                    memory = round(float(memory)/1024/1024, 2)
         if osname in ["Windows", "Win32"]:
             import ctypes
             kernel32 = ctypes.windll.kernel32
@@ -184,7 +184,7 @@ class Computer(dict):
             kernel32.GlobalMemoryStatus(ctypes.byref(memoryStatus))
             mem = memoryStatus.dwTotalPhys / (1024*1024)
             mem = mem / 1000
-            memory = str(mem) + " GB"
+            memory = float(mem)
         return memory
     get_memory = Callable(get_memory)
 
