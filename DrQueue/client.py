@@ -41,68 +41,20 @@ class Client():
             raise ValueError("Job name %s is already used!" % job['name'])
             return False
 
-        # only work on available engines
-        if self.query_ready_engines_of_pool(job['pool']) == False:
-            raise ValueError("There are no computers in pool %s!" % job['pool'])
-            return False
-
         # run job only on matching os
-        matching_os = []
-        if ('os' in job['limits']) and (job['limits']['os'] != None):
-            for engine_id in self.ip_client.ids:
-                engine = self.identify_computer(engine_id, 1000)
-                if job['limits']['os'] in engine['os']:
-                    matching_os.append(engine_id)
-            print("DEBUG: matching os:")
-            print(job['limits']['os'])
-            print(matching_os)
+        os_list = self.query_engines_of_os(job['limits']['os'])
 
         # run job only on matching minram
-        matching_minram = []
-        if ('minram' in job['limits']) and (job['limits']['minram'] != None):
-            for engine_id in self.ip_client.ids:
-                engine = self.identify_computer(engine_id, 1000)
-                if engine['memory'] >= job['limits']['minram']:
-                    matching_minram.append(engine_id)
-            print("DEBUG: matching minram:")
-            print(job['limits']['minram'])
-            print(matching_minram)
+        minram_list = self.query_engines_with_minram(job['limits']['minram'])
 
         # run job only on matching mincores
-        matching_mincores = []
-        if ('mincores' in job['limits']) and (job['limits']['mincores'] != None):
-            for engine_id in self.ip_client.ids:
-                engine = self.identify_computer(engine_id, 1000)
-                if engine['ncorescpu'] * engine['ncpus'] >= job['limits']['mincores']:
-                    matching_mincores.append(engine_id)
-            print("DEBUG: matching mincores:")
-            print(job['limits']['mincores'])
-            print(matching_mincores)
+        mincores_list = self.query_engines_with_mincores(job['limits']['mincores'])
+
+        # check pool members
+        pool_list = self.query_engines_of_pool(job['limits']['pool'])
 
         # check limits
-        tmp_list = []
-        tmp_list.extend(matching_os)
-        tmp_list.extend(matching_minram)
-        tmp_list.extend(matching_mincores)
-        tmp_list = set(tmp_list)
-        tmp_list = list(tmp_list)
-        matching_limits = []
-        for entry in tmp_list:
-            if (entry in matching_os) and (entry in matching_minram) and (entry in matching_mincores):
-                matching_limits.append(entry)
-            else:
-                print("%i isn't matching limits" % entry)
-        print("DEBUG: matching limits:")
-        print(matching_limits)
-        if len(matching_limits) == 0:
-            message = "No engine meets the requirements."
-            print(message)
-            raise Exception(message)
-        elif len(matching_limits) > 0:
-            # only run on matching engines
-            self.lbview = self.ip_client.load_balanced_view(matching_limits)
-        else:
-            self.lbview = self.ip_client.load_balanced_view()
+        self.match_all_limits(os_list, minram_list, mincores_list, pool_list)
 
         # save job in database
         job_id = DrQueueJob.store_db(job)
@@ -347,23 +299,99 @@ class Client():
         return self.ip_client.ids
 
 
-    def query_ready_engines_of_pool(self, pool_name):
-        """Query list of pool members and return only available engines"""
-        ready_computers = []
+    def query_engines_of_pool(self, pool_name):
+        """Return available engines of certain pool."""
+        pool_computers = self.ip_client.ids
         # update LoadBalancedView if pool is set
         if pool_name != None:
             computers = list(DrQueueComputerPool.query_pool_members(pool_name))
-            for comp in computers:
-                if comp in self.query_engine_list():
-                    ready_computers.append(comp)
-            if ready_computers == []:
+            for comp in pool_computers:
+                if not comp in computers:
+                    pool_computers.remove(comp)
+            if pool_computers == []:
                 raise ValueError("No computer of pool %s is available!" % pool_name)
                 return False
-            self.lbview = self.ip_client.load_balanced_view(ready_computers)
+            #self.lbview = self.ip_client.load_balanced_view(ready_computers)
         # load balance on all existing computers
+        #else:
+        #    self.lbview = self.ip_client.load_balanced_view()
+        #return True
+        return pool_computers
+
+
+    def query_engines_of_os(self, os_name):
+        """Return only engines running certain OS."""
+        # run job only on matching os
+        matching_os = self.ip_client.ids
+        if os_name != None:
+            for engine_id in self.ip_client.ids:
+                engine = self.identify_computer(engine_id, 1000)
+                # os string has to contain os_name
+                if not os_name in engine['os']:
+                    matching_os.remove(engine_id)
+            print("DEBUG: matching os: " + os_name)
+            print(matching_os)
+        return matching_os
+
+
+    def query_engines_with_minram(self, minram):
+        """Return only engines with at least minram GB RAM."""
+        # run job only on matching minram
+        matching_minram = self.ip_client.ids
+        if minram > 0:
+            for engine_id in self.ip_client.ids:
+                engine = self.identify_computer(engine_id, 1000)
+                if engine['memory'] < minram:
+                    matching_minram.remove(engine_id)
+            print("DEBUG: matching minram: " + str(minram))
+            print(matching_minram)
+        return matching_minram
+
+
+    def query_engines_with_mincores(self, mincores):
+        """Return only engines with at least minram GB RAM."""
+        # run job only on matching mincores
+        matching_mincores = self.ip_client.ids
+        if mincores > 0:
+            for engine_id in self.ip_client.ids:
+                engine = self.identify_computer(engine_id, 1000)
+                if engine['ncorescpu'] * engine['ncpus'] < mincores:
+                    matching_mincores.remove(engine_id)
+            print("DEBUG: matching mincores: " + str(mincores))
+            print(matching_mincores)
+        return matching_mincores
+
+
+    def match_all_limits(self, os_list, minram_list, mincores_list, pool_list):
+        """Match all limits for job."""
+        tmp_list = []
+        # build list with all list members
+        tmp_list.extend(os_list)
+        tmp_list.extend(minram_list)
+        tmp_list.extend(mincores_list)
+        tmp_list.extend(pool_list)
+        # make entries unique
+        tmp_list = set(tmp_list)
+        tmp_list = list(tmp_list)
+        matching_limits = []
+        for entry in tmp_list:
+            # look if entry is in all lists
+            if (entry in os_list) and (entry in minram_list) and (entry in mincores_list) and (entry in pool_list):
+                matching_limits.append(entry)
+            else:
+                print("DEBUG: %i isn't matching limits" % entry)
+        print("DEBUG: matching limits:")
+        print(matching_limits)
+        if len(matching_limits) == 0:
+            message = "No engine meets the requirements."
+            print(message)
+            raise Exception(message)
+        elif len(matching_limits) > 0:
+            # only run on matching engines
+            self.lbview = self.ip_client.load_balanced_view(matching_limits)
         else:
             self.lbview = self.ip_client.load_balanced_view()
-        return True
+
 
     def job_stop(self, job_id):
         """Stop job and all tasks which are not currently running"""

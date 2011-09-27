@@ -41,6 +41,12 @@ def main():
                       dest="retries", default=1, help="number of retries for every task")
     parser.add_option("--owner",
                       dest="owner", default=getpass.getuser(), help="Owner of job. Default is current username.")
+    parser.add_option("--os",
+                      dest="os", default=None, help="Operating system.")
+    parser.add_option("--minram",
+                      dest="minram", default=0, help="Minimal RAM in GB.")
+    parser.add_option("--mincores",
+                      dest="mincores", default=0, help="Minimal CPU cores.")
     parser.add_option("-w", "--wait",
                       action="store_true", dest="wait", default=False, help="wait for job to finish")
     parser.add_option("-v", "--verbose",
@@ -50,8 +56,15 @@ def main():
     # initialize DrQueue client
     client = DrQueueClient()
 
+    # set limits
+    limits = dict()
+    limits['pool'] = options.pool
+    limits['os'] = options.os
+    limits['minram'] = options.minram
+    limits['mincores'] = options.mincores
+
     # initialize DrQueue job
-    job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, options.retries, options.owner, options.pool, eval(options.options))
+    job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, options.retries, options.owner, eval(options.options), limits)
 
     # run job with client
     try:

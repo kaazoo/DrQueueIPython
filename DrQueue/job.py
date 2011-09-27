@@ -21,7 +21,7 @@ class Callable:
 
 class Job(dict):
     """Subclass of dict for collecting Job attribute values."""
-    def __init__(self, name, startframe, endframe, blocksize, renderer, scenefile, retries=1, owner=getpass.getuser(), pool=None, options={}, limits={}):
+    def __init__(self, name, startframe, endframe, blocksize, renderer, scenefile, retries=1, owner=getpass.getuser(), options={}, limits={}):
         dict.__init__(self)
         # mandatory elements
         jb = {'name' : name,
@@ -32,7 +32,6 @@ class Job(dict):
               'scenefile' : scenefile,
               'retries' : retries,
               'owner' : owner,
-              'pool' : pool,
               'limits' : {}
              }
         if name == "":
@@ -96,6 +95,8 @@ class Job(dict):
             jb['limits']['minram'] = limits['minram']
         if 'mincores' in limits:
             jb['limits']['mincores'] = limits['mincores']
+        if 'pool' in limits:
+            jb['limits']['pool'] = limits['pool']
 
         self.update(jb)
 
