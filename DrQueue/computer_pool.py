@@ -126,6 +126,9 @@ class ComputerPool(dict):
         db = connection['ipythondb']
         pools = db['drqueue_pools']
         pool = pools.find_one({"name": pool_name})
-        return pool['engine_ids']
+        if pool == None:
+            return None
+        else:
+            return list(pool['engine_ids'])
     query_pool_members = Callable(query_pool_members)
 

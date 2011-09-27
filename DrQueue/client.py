@@ -302,20 +302,17 @@ class Client():
     def query_engines_of_pool(self, pool_name):
         """Return available engines of certain pool."""
         pool_computers = self.ip_client.ids
-        # update LoadBalancedView if pool is set
         if pool_name != None:
-            computers = list(DrQueueComputerPool.query_pool_members(pool_name))
+            computers = DrQueueComputerPool.query_pool_members(pool_name)
+            if computers == None:
+                raise ValueError("Pool \"%s\" is not existing!" % pool_name)
+                return False
             for comp in pool_computers:
                 if not comp in computers:
                     pool_computers.remove(comp)
             if pool_computers == []:
                 raise ValueError("No computer of pool %s is available!" % pool_name)
                 return False
-            #self.lbview = self.ip_client.load_balanced_view(ready_computers)
-        # load balance on all existing computers
-        #else:
-        #    self.lbview = self.ip_client.load_balanced_view()
-        #return True
         return pool_computers
 
 

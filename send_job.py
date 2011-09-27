@@ -60,8 +60,8 @@ def main():
     limits = dict()
     limits['pool'] = options.pool
     limits['os'] = options.os
-    limits['minram'] = options.minram
-    limits['mincores'] = options.mincores
+    limits['minram'] = int(options.minram)
+    limits['mincores'] = int(options.mincores)
 
     # initialize DrQueue job
     job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, options.retries, options.owner, eval(options.options), limits)
