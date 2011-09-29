@@ -17,9 +17,8 @@ from computer import Computer as DrQueueComputer
 
 class Helper():
     """Object providing some helper methods for engines."""
-    def __init__(self, env_dict):
-        self.logfile = self.openlog(env_dict['DRQUEUE_LOGFILE'])
-        self.scenefile = env_dict['DRQUEUE_SCENEFILE']
+    def __init__(self, logfile):
+        self.logfile = self.openlog(logfile)
 
     def calc_block(self, frame, endframe, size):
         """Calculate block to render."""
@@ -47,9 +46,9 @@ class Helper():
         self.logfile.flush()
         return True
 
-    def check_scenefile(self):
+    def check_scenefile(self, scenefile):
         """Check if scenefile is existing."""
-        if os.path.isfile(self.scenefile) == False:
+        if os.path.isfile(scenefile) == False:
             message = "Scenefile was not found."
             self.logfile.write(message)
             self.logfile.close()

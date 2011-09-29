@@ -11,7 +11,7 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 
 import os
 import DrQueue
-from DrQueue import engine_helpers as helper
+from DrQueue import engine_helpers
 
 
 def run_renderer(env_dict):
@@ -26,6 +26,9 @@ def run_renderer(env_dict):
     global DRQUEUE_ENDFRAME
     global DRQUEUE_LOGFILE
 
+    # initialize helper object
+    helper = engine_helpers.Helper(env_dict['DRQUEUE_LOGFILE'])
+
     # range to render
     block = helper.calc_block(DRQUEUE_FRAME, DRQUEUE_ENDFRAME, DRQUEUE_BLOCKSIZE)
 
@@ -35,17 +38,15 @@ def run_renderer(env_dict):
 
     command = DRQUEUE_SCENEFILE + " " + DRQUEUE_FRAME
 
-    # open logfile and write header and command line
-    logfile = helper.openlog(DRQUEUE_LOGFILE)
-    logfile.write(command + "\n")
-    logfile.flush()
+    # log command line
+    helper.log_write(command + "\n")
 
     # check scenefile
-    helper.check_scenefile(logfile, DRQUEUE_SCENEFILE)
+    helper.check_scenefile(DRQUEUE_SCENEFILE)
 
     # run renderer and wait for finish
-    ret = helper.run_command(logfile, command)
+    ret = helper.run_command(command)
 
     # return exit status to IPython
-    return helper.return_to_ipython(logfile, ret)
+    return helper.return_to_ipython(ret)
 

@@ -28,7 +28,7 @@ def run_renderer(env_dict):
     global DRQUEUE_LOGFILE
 
     # initialize helper object
-    helper = engine_helpers.Helper(env_dict)
+    helper = engine_helpers.Helper(env_dict['DRQUEUE_LOGFILE'])
 
     # range to render
     block = helper.calc_block(DRQUEUE_FRAME, DRQUEUE_ENDFRAME, DRQUEUE_BLOCKSIZE)
@@ -54,7 +54,7 @@ def run_renderer(env_dict):
     helper.log_write(command + "\n")
 
     # check scenefile
-    helper.check_scenefile()
+    helper.check_scenefile(DRQUEUE_SCENEFILE)
 
     # run renderer and wait for finish
     ret = helper.run_command(command)

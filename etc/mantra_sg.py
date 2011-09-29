@@ -11,7 +11,7 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 
 import os
 import DrQueue
-from DrQueue import engine_helpers as helper
+from DrQueue import engine_helpers
 
 
 def run_renderer(env_dict):
@@ -54,6 +54,9 @@ def run_renderer(env_dict):
     global DRQUEUE_CUSTOM_TYPE
     global DRQUEUE_CTYPE
     global DRQUEUE_LOGFILE
+
+    # initialize helper object
+    helper = engine_helpers.Helper(env_dict['DRQUEUE_LOGFILE'])
 
     # range to render
     block = helper.calc_block(DRQUEUE_FRAME, DRQUEUE_ENDFRAME, DRQUEUE_BLOCKSIZE)
@@ -152,17 +155,15 @@ def run_renderer(env_dict):
 
     command = engine_path + " -f " + str(DRQUEUE_SCENEFILE + DRQUEUE_PADFRAME) + ".ifd " + antialias_args + " " + raytrace_args + " " + bucket_args + " " + lod_args + "  " + varyaa_args + " " + bdepth_args + " " + zdepth_args + " " + cracks_args + " " + quality_args + " " + qfiner_args + " " + smultiplier_args + " " + mpcache_args + " " + mcache_args + " " + smpolygon_args + " " + width_args + " " + height_args + " " + DRQUEUE_RENDERDIR + str(DRQUEUE_PADFRAME) + type_args
 
-    # open logfile and write header and command line
-    logfile = helper.openlog(DRQUEUE_LOGFILE)
-    logfile.write(command + "\n")
-    logfile.flush()
+    # log command line
+    helper.log_write(command + "\n")
 
     # check scenefile
-    helper.check_scenefile(logfile, DRQUEUE_SCENEFILE)
+    helper.check_scenefile(DRQUEUE_SCENEFILE)
 
     # run renderer and wait for finish
-    ret = helper.run_command(logfile, command)
+    ret = helper.run_command(command)
 
     # return exit status to IPython
-    return helper.return_to_ipython(logfile, ret)
+    return helper.return_to_ipython(ret)
 
