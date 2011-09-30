@@ -260,7 +260,6 @@ class Computer(dict):
 
     def query_db(engine_id):
         import pymongo
-        #import bson
         """query computer information from MongoDB"""
         connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
         db = connection['ipythondb']
@@ -283,6 +282,17 @@ class Computer(dict):
         return computer_id
     store_db = Callable(store_db)
 
+
+    def delete_from_db(engine_id):
+        import pymongo
+        import bson
+        """delete comouter information from MongoDB"""
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        db = connection['ipythondb']
+        computers = db['drqueue_computers']
+        computers.remove({"engine_id" : engine_id})
+        return True
+    delete_from_db = Callable(delete_from_db)
 
 
 

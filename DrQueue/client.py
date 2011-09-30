@@ -313,6 +313,8 @@ class Client():
             if pool_computers == []:
                 raise ValueError("No computer of pool %s is available!" % pool_name)
                 return False
+            print("DEBUG: matching pool: " + pool_name)
+            print(pool_computers)
         return pool_computers
 
 
@@ -452,6 +454,17 @@ class Client():
 
     def job_continue(self, job_id):
         """Continue stopped job and all of it's tasks"""
+        job = self.query_job(job_id)
+        # run job only on matching os
+        os_list = self.query_engines_of_os(job['limits']['os'])
+        # run job only on matching minram
+        minram_list = self.query_engines_with_minram(job['limits']['minram'])
+        # run job only on matching mincores
+        mincores_list = self.query_engines_with_mincores(job['limits']['mincores'])
+        # check pool members
+        pool_list = self.query_engines_of_pool(job['limits']['pool'])
+        # check limits
+        self.match_all_limits(os_list, minram_list, mincores_list, pool_list)
         tasks = self.query_task_list(job_id)
         # continue tasks
         for task in tasks:
@@ -461,6 +474,17 @@ class Client():
 
     def job_rerun(self, job_id):
         """Run all tasks of job another time"""
+        job = self.query_job(job_id)
+        # run job only on matching os
+        os_list = self.query_engines_of_os(job['limits']['os'])
+        # run job only on matching minram
+        minram_list = self.query_engines_with_minram(job['limits']['minram'])
+        # run job only on matching mincores
+        mincores_list = self.query_engines_with_mincores(job['limits']['mincores'])
+        # check pool members
+        pool_list = self.query_engines_of_pool(job['limits']['pool'])
+        # check limits
+        self.match_all_limits(os_list, minram_list, mincores_list, pool_list)
         tasks = self.query_task_list(job_id)
         # rerun tasks
         for task in tasks:
@@ -488,14 +512,16 @@ class Client():
                     if ('status' in result_header.keys()) and (result_header['status'] == "ok"):
                         status_ok += 1
                     # look for aborted tasks
-                    if ('status' in result_header.keys()) and (result_header['status'] == "aborted"):
+                    elif ('status' in result_header.keys()) and (result_header['status'] == "aborted"):
                         status_aborted += 1
                     # look for done tasks
-                    if ('status' in result_header.keys()) and (result_header['status'] == "resubmitted"):
+                    elif ('status' in result_header.keys()) and (result_header['status'] == "resubmitted"):
                         status_resubmitted += 1
                     # look for tasks with error
-                    if ('status' in result_header.keys()) and (result_header['status'] == "error"):
+                    elif ('status' in result_header.keys()) and (result_header['status'] == "error"):
                         status_error += 1
+                    else:
+                        status_unknown += 1
         # if at least 1 task is ok, job status is ok
         if status_ok > 0:
             status = "ok"
@@ -513,7 +539,10 @@ class Client():
 
     def engine_stop(self, engine_id):
         """Stop a specific engine"""
-        self.ip_client.shutdown(engine_id, False, False, True)
+        # delete computer information in db
+        DrQueueComputer.delete_from_db(engine_id)
+        # shutdown computer
+        self.ip_client.shutdown(engine_id)
         return True
 
 

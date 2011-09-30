@@ -53,7 +53,7 @@ def main():
     # run specified action
     if options.shutdown:
         for computer in computers:
-            client.ip_client.shutdown(computer)
+            client.engine_stop(computer)
         print("Computer %s has been shut down." % str(computers))
         return True
     if options.pools:
