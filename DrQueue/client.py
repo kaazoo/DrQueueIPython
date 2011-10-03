@@ -445,16 +445,6 @@ class Client():
     def job_continue(self, job_id):
         """Continue stopped job and all of it's tasks"""
         job = self.query_job(job_id)
-        # run job only on matching os
-        os_list = self.query_engines_of_os(job['limits']['os'])
-        # run job only on matching minram
-        minram_list = self.query_engines_with_minram(job['limits']['minram'])
-        # run job only on matching mincores
-        mincores_list = self.query_engines_with_mincores(job['limits']['mincores'])
-        # check pool members
-        pool_list = self.query_engines_of_pool(job['limits']['pool'])
-        # check limits
-        self.match_all_limits(os_list, minram_list, mincores_list, pool_list)
         tasks = self.query_task_list(job_id)
         # continue tasks
         for task in tasks:
@@ -465,16 +455,6 @@ class Client():
     def job_rerun(self, job_id):
         """Run all tasks of job another time"""
         job = self.query_job(job_id)
-        # run job only on matching os
-        os_list = self.query_engines_of_os(job['limits']['os'])
-        # run job only on matching minram
-        minram_list = self.query_engines_with_minram(job['limits']['minram'])
-        # run job only on matching mincores
-        mincores_list = self.query_engines_with_mincores(job['limits']['mincores'])
-        # check pool members
-        pool_list = self.query_engines_of_pool(job['limits']['pool'])
-        # check limits
-        self.match_all_limits(os_list, minram_list, mincores_list, pool_list)
         tasks = self.query_task_list(job_id)
         # rerun tasks
         for task in tasks:

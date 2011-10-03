@@ -63,27 +63,27 @@ def main():
         return True
     if options.info:
         for computer in computers:
-            print("Engine "+str(computer)+ ":")
+            print("Engine " + str(computer) + ":")
             comp = client.identify_computer(computer, cache_time)
-            print(" hostname: "+comp['hostname'])
-            print(" arch: "+comp['arch'])
-            print(" os: "+comp['os'])
-            print(" nbits: "+str(comp['nbits']))
-            print(" procspeed: "+comp['procspeed'])
-            print(" ncpus: "+str(comp['ncpus']))
-            print(" ncorescpu: "+str(comp['ncorescpu']))
-            print(" memory: "+comp['memory'])
-            print(" load: "+comp['load'])
-            print(" pools: "+str(DrQueueComputer.get_pools(computer))+"\n")
+            print(" hostname: " + comp['hostname'])
+            print(" arch: " + comp['arch'])
+            print(" os: " + comp['os'])
+            print(" nbits: " + str(comp['nbits']))
+            print(" procspeed: " + comp['procspeed'])
+            print(" ncpus: " + str(comp['ncpus']))
+            print(" ncorescpu: " + str(comp['ncorescpu']))
+            print(" memory: " + str(comp['memory']))
+            print(" load: " + comp['load'])
+            print(" pools: " + str(DrQueueComputer.get_pools(computer)) + "\n")
         return True
     if options.status:
         for computer in computers:
-            print("Engine "+str(computer)+ ":")
+            print("Engine " + str(computer) + ":")
             status = client.ip_client.queue_status(computer, verbose=True)
             print(" status:")
-            print("  in queue: "+str(status['queue']))
-            print("  completed: "+str(status['completed']))
-            print("  tasks: "+str(status['tasks']))
+            print("  in queue: " + str(status['queue']))
+            print("  completed: " + str(status['completed']))
+            print("  tasks: " + str(status['tasks']))
         return True
 
 if __name__ == "__main__":
