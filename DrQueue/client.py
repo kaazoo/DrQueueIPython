@@ -14,6 +14,7 @@ import os.path
 import time
 from IPython.parallel import Client as IPClient
 from IPython.parallel.util import unpack_apply_message
+from IPython.parallel import dependent
 import DrQueue
 from job import Job as DrQueueJob
 from computer import Computer as DrQueueComputer
@@ -40,21 +41,6 @@ class Client():
         if job['name'] in DrQueueJob.query_jobnames():
             raise ValueError("Job name %s is already used!" % job['name'])
             return False
-
-        # run job only on matching os
-        os_list = self.query_engines_of_os(job['limits']['os'])
-
-        # run job only on matching minram
-        minram_list = self.query_engines_with_minram(job['limits']['minram'])
-
-        # run job only on matching mincores
-        mincores_list = self.query_engines_with_mincores(job['limits']['mincores'])
-
-        # check pool members
-        pool_list = self.query_engines_of_pool(job['limits']['pool'])
-
-        # check limits
-        self.match_all_limits(os_list, minram_list, mincores_list, pool_list)
 
         # save job in database
         job_id = DrQueueJob.store_db(job)
@@ -202,14 +188,34 @@ class Client():
                 env_dict['DRQUEUE_CTYPE'] = job['ctype']
             if 'skipframes' in job:
                 env_dict['DRQUEUE_SKIPFRAMES'] = job['skipframes']
-    
+
+            # set dependency chain
+            #dep_os = dependent(DrQueue.run_script_with_env, self.engine_has_os, job['limits']['os'])
+            #dep_minram = dependent(dep_os, self.engine_has_minram, job['limits']['minram'])
+            #dep_mincores = dependent(dep_minram, self.engine_has_mincores, job['limits']['mincores'])
+            #dep_pool = dependent(dep_mincores, self.engine_is_in_pool, job['limits']['pool'])
+
+            run_script_with_env_and_deps = dependent(DrQueue.run_script_with_env, self.check_deps, job['limits']['os'], job['limits']['minram'], job['limits']['mincores'], job['limits']['pool'])
+
             # run task on cluster
             render_script = DrQueue.get_rendertemplate(job['renderer'])
-            ar = self.lbview.apply(DrQueue.run_script_with_env, render_script, env_dict)
+            ar = self.lbview.apply(run_script_with_env_and_deps, render_script, env_dict)
             # wait for pyzmq send to complete communication (avoid race condition)
             ar.wait_for_send()
         return True
 
+
+    def check_deps(self, os_name, minram, mincores, pool_name):
+        if self.engine_has_os(os_name) == False:
+            return False
+        elif self.engine_has_minram(minram) == False:
+            return False
+        elif self.engine_has_mincores(mincores) == False:
+            return False
+        elif self.engine_is_in_pool(pool_name) == False:
+            return False
+        else:
+            return True
 
     def identify_computer(self, engine_id, cache_time):
         """Gather information about computer"""
@@ -318,6 +324,15 @@ class Client():
         return pool_computers
 
 
+    def engine_is_in_pool(self, pool_name):
+        """Check if engine belongs to certain pool."""
+        belongs = False
+        computers = DrQueueComputerPool.query_pool_members(pool_name)
+        if engine_id in computers:
+            belongs = True
+        return belongs
+
+
     def query_engines_of_os(self, os_name):
         """Return only engines running certain OS."""
         # run job only on matching os
@@ -331,6 +346,18 @@ class Client():
             print("DEBUG: matching os: " + os_name)
             print(matching_os)
         return matching_os
+
+
+    def engine_has_os(self, os_name):
+        """Check if engine is running on certain OS."""
+        import platform
+        running_os = platform.system()
+        print("requirement: " + os_name)
+        print("running: " + running_os)
+        if os_name in running_os:
+            return True
+        else:
+            return False
 
 
     def query_engines_with_minram(self, minram):
@@ -347,8 +374,19 @@ class Client():
         return matching_minram
 
 
+    def engine_has_minram(self, minram):
+        """Check if engine has at least minram GB RAM."""
+        mem = DrQueueComputer.get_memory()
+        print("requirement: " + str(minram))
+        print("running: " + str(mem))
+        if mem >= minram:
+            return True
+        else:
+            return False
+
+
     def query_engines_with_mincores(self, mincores):
-        """Return only engines with at least minram GB RAM."""
+        """Return only engines with at least mincores CPU cores."""
         # run job only on matching mincores
         matching_mincores = self.ip_client.ids
         if mincores > 0:
@@ -359,6 +397,19 @@ class Client():
             print("DEBUG: matching mincores: " + str(mincores))
             print(matching_mincores)
         return matching_mincores
+
+
+    def engine_has_mincores(self, mincores):
+        """Check if engine has at least mincores CPU cores."""
+        ncpus = DrQueueComputer.get_ncpus()
+        ncorescpu = DrQueueComputer.get_ncorescpu()
+        cores = ncpus * ncorescpu
+        print("requirement: " + str(mincores))
+        print("running: " + str(cores))
+        if cores >= mincores:
+            return True
+        else:
+            return False
 
 
     def match_all_limits(self, os_list, minram_list, mincores_list, pool_list):
@@ -501,6 +552,7 @@ class Client():
         status_aborted = 0
         status_resubmitted = 0
         status_error = 0
+        status_unknown = 0
         for task in tasks:
             # look for pending tasks
             if task['completed'] == None:
