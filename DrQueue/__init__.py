@@ -18,6 +18,7 @@ from job import Job
 from computer import Computer
 from computer_pool import ComputerPool
 
+
 supported_renderers = ['3delight', '3dsmax', 'aftereffects', 'aqsis', 'blender', 'cinema4d', 'general', 'lightwave', 'luxrender', 'mantra', 'maya', 'mentalray', 'nuke', 'shake', 'terragen', 'turtle', 'vray', 'xsi']
 
 supported_os = ['Windows', 'Mac OSX', 'Linux', 'FreeBSD', 'NetBSD', 'OpenBSD', 'AIX', 'Solaris']
@@ -102,5 +103,62 @@ def run_script_with_env(render_script, env_dict):
     status = template.run_renderer(env_dict)
     return status
 
+
+def check_deps(dep_dict):
+    """Run all dependency checking functions."""
+    if engine_has_os(dep_dict['os_name']) == False:
+        return False
+    elif engine_has_minram(dep_dict['minram']) == False:
+        return False
+    elif engine_has_mincores(dep_dict['mincores']) == False:
+        return False
+    #elif engine_is_in_pool(dep_dict['pool_name']) == False:
+    #    return False
+    else:
+        return True
+
+
+def engine_is_in_pool(pool_name):
+    """Check if engine belongs to certain pool."""
+    belongs = False
+    computers = ComputerPool.query_pool_members(pool_name)
+    if engine_id in computers:
+        belongs = True
+    return belongs
+
+
+def engine_has_os(os_name):
+    """Check if engine is running on certain OS."""
+    running_os = get_osname()
+    print("requirement: " + os_name)
+    print("running: " + running_os)
+    if os_name == running_os:
+        return True
+    else:
+        return False
+
+
+def engine_has_minram(minram):
+    """Check if engine has at least minram GB RAM."""
+    mem = Computer.get_memory()
+    print("requirement: " + str(minram))
+    print("running: " + str(mem))
+    if mem >= minram:
+        return True
+    else:
+        return False
+
+
+def engine_has_mincores(mincores):
+    """Check if engine has at least mincores CPU cores."""
+    ncpus = Computer.get_ncpus()
+    ncorescpu = Computer.get_ncorescpu()
+    cores = ncpus * ncorescpu
+    print("requirement: " + str(mincores))
+    print("running: " + str(cores))
+    if cores >= mincores:
+        return True
+    else:
+        return False
 
 
