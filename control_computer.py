@@ -58,7 +58,8 @@ def main():
         return True
     if options.pools:
         for computer in computers:
-            DrQueueComputer.set_pools(computer, options.pools.split(","))
+            comp = client.identify_computer(computer, cache_time)
+            DrQueueComputer.set_pools(comp['hostname'], options.pools.split(","))
             print("Computer %i has been added to pools %s." % (computer, options.pools.split(",")))
         return True
     if options.info:
@@ -74,7 +75,7 @@ def main():
             print(" ncorescpu: " + str(comp['ncorescpu']))
             print(" memory: " + str(comp['memory']))
             print(" load: " + comp['load'])
-            print(" pools: " + str(DrQueueComputer.get_pools(computer)) + "\n")
+            print(" pools: " + str(DrQueueComputer.get_pools(comp['hostname'])) + "\n")
         return True
     if options.status:
         for computer in computers:

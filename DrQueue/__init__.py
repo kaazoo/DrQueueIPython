@@ -17,7 +17,6 @@ from client import Client
 from job import Job
 from computer import Computer
 from computer_pool import ComputerPool
-from IPython.config.application import Application
 
 
 supported_renderers = ['3delight', '3dsmax', 'aftereffects', 'aqsis', 'blender', 'cinema4d', 'general', 'lightwave', 'luxrender', 'mantra', 'maya', 'mentalray', 'nuke', 'shake', 'terragen', 'turtle', 'vray', 'xsi']
@@ -121,9 +120,9 @@ def check_deps(dep_dict):
 
 def engine_is_in_pool(pool_name):
     """Check if engine belongs to certain pool."""
-    engine_id = Application.instance().engine.id
+    computer_name = Computer.get_hostname()
     computers = ComputerPool.query_pool_members(pool_name)
-    if engine_id in computers:
+    if computer_name in computers:
         belongs = True
     else:
         return False

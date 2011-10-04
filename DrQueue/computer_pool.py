@@ -20,17 +20,17 @@ class Callable:
 
 class ComputerPool(dict):
     """Subclass of dict for collecting Pool attribute values."""
-    def __init__(self, name, engine_ids=[]):
+    def __init__(self, name, engine_names=[]):
         dict.__init__(self)
 
-        if type(engine_ids).__name__ != 'list':
+        if type(engine_names).__name__ != 'list':
             raise ValueError("argument is not of type list")
             return False
 
         # mandatory elements
         pool = {
               'name' : name,
-              'engine_ids' : engine_ids,
+              'engine_names' : engine_names,
              }
         self.update(pool)
 
@@ -129,6 +129,6 @@ class ComputerPool(dict):
         if pool == None:
             return None
         else:
-            return list(pool['engine_ids'])
+            return list(pool['engine_names'])
     query_pool_members = Callable(query_pool_members)
 
