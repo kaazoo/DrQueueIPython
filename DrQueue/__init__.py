@@ -157,3 +157,26 @@ def engine_has_mincores(mincores):
         return False
 
 
+def send_email(job_name, recipients):
+    """Notify recipients about finish of job."""
+    # Import smtplib for the actual sending function
+    import smtplib
+    # Import the email modules we'll need
+    from email.mime.text import MIMEText
+    # text to send
+    body_text = "Your render job \"%s\" is finished." % job_name
+    # Create a text/plain message
+    msg = MIMEText(body_text)
+    # subject, sender and recipient
+    msg['Subject'] = "Job \"%s\" is finished" % job_name
+    msg['From'] = "root@renderfarm"
+    msg['To'] = recipients
+    # Send the message via our own SMTP server, but don't include the
+    # envelope header.
+    s = smtplib.SMTP(os.getenv('DRQUEUE_MASTER'))
+    s.sendmail(msg['From'], msg['To'], msg.as_string())
+    s.quit()
+
+
+
+

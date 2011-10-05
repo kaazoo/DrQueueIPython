@@ -83,6 +83,7 @@ class Client():
                 return False
 
         task_frames = range(job['startframe'], job['endframe'] + 1, job['blocksize'])
+        ar = None
         for x in task_frames:
             # prepare script input
             env_dict = {
@@ -198,6 +199,14 @@ class Client():
             ar = self.lbview.apply(run_script_with_env_and_deps, render_script, env_dict)
             # wait for pyzmq send to complete communication (avoid race condition)
             ar.wait_for_send()
+
+        # append email task behind last task if requested
+        if ('send_email' in job) and (job['send_email'] == True):
+            self.lbview.after = ar
+            # run email task
+            mail_ar = self.lbview.apply(DrQueue.send_email, job['name'], job['email_recipients'])
+            # wait for pyzmq send to complete communication (avoid race condition)
+            mail_ar.wait_for_send()
         return True
 
 

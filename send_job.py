@@ -47,6 +47,10 @@ def main():
                       dest="minram", default=0, help="Minimal RAM in GB.")
     parser.add_option("--mincores",
                       dest="mincores", default=0, help="Minimal CPU cores.")
+    parser.add_option("--send-email",
+                      action="store_true", dest="send_email", default=False, help="Send notification email when job is finished.")
+    parser.add_option("--email-recipients",
+                      dest="email_recipients", default=None, help="Recipients for notification email.")
     parser.add_option("-w", "--wait",
                       action="store_true", dest="wait", default=False, help="wait for job to finish")
     parser.add_option("-v", "--verbose",
@@ -63,8 +67,12 @@ def main():
     limits['minram'] = int(options.minram)
     limits['mincores'] = int(options.mincores)
 
+    options_var = eval(options.options)
+    options_var['send_email'] = options.send_email
+    options_var['email_recipients'] = options.email_recipients
+
     # initialize DrQueue job
-    job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, options.retries, options.owner, eval(options.options), limits)
+    job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, options.retries, options.owner, options_var, limits)
 
     # run job with client
     try:
