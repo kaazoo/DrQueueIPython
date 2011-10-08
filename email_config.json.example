@@ -1,0 +1,10 @@
+{
+    "from": "drqueue@renderfarm",
+    "smtp_server": "server",
+    "smtp_port": "25",
+    "smtp_auth": "1",
+    "smtp_user": "user",
+    "smtp_passwd": "password",
+    "smtp_tls": "1",
+    "smtp_ssl": "0"
+}
