@@ -13,6 +13,9 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 import platform
 import os
 import sys
+import smtplib
+import json
+from email.mime.text import MIMEText
 from client import Client
 from job import Job
 from computer import Computer
@@ -159,23 +162,43 @@ def engine_has_mincores(mincores):
 
 def send_email(job_name, recipients):
     """Notify recipients about finish of job."""
-    # Import smtplib for the actual sending function
-    import smtplib
-    # Import the email modules we'll need
-    from email.mime.text import MIMEText
-    # text to send
+    # load email configuration
+    user_dir = os.path.expanduser("~")
+    config_file = os.path.join(user_dir, ".drqueue", "email_config.json")
+    try:
+        fp = open(config_file, "rb")
+    except:
+        print("Email configuration could not be loaded.")
+    try:
+        config = json.load(fp)
+    except:
+        print("Email configuration could not be parsed.")
+    print(config)
+    mail_from = config['from']
     body_text = "Your render job \"%s\" is finished." % job_name
     # Create a text/plain message
     msg = MIMEText(body_text)
-    # subject, sender and recipient
+    # subject, sender and recipients
     msg['Subject'] = "Job \"%s\" is finished" % job_name
-    msg['From'] = "root@renderfarm"
+    msg['From'] = mail_from
     msg['To'] = recipients
-    # Send the message via our own SMTP server, but don't include the
-    # envelope header.
-    s = smtplib.SMTP(os.getenv('DRQUEUE_MASTER'))
-    s.sendmail(msg['From'], msg['To'], msg.as_string())
-    s.quit()
+    if config['smtp_ssl'] == "1":
+        # connect via SSL
+        smtp = smtplib.SMTP_SSL(config['smtp_server'], int(config['smtp_port']))
+    else:
+        # connect without SSL
+        smtp = smtplib.SMTP(config['smtp_server'], int(config['smtp_port']))
+        # start TLS encryption
+        if config['smtp_tls'] == "1":
+            smtp.starttls()
+    if config['smtp_auth'] == "1":
+        # authenticate if required
+        smtp.login(config['smtp_user'], config['smtp_passwd'])
+    try:
+        smtp.sendmail(msg['From'], msg['To'], msg.as_string())
+    except:
+        print("Email could not be sent.")
+    smtp.quit()
 
 
 
