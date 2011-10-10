@@ -109,13 +109,13 @@ def run_script_with_env(render_script, env_dict):
 
 def check_deps(dep_dict):
     """Run all dependency checking functions."""
-    if engine_has_os(dep_dict['os_name']) == False:
+    if ('os_name' in dep_dict) and (engine_has_os(dep_dict['os_name']) == False):
         return False
-    elif engine_has_minram(dep_dict['minram']) == False:
+    elif ('minram' in dep_dict) and (engine_has_minram(dep_dict['minram']) == False):
         return False
-    elif engine_has_mincores(dep_dict['mincores']) == False:
+    elif ('mincores' in dep_dict) and (engine_has_mincores(dep_dict['mincores']) == False):
         return False
-    elif engine_is_in_pool(dep_dict['pool_name']) == False:
+    elif ('pool_name' in dep_dict) and (engine_is_in_pool(dep_dict['pool_name']) == False):
         return False
     else:
         return True

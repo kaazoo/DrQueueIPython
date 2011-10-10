@@ -95,8 +95,8 @@ class Job(dict):
             jb['limits']['minram'] = limits['minram']
         if 'mincores' in limits:
             jb['limits']['mincores'] = limits['mincores']
-        if 'pool' in limits:
-            jb['limits']['pool'] = limits['pool']
+        if 'pool_name' in limits:
+            jb['limits']['pool_name'] = limits['pool_name']
 
         self.update(jb)
 
