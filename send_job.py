@@ -62,7 +62,7 @@ def main():
 
     # set limits
     limits = dict()
-    limits['pool'] = options.pool
+    limits['pool_name'] = options.pool
     limits['os'] = options.os
     limits['minram'] = int(options.minram)
     limits['mincores'] = int(options.mincores)

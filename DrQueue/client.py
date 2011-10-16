@@ -200,7 +200,6 @@ class Client():
                 dep_dict['mincores'] = job['limits']['mincores']
             if job['limits']['pool_name'] != None:
                 dep_dict['pool_name'] = job['limits']['pool_name']
-            print(dep_dict)
             run_script_with_env_and_deps = dependent(DrQueue.run_script_with_env, DrQueue.check_deps, dep_dict)
 
             # run task on cluster
