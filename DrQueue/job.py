@@ -9,7 +9,7 @@ This file is part of DrQueue.
 Licensed under GNU General Public License version 3. See LICENSE for details.
 """
 
-import os
+import os, time
 import getpass
 import DrQueue
 
@@ -21,7 +21,7 @@ class Callable:
 
 class Job(dict):
     """Subclass of dict for collecting Job attribute values."""
-    def __init__(self, name, startframe, endframe, blocksize, renderer, scenefile, retries=1, owner=getpass.getuser(), options={}, limits={}):
+    def __init__(self, name, startframe, endframe, blocksize, renderer, scenefile, retries=1, owner=getpass.getuser(), options={}, created_with=None, limits={}):
         dict.__init__(self)
         # mandatory elements
         jb = {'name' : name,
@@ -32,6 +32,8 @@ class Job(dict):
               'scenefile' : scenefile,
               'retries' : retries,
               'owner' : owner,
+              'submit_time' : time.time(),
+              'created_with' : created_with,
               'limits' : {}
              }
         if name == "":

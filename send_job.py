@@ -72,7 +72,7 @@ def main():
     options_var['email_recipients'] = options.email_recipients
 
     # initialize DrQueue job
-    job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, options.retries, options.owner, options_var, limits)
+    job = DrQueueJob(options.name, int(options.startframe), int(options.endframe), int(options.blocksize), options.renderer, options.scenefile, options.retries, options.owner, options_var, "send_job.py", limits)
 
     # run job with client
     try:
