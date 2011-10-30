@@ -192,13 +192,13 @@ class Client():
 
             # set dependencies
             dep_dict = {}
-            if job['limits']['os'] != None:
+            if ('os' in job['limits']) and (job['limits']['os'] != None):
                 dep_dict['os_name'] = job['limits']['os']
-            if job['limits']['minram'] > 0:
+            if ('minram' in job['limits']) and (job['limits']['minram'] > 0):
                 dep_dict['minram'] = job['limits']['minram']
-            if job['limits']['mincores'] > 0:
+            if ('mincores' in job['limits']) and (job['limits']['mincores'] > 0):
                 dep_dict['mincores'] = job['limits']['mincores']
-            if job['limits']['pool_name'] != None:
+            if ('pool_name' in job['limits']) and (job['limits']['pool_name'] != None):
                 dep_dict['pool_name'] = job['limits']['pool_name']
             run_script_with_env_and_deps = dependent(DrQueue.run_script_with_env, DrQueue.check_deps, dep_dict)
 
