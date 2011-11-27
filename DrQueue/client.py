@@ -12,6 +12,7 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 import os
 import os.path
 import time
+import pickle
 from IPython.parallel import Client as IPClient
 from IPython.parallel.util import unpack_apply_message
 from IPython.parallel import dependent
@@ -290,9 +291,16 @@ class Client():
         return left
 
 
+    def get_frame_nr(self, task):
+        """Extract value of DRQUEUE_FRAME."""
+        return int(pickle.loads(task['buffers'][3])['DRQUEUE_FRAME'])
+
+
     def query_task_list(self, job_id):
         """Query a list of tasks objects of certain job"""
-        return self.ip_client.db_query({'header.session' : str(job_id)})
+        task_list =  self.ip_client.db_query({'header.session' : str(job_id)})
+        sorted_task_list = sorted(task_list, key=self.get_frame_nr)
+        return sorted_task_list
 
 
     def query_task(self, task_id):
