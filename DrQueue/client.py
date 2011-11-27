@@ -13,6 +13,7 @@ import os
 import os.path
 import time
 import pickle
+import datetime
 from IPython.parallel import Client as IPClient
 from IPython.parallel.util import unpack_apply_message
 from IPython.parallel import dependent
@@ -484,6 +485,9 @@ class Client():
         # rerun tasks
         for task in tasks:
             self.task_requeue(task['msg_id'])
+        # set resubmit time
+        job['requeue_time'] = datetime.datetime.now()
+        DrQueueJob.update_db(job)
         return True
 
 
@@ -531,6 +535,45 @@ class Client():
         if status_error > 0:
             status = "error"
         return status
+
+
+    def job_estimated_finish_time(self, job_id):
+        """Calculate estimated finish time of job."""
+        tasks = self.query_task_list(job_id)
+        spent_times = []
+        # get spent time for each finished task
+        for task in tasks:
+            if task['completed'] != None:
+                if 'result_header' in task.keys():
+                    result_header = task['result_header']
+                    if ('status' in result_header.keys()) and (result_header['status'] == "ok"):
+                        timediff = task['completed'] - task['started']
+                        spent_times.append(timediff)
+        if len(spent_times) > 0:
+            # calculate sum of spent time
+            sum_times = datetime.timedelta(0)
+            for spent in spent_times:
+                sum_times += spent
+            # calcutate mean time for a single task
+            meantime = sum_times / len(spent_times)
+            # calculate estimated time left
+            tasks_left = len(tasks) - len(spent_times)
+            time_left = tasks_left * meantime
+            # calculate estimated finish time
+            job = self.query_job(job_id)
+            # use requeue time if available
+            if ('requeue_time' in job ) and (job['requeue_time'] != False):
+                finish_time = job['requeue_time'] + time_left
+            else:
+                finish_time = job['submit_time'] + time_left
+        else:
+            meantime = "unknown"
+            time_left = "unknown"
+            finish_time = "unknown"
+        print("meatime: " + str(meantime))
+        print("time_left: " + str(time_left))
+        print("finish_time: " + str(finish_time))
+        return meantime, time_left, finish_time
 
 
     def engine_stop(self, engine_id):

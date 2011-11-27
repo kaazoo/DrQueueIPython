@@ -9,7 +9,7 @@ This file is part of DrQueue.
 Licensed under GNU General Public License version 3. See LICENSE for details.
 """
 
-import os, time
+import os, datetime
 import getpass
 import DrQueue
 
@@ -32,7 +32,8 @@ class Job(dict):
               'scenefile' : scenefile,
               'retries' : retries,
               'owner' : owner,
-              'submit_time' : time.time(),
+              'submit_time' : datetime.datetime.now(),
+              'requeue_time' : False,
               'created_with' : created_with,
               'limits' : {}
              }
@@ -113,6 +114,18 @@ class Job(dict):
         job['_id'] = str(job['_id'])
         return job_id
     store_db = Callable(store_db)
+
+
+    def update_db(job):
+        import pymongo
+        """update job information in MongoDB"""
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        db = connection['ipythondb']
+        jobs = db['drqueue_jobs']
+        job_id = jobs.save(job)
+        job['_id'] = str(job['_id'])
+        return job_id
+    update_db = Callable(update_db)
 
 
     def query_db(job_id):
