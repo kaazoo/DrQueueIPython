@@ -18,12 +18,14 @@ def sigterm_handler(signum, frame):
 
     if not SIGTERM_SENT:
         SIGTERM_SENT = True
-        if MONGODB_PID > 0:
-            sys.stderr.write("Sending TERM to MongoDB.\n")
-            os.kill(MONGODB_PID, signal.SIGTERM)
         if IPCONTROLLER_PID > 0:
             sys.stderr.write("Sending TERM to IPython controller.\n")
             os.kill(IPCONTROLLER_PID, signal.SIGTERM)
+            os.waitpid(IPCONTROLLER_PID, 0)
+        if MONGODB_PID > 0:
+            sys.stderr.write("Sending TERM to MongoDB.\n")
+            os.kill(MONGODB_PID, signal.SIGTERM)
+            os.waitpid(MONGODB_PID, 0)
 
     sys.exit()
 
