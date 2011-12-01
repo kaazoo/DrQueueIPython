@@ -1,7 +1,7 @@
 import ez_setup
 ez_setup.use_setuptools()
 
-import os
+import os, glob
 from setuptools import setup
 
 def read(fname):
@@ -17,7 +17,7 @@ setup(
     keywords = "render renderfarm management drqueue",
     url = "http://packages.python.org/DrQueueIPython",
     packages = ['DrQueue'],
-    scripts = ['control_computer.py', 'control_job.py', 'list_computers.py', 'list_jobs.py', 'send_job.py'],
+    scripts = glob.glob(os.path.join('bin', '*.py')),
     install_requires = ['ipython>=0.11', 'pyzmq>=2.1.4'],
     long_description = read('README.md'),
     classifiers = [
