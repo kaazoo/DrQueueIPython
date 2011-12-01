@@ -1,4 +1,13 @@
+# -*- coding: utf-8 -*-
 
+"""
+DrQueue master startup script
+Copyright (C) 2011 Andreas Schroeder
+
+This file is part of DrQueue.
+
+Licensed under GNU General Public License version 3. See LICENSE for details.
+"""
 
 
 import os, signal, subprocess, sys, platform, time, socket
