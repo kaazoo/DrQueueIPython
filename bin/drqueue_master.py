@@ -12,7 +12,11 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 
 import os, signal, subprocess, sys, platform, time, socket
 
-MASTER_IP = socket.gethostbyname(socket.getfqdn())
+if os.environ["DRQUEUE_MASTER"] != None:
+    MASTER_IP = os.environ["DRQUEUE_MASTER"]
+else:
+    MASTER_IP = socket.gethostbyname(socket.getfqdn())
+
 SIGTERM_SENT = False
 MONGODB_PID = None
 IPCONTROLLER_PID = None
