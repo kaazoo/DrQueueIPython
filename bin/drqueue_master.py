@@ -18,27 +18,43 @@ else:
     MASTER_IP = socket.gethostbyname(socket.getfqdn())
 
 SIGTERM_SENT = False
+SIGINT_SENT = False
 MONGODB_PID = None
 IPCONTROLLER_PID = None
 
 
-def sigterm_handler(signum, frame):
-    sys.stderr.write("SIGTERM handler. Shutting Down.\n")
+def sig_handler(signum, frame):
+    sig_name = tuple((v) for v, k in signal.__dict__.iteritems() if k == signum)[0]
+    sys.stderr.write("Received " + sig_name + ". Shutting Down.\n")
 
-    global SIGTERM_SENT
     global MONGODB_PID
     global IPCONTROLLER_PID
 
-    if not SIGTERM_SENT:
-        SIGTERM_SENT = True
-        if IPCONTROLLER_PID > 0:
-            sys.stderr.write("Sending TERM to IPython controller.\n")
-            os.kill(IPCONTROLLER_PID, signal.SIGTERM)
-            os.waitpid(IPCONTROLLER_PID, 0)
-        if MONGODB_PID > 0:
-            sys.stderr.write("Sending TERM to MongoDB.\n")
-            os.kill(MONGODB_PID, signal.SIGTERM)
-            os.waitpid(MONGODB_PID, 0)
+    if sig_name == "SIGINT":
+        global SIGINT_SENT
+        if not SIGINT_SENT:
+            SIGINT_SENT = True
+            if IPCONTROLLER_PID > 0:
+                sys.stderr.write("Sending INT to IPython controller.\n")
+                os.kill(IPCONTROLLER_PID, signal.SIGINT)
+                os.waitpid(IPCONTROLLER_PID, 0)
+            if MONGODB_PID > 0:
+                sys.stderr.write("Sending INT to MongoDB.\n")
+                os.kill(MONGODB_PID, signal.SIGINT)
+                os.waitpid(MONGODB_PID, 0)
+
+    if sig_name == "SIGTERM":
+        global SIGTERM_SENT
+        if not SIGTERM_SENT:
+            SIGTERM_SENT = True
+            if IPCONTROLLER_PID > 0:
+                sys.stderr.write("Sending TERM to IPython controller.\n")
+                os.kill(IPCONTROLLER_PID, signal.SIGTERM)
+                os.waitpid(IPCONTROLLER_PID, 0)
+            if MONGODB_PID > 0:
+                sys.stderr.write("Sending TERM to MongoDB.\n")
+                os.kill(MONGODB_PID, signal.SIGTERM)
+                os.waitpid(MONGODB_PID, 0)
 
     sys.exit()
 
@@ -55,11 +71,12 @@ def run_command(command, logfile):
 
 
 def main():
-    signal.signal(signal.SIGTERM, sigterm_handler)
-    signal.signal(signal.SIGINT, sigterm_handler)
+    signal.signal(signal.SIGTERM, sig_handler)
+    signal.signal(signal.SIGINT, sig_handler)
 
     global MASTER_IP
-    print("Running DrQueue master on " + MASTER_IP)
+    pid = os.getpid()
+    print("Running DrQueue master on " + MASTER_IP + " with PID " + str(pid) + ".")
 
     if os.environ["DRQUEUE_ROOT"] == None:
         sys.stderr.write("DRQUEUE_ROOT environment variable is not set!\n")
@@ -75,7 +92,7 @@ def main():
     mongodb_daemon = run_command(command, mongodb_logfile)
     global MONGODB_PID
     MONGODB_PID = mongodb_daemon.pid
-    print("MongoDB started with PID " + str(mongodb_daemon.pid) + ".")
+    print("MongoDB started with PID " + str(mongodb_daemon.pid) + ". Logging to mongodb.log.")
 
     # wait a short while
     time.sleep(5)
@@ -86,7 +103,7 @@ def main():
     ipcontroller_daemon = run_command(command, ipcontroller_logfile)
     global IPCONTROLLER_PID
     IPCONTROLLER_PID = ipcontroller_daemon.pid
-    print("IPython controller started with PID " + str(ipcontroller_daemon.pid) + ".")
+    print("IPython controller started with PID " + str(ipcontroller_daemon.pid) + ". Logging to ipcontroller.log.")
 
     # wait for any child to exit
     os.wait()
