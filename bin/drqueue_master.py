@@ -88,22 +88,24 @@ def main():
 
     # start MongoDB daemon
     command = "mongod --dbpath $IPYTHON_DIR/db"
-    mongodb_logfile = open("mongodb.log", "ab")
+    mongodb_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "mongodb.log")
+    mongodb_logfile = open(mongodb_logpath, "ab")
     mongodb_daemon = run_command(command, mongodb_logfile)
     global MONGODB_PID
     MONGODB_PID = mongodb_daemon.pid
-    print("MongoDB started with PID " + str(mongodb_daemon.pid) + ". Logging to mongodb.log.")
+    print("MongoDB started with PID " + str(mongodb_daemon.pid) + ". Logging to " + mongodb_logpath + ".")
 
     # wait a short while
     time.sleep(5)
 
     # start IPython controller
     command = "ipcontroller --url tcp://" + MASTER_IP + ":10101 --mongodb"
-    ipcontroller_logfile = open("ipcontroller.log", "ab")
+    ipcontroller_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipcontroller.log")
+    ipcontroller_logfile = open(ipcontroller_logpath, "ab")
     ipcontroller_daemon = run_command(command, ipcontroller_logfile)
     global IPCONTROLLER_PID
     IPCONTROLLER_PID = ipcontroller_daemon.pid
-    print("IPython controller started with PID " + str(ipcontroller_daemon.pid) + ". Logging to ipcontroller.log.")
+    print("IPython controller started with PID " + str(ipcontroller_daemon.pid) + ". Logging to " + ipcontroller_logpath + ".")
 
     # wait for any child to exit
     os.wait()

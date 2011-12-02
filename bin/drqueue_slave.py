@@ -84,11 +84,12 @@ def main():
 
     # start IPython engine
     command = "ipengine --url tcp://" + MASTER_IP + ":10101"
-    ipengine_logfile = open("ipengine.log", "ab")
+    ipengine_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipengine.log")
+    ipengine_logfile = open(ipengine_logpath, "ab")
     ipengine_daemon = run_command(command, ipengine_logfile)
     global IPENGINE_PID
     IPENGINE_PID = ipengine_daemon.pid
-    print("IPython engine started with PID " + str(ipengine_daemon.pid) + ". Logging to ipengine.log.")
+    print("IPython engine started with PID " + str(ipengine_daemon.pid) + ". Logging to " + ipengine_logpath + ".")
 
     # wait for any child to exit
     os.wait()
