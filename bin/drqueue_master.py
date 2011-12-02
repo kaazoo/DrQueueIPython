@@ -12,7 +12,7 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 
 import os, signal, subprocess, sys, platform, time, socket
 
-if os.environ["DRQUEUE_MASTER"] != None:
+if "DRQUEUE_MASTER" in os.environ:
     MASTER_IP = os.environ["DRQUEUE_MASTER"]
 else:
     MASTER_IP = socket.gethostbyname(socket.getfqdn())
@@ -78,11 +78,11 @@ def main():
     pid = os.getpid()
     print("Running DrQueue master on " + MASTER_IP + " with PID " + str(pid) + ".")
 
-    if os.environ["DRQUEUE_ROOT"] == None:
+    if "DRQUEUE_ROOT" not in os.environ:
         sys.stderr.write("DRQUEUE_ROOT environment variable is not set!\n")
         sys.exit(-1)
 
-    if os.environ["IPYTHON_DIR"] == None:
+    if "IPYTHON_DIR" not in os.environ:
         sys.stderr.write("IPYTHON_DIR environment variable is not set!\n")
         sys.exit(-1)
 
