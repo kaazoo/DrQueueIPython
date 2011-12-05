@@ -29,10 +29,14 @@ def main():
         print("\nJob \"%s\" (ID: %s):" % (job['name'], job['_id']))
         print("Overall status: " + client.job_status(job['_id']))
         print("Submit time: "+ str(job['submit_time']))
-        print("Requeue time: "+ str(job['requeue_time']))
+        if job['requeue_time'] != False:
+            print("Requeue time: "+ str(job['requeue_time']))
         print("Time per task: " + str(meantime))
-        print("Time left: " + str(time_left))
-        print("Estimated finish time: " + str(finish_time))
+        if client.query_job_tasks_left(job['_id']) > 0:
+            print("Time left: " + str(time_left))
+            print("Estimated finish time: " + str(finish_time))
+        else:
+            print("Finish time: " + str(finish_time))
         print("Task id                                 status    owner       completed at")
         
         for task in tasks:

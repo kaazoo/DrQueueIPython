@@ -292,6 +292,22 @@ class Client():
         return left
 
 
+    def query_job_finish_time(self, job_id):
+        """Query oldest finish time of all tasks."""
+        job = self.query_job(job_id)
+        # use requeue time as starting point if available
+        if ('requeue_time' in job ) and (job['requeue_time'] != False):
+            finish_time = job['requeue_time']
+        else:
+            finish_time = job['submit_time']
+        tasks = self.query_task_list(job_id)
+        for task in tasks:
+            # look if older finish time exists
+            if (task['completed'] != None) and (task['completed'] > finish_time):
+                finish_time = task['completed']
+        return finish_time
+
+
     def get_frame_nr(self, task):
         """Extract value of DRQUEUE_FRAME."""
         return int(pickle.loads(task['buffers'][3])['DRQUEUE_FRAME'])
@@ -559,20 +575,21 @@ class Client():
             # calculate estimated time left
             tasks_left = len(tasks) - len(spent_times)
             time_left = tasks_left * meantime
-            # calculate estimated finish time
+            # query job object
             job = self.query_job(job_id)
-            # use requeue time if available
-            if ('requeue_time' in job ) and (job['requeue_time'] != False):
-                finish_time = job['requeue_time'] + time_left
+            # look if all tasks are already done
+            if self.query_job_tasks_left(job_id) == 0:
+                finish_time = self.query_job_finish_time(job_id)
             else:
-                finish_time = job['submit_time'] + time_left
+                # calculate estimated finish time, use requeue time if available
+                if ('requeue_time' in job ) and (job['requeue_time'] != False):
+                    finish_time = job['requeue_time'] + time_left
+                else:
+                    finish_time = job['submit_time'] + time_left
         else:
             meantime = "unknown"
             time_left = "unknown"
             finish_time = "unknown"
-        print("meatime: " + str(meantime))
-        print("time_left: " + str(time_left))
-        print("finish_time: " + str(finish_time))
         return meantime, time_left, finish_time
 
 
