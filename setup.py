@@ -1,6 +1,3 @@
-import ez_setup
-ez_setup.use_setuptools()
-
 import os, glob, shutil, sys, pwd, grp
 from setuptools import setup
 from distutils.core import setup, Command
