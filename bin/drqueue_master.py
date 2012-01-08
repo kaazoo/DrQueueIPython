@@ -62,7 +62,8 @@ def sig_handler(signum, frame):
 def run_command(command, logfile):
     try:
         p = subprocess.Popen(command, shell=True, stdout=logfile, stderr=subprocess.STDOUT)
-    except OSError as (errno, strerror):
+    except OSError as e:
+        errno, strerror = e.args
         message = "OSError({0}) while executing renderer: {1}\n".format(errno, strerror)
         logfile.write(message)
         raise OSError(message)
