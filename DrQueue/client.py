@@ -443,14 +443,10 @@ class Client():
             # check if tasks is already running on an engine
             for key,status in stats.items():
                 if ('tasks' in status) and (task['msg_id'] in status['tasks']):
-                    print "found"
                     running_engines.append(key)
             self.ip_client.abort(task['msg_id'])
         # restart all engines which still run a task
         running_engines = set(running_engines)
-        print list(running_engines)
-        #for engine_id in running_engines:
-        #    self.ip_client(engine_id)
         return True
 
 
@@ -480,7 +476,7 @@ class Client():
     def task_requeue(self, task_id):
         """Requeue task"""
         self.ip_client.resubmit(task_id)
-        print "requeuing %s" % task_id
+        print("requeuing %s" % task_id)
         return True
 
 
