@@ -59,7 +59,8 @@ class Helper():
         """Run command in shell."""
         try:
             p = subprocess.Popen(command, shell=True, stdout=self.logfile, stderr=subprocess.STDOUT)
-        except OSError as (errno, strerror):
+        except OSError as e:
+            errno, strerror = e.args
             message = "OSError({0}) while executing renderer: {1}\n".format(errno, strerror)
             self.logfile.write(message)
             self.logfile.close()
