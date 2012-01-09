@@ -25,7 +25,7 @@ Requirements
 ------------
 
 * ZMQ >= 2.1.4 and pyzmq >= 2.1.4 from http://www.zeromq.org
-* IPython 0.12 from http://www.ipython.org
+* IPython >= 0.12 from http://www.ipython.org
 * MongoDB >= 1.8 and PyMongo >= 1.10 from http://www.mongodb.org
 * PyMongo3 is required when using Python 3.x
 
