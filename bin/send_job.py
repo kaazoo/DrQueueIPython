@@ -78,7 +78,7 @@ def main():
     try:
         client.job_run(job)
     except ValueError:
-        print "One of your the specified values produced an error:"
+        print("One of your the specified values produced an error:")
         raise
         exit(1)
 

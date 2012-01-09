@@ -55,9 +55,9 @@ def main():
                 print("%s   %s  %s  %i-%02i-%02i %02i:%02i:%02i" % (tmsg_id, string.ljust(status, 8), string.ljust(username, 10), cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
 
                 if result_header['status'] == 'error':
-                    print "  Error was: " + result_content['evalue']
+                    print("  Error was: " + result_content['evalue'])
             # for debugging:
-            #print task
+            #print(task)
     
 if __name__ == "__main__":
     main()
