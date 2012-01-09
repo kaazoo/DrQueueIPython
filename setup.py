@@ -109,7 +109,7 @@ setup(
     classifiers = [
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",
-        "License :: OSI Approved :: GPLv3 License",
+        "License :: OSI Approved :: GNU General Public License (GPL)",
     ],
     cmdclass = cmdclass
 )

@@ -25,8 +25,9 @@ Requirements
 ------------
 
 * ZMQ >= 2.1.4 and pyzmq >= 2.1.4 from http://www.zeromq.org
-* IPython 0.11 from http://www.ipython.org
+* IPython 0.12 from http://www.ipython.org
 * MongoDB >= 1.8 and PyMongo >= 1.10 from http://www.mongodb.org
+* PyMongo3 is required when using Python 3.x
 
 
 Installation
@@ -45,7 +46,7 @@ Support development
 License
 -------
 
-Copyright (C) 2011 Andreas Schroeder
+Copyright (C) 2011-2012 Andreas Schroeder
 
 Licensed under GNU General Public License version 3. See LICENSE for details.
 
