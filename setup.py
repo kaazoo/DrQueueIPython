@@ -95,7 +95,7 @@ cmdclass = {'create_drqueue_dirs': CreateDrQueueWorkDirs}
 
 setup(
     name = "DrQueueIPython",
-    version = "0.1.0",
+    version = "0.0.1",
     author = "Andreas Schroeder",
     author_email = "andreas@drqueue.org",
     description = ("This is a port of DrQueue to Python. IPython is used for network communication and task management."),
