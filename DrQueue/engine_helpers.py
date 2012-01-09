@@ -12,7 +12,7 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 import os, signal, subprocess, sys, platform
 from time import strftime,localtime
 import DrQueue
-from computer import Computer as DrQueueComputer
+from .computer import Computer as DrQueueComputer
 
 
 class Helper():

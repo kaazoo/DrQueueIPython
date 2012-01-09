@@ -13,7 +13,7 @@ import os
 import platform
 import sys
 import fileinput
-from computer_pool import ComputerPool
+from .computer_pool import ComputerPool
 
 
 class Callable:
@@ -100,9 +100,9 @@ class Computer(dict):
                 if 'MHz' in line:
                     speed = line.split(':')[1].strip() + " MHz"
         if osname in ["Windows", "Win32"]:
-            import _winreg
-            key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0")
-            speed, type = _winreg.QueryValueEx(key, "~MHz")
+            import winreg
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0")
+            speed, type = winreg.QueryValueEx(key, "~MHz")
             speed = str(speed) + " MHz"
         return speed
     get_procspeed = Callable(get_procspeed)

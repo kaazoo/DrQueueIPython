@@ -18,9 +18,9 @@ from IPython.parallel import Client as IPClient
 from IPython.parallel.util import unpack_apply_message
 from IPython.parallel import dependent
 import DrQueue
-from job import Job as DrQueueJob
-from computer import Computer as DrQueueComputer
-from computer_pool import ComputerPool as DrQueueComputerPool
+from .job import Job as DrQueueJob
+from .computer import Computer as DrQueueComputer
+from .computer_pool import ComputerPool as DrQueueComputerPool
 
 class Client():
     """DrQueue client actions"""
@@ -84,7 +84,7 @@ class Client():
                 raise ValueError("Invalid value for blocksize. Has to be equal 1 if endframe equals startframe.")
                 return False
 
-        task_frames = range(job['startframe'], job['endframe'] + 1, job['blocksize'])
+        task_frames = list(range(job['startframe'], job['endframe'] + 1, job['blocksize']))
         ar = None
         for x in task_frames:
             # prepare script input
@@ -441,7 +441,7 @@ class Client():
         for task in tasks:
             stats = self.ip_client.queue_status('all', True)
             # check if tasks is already running on an engine
-            for key,status in stats.items():
+            for key,status in list(stats.items()):
                 if ('tasks' in status) and (task['msg_id'] in status['tasks']):
                     running_engines.append(key)
             self.ip_client.abort(task['msg_id'])
@@ -518,19 +518,19 @@ class Client():
             if task['completed'] == None:
                 status_pending += 1
             else:
-                if 'result_header' in task.keys():
+                if 'result_header' in list(task.keys()):
                     result_header = task['result_header']
                     # look for done tasks
-                    if ('status' in result_header.keys()) and (result_header['status'] == "ok"):
+                    if ('status' in list(result_header.keys())) and (result_header['status'] == "ok"):
                         status_ok += 1
                     # look for aborted tasks
-                    elif ('status' in result_header.keys()) and (result_header['status'] == "aborted"):
+                    elif ('status' in list(result_header.keys())) and (result_header['status'] == "aborted"):
                         status_aborted += 1
                     # look for done tasks
-                    elif ('status' in result_header.keys()) and (result_header['status'] == "resubmitted"):
+                    elif ('status' in list(result_header.keys())) and (result_header['status'] == "resubmitted"):
                         status_resubmitted += 1
                     # look for tasks with error
-                    elif ('status' in result_header.keys()) and (result_header['status'] == "error"):
+                    elif ('status' in list(result_header.keys())) and (result_header['status'] == "error"):
                         status_error += 1
                     else:
                         status_unknown += 1
@@ -556,9 +556,9 @@ class Client():
         # get spent time for each finished task
         for task in tasks:
             if task['completed'] != None:
-                if 'result_header' in task.keys():
+                if 'result_header' in list(task.keys()):
                     result_header = task['result_header']
-                    if ('status' in result_header.keys()) and (result_header['status'] == "ok"):
+                    if ('status' in list(result_header.keys())) and (result_header['status'] == "ok"):
                         timediff = task['completed'] - task['started']
                         spent_times.append(timediff)
         if len(spent_times) > 0:
