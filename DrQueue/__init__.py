@@ -101,7 +101,9 @@ def run_script_with_env(render_script, env_dict):
     env_dict['DRQUEUE_LOGFILE'] = os.path.join(os.getenv('DRQUEUE_ROOT'), "logs", env_dict['DRQUEUE_LOGFILE'])
     # import specific render template
     sys.path.append(env_dict['DRQUEUE_ETC'])
-    exec("import " + render_script.replace('.py', '') + " as template")
+    impmod = render_script.replace('.py', '')
+    __import__(impmod)
+    template = sys.modules[impmod]
     # run template with env_dict
     status = template.run_renderer(env_dict)
     return status
