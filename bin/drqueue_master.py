@@ -24,13 +24,11 @@ IPCONTROLLER_PID = None
 
 
 def sig_handler(signum, frame):
-    sig_name = tuple((v) for v, k in signal.__dict__.iteritems() if k == signum)[0]
-    sys.stderr.write("Received " + sig_name + ". Shutting Down.\n")
-
     global MONGODB_PID
     global IPCONTROLLER_PID
 
-    if sig_name == "SIGINT":
+    if signum == signal.SIGINT:
+        sys.stderr.write("Received SIGINT. Shutting Down.\n")
         global SIGINT_SENT
         if not SIGINT_SENT:
             SIGINT_SENT = True
@@ -43,7 +41,8 @@ def sig_handler(signum, frame):
                 os.kill(MONGODB_PID, signal.SIGINT)
                 os.waitpid(MONGODB_PID, 0)
 
-    if sig_name == "SIGTERM":
+    if signum == signal.SIGTERM:
+        sys.stderr.write("Received SIGTERM. Shutting Down.\n")
         global SIGTERM_SENT
         if not SIGTERM_SENT:
             SIGTERM_SENT = True
