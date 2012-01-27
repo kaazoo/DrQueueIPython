@@ -234,7 +234,8 @@ class Client():
             # run command only on specific computer
             dview = self.ip_client[engine_id]
             dview.block = True
-            dview.execute("import DrQueue\nfrom DrQueue import Computer as DrQueueComputer\nengine = DrQueueComputer(" + str(engine_id) + ")")
+            command = "import DrQueue\nfrom DrQueue import Computer as DrQueueComputer\nengine = DrQueueComputer(" + str(engine_id) + ")"
+            dview.execute(command)
             engine = dview['engine']
             engine['date'] = int(time.time())
             DrQueueComputer.store_db(engine)
@@ -567,7 +568,9 @@ class Client():
             for spent in spent_times:
                 sum_times += spent
             # calcutate mean time for a single task
-            meantime = sum_times / len(spent_times)
+            sum_times_secs = sum_times.days * 86400 + sum_times.seconds
+            meantime_secs = sum_times_secs / len(spent_times)
+            meantime = datetime.timedelta(0, meantime_secs)
             # calculate estimated time left
             tasks_left = len(tasks) - len(spent_times)
             time_left = tasks_left * meantime
