@@ -14,23 +14,18 @@ import getpass
 import DrQueue
 
 
-class Callable:
-    def __init__(self, anycallable):
-        self.__call__ = anycallable
-
-
 class Job(dict):
     """Subclass of dict for collecting Job attribute values."""
     def __init__(self, name, startframe, endframe, blocksize, renderer, scenefile, retries=1, owner=getpass.getuser(), options={}, created_with=None, limits={}):
         dict.__init__(self)
         # mandatory elements
         jb = {'name' : name,
-              'startframe' : startframe,
-              'endframe' : endframe,
-              'blocksize' : blocksize,
+              'startframe' : int(startframe),
+              'endframe' : int(endframe),
+              'blocksize' : int(blocksize),
               'renderer' : renderer,
               'scenefile' : scenefile,
-              'retries' : retries,
+              'retries' : int(retries),
               'owner' : owner,
               'submit_time' : datetime.datetime.now(),
               'requeue_time' : False,
@@ -113,7 +108,6 @@ class Job(dict):
         job_id = jobs.insert(job)
         job['_id'] = str(job['_id'])
         return job_id
-    store_db = Callable(store_db)
 
 
     def update_db(job):
@@ -125,7 +119,6 @@ class Job(dict):
         job_id = jobs.save(job)
         job['_id'] = str(job['_id'])
         return job_id
-    update_db = Callable(update_db)
 
 
     def query_db(job_id):
@@ -137,7 +130,6 @@ class Job(dict):
         jobs = db['drqueue_jobs']
         job = jobs.find_one({"_id": bson.ObjectId(job_id)})
         return job
-    query_db = Callable(query_db)
 
 
     def delete_from_db(job_id):
@@ -148,7 +140,6 @@ class Job(dict):
         db = connection['ipythondb']
         jobs = db['drqueue_jobs']
         return jobs.remove({"_id": bson.ObjectId(job_id)})
-    delete_from_db = Callable(delete_from_db)
 
 
     def query_jobnames():
@@ -161,7 +152,6 @@ class Job(dict):
         for job in jobs.find():
             names.append(job['name'])
         return names
-    query_jobnames = Callable(query_jobnames)
 
 
     def query_job_by_name(job_name):
@@ -172,7 +162,6 @@ class Job(dict):
         jobs = db['drqueue_jobs']
         job = jobs.find_one({"name": job_name})
         return job
-    query_job_by_name = Callable(query_job_by_name)
 
 
     def query_job_list():
@@ -182,5 +171,4 @@ class Job(dict):
         db = connection['ipythondb']
         jobs = db['drqueue_jobs']
         return list(jobs.find())
-    query_job_list = Callable(query_job_list)
         
