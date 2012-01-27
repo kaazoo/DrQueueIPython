@@ -16,11 +16,6 @@ import fileinput
 from .computer_pool import ComputerPool
 
 
-class Callable:
-    def __init__(self, anycallable):
-        self.__call__ = anycallable
-
-
 class Computer(dict):
     """Subclass of dict for collecting Computer attribute values."""
     def __init__(self, engine_id):
@@ -40,15 +35,16 @@ class Computer(dict):
         }
         self.update(comp)
 
+
     def get_hostname():
         """get hostname of computer"""
         return platform.node()
-    get_hostname = Callable(get_hostname)
+
 
     def get_arch():
         """get hardware architecture of computer"""
         return platform.machine()
-    get_arch = Callable(get_arch)
+
 
     def get_os():
         """get operating system name of computer"""
@@ -62,7 +58,7 @@ class Computer(dict):
         if osname == "Linux":
             osver = platform.linux_distribution()[0] + " " + platform.linux_distribution()[1]
         return osname + " " + osver
-    get_os = Callable(get_os)
+
 
     def get_proctype():
         """get CPU type of computer"""
@@ -70,13 +66,13 @@ class Computer(dict):
         proctype = ""
         if osname == "Darwin":
             import subprocess
-            proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Processor Name\""], shell=True, stdout=subprocess.PIPE)
+            proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Processor Name\" | cut -d \":\" -f2"], shell=True, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
-            proctype = output.split(":")[1].split("\n")[0].lstrip()
+            proctype = output.lstrip()
         if osname == ["Linux", "Windows", "Win32"]:
             proctype = platform.processor()
         return proctype
-    get_proctype = Callable(get_proctype)
+
 
     def get_nbits():
         """get bitness of computer"""
@@ -84,7 +80,7 @@ class Computer(dict):
             return 64
         else:
             return 32
-    get_nbits = Callable(get_nbits)
+
 
     def get_procspeed():
         """get CPU speed of computer"""
@@ -92,9 +88,9 @@ class Computer(dict):
         speed = ""
         if osname == "Darwin":
             import subprocess
-            proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Processor Speed\""], shell=True, stdout=subprocess.PIPE)
+            proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Processor Speed\" | cut -d \":\" -f2"], shell=True, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
-            speed = output.split(":")[1].split("\n")[0].lstrip()
+            speed = output.lstrip()
         if osname == "Linux":
             for line in fileinput.input('/proc/cpuinfo'):
                 if 'MHz' in line:
@@ -105,7 +101,7 @@ class Computer(dict):
             speed, type = winreg.QueryValueEx(key, "~MHz")
             speed = str(speed) + " MHz"
         return speed
-    get_procspeed = Callable(get_procspeed)
+
 
     def get_ncpus():
         """get number of CPUs of computer"""
@@ -113,9 +109,9 @@ class Computer(dict):
         ncpus = 0
         if osname == "Darwin":
             import subprocess
-            proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Number Of Processors\""], shell=True, stdout=subprocess.PIPE)
+            proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Number Of Processors\" | cut -d \":\" -f2"], shell=True, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
-            ncpus = int(output.split(":")[1].split("\n")[0])
+            ncpus = int(output.lstrip())
         if osname == "Linux":
             phyids = []
             for line in fileinput.input('/proc/cpuinfo'):
@@ -126,7 +122,7 @@ class Computer(dict):
         if osname in ["Windows", "Win32"]:
             ncpus = int(os.environ['NUMBER_OF_PROCESSORS'])
         return ncpus
-    get_ncpus = Callable(get_ncpus)
+
 
     def get_ncorescpu():
         """get number of cores in CPU of computer"""
@@ -134,9 +130,9 @@ class Computer(dict):
         ncorescpu = 0
         if osname == "Darwin":
             import subprocess
-            proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Total Number Of Cores\""], shell=True, stdout=subprocess.PIPE)
+            proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Total Number Of Cores\" | cut -d \":\" -f2"], shell=True, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
-            total_cores = output.split(":")[1].split("\n")[0]
+            total_cores = int(output.lstrip())
             ncorescpu = int(total_cores) / Computer.get_ncpus()
         if osname == "Linux":
             phyids = [] 
@@ -148,7 +144,7 @@ class Computer(dict):
         if osname in ["Windows", "Win32"]:
             ncorescpu = 1
         return ncorescpu
-    get_ncorescpu = Callable(get_ncorescpu)
+
 
     def get_memory():
         """get amount of memory of computer in GB"""
@@ -156,9 +152,9 @@ class Computer(dict):
         memory = 0.0
         if osname == "Darwin":
             import subprocess
-            proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Memory\""], shell=True, stdout=subprocess.PIPE)
+            proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Memory\" | cut -d \":\" -f2 | cut -d \" \" -f2"], shell=True, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
-            memory = float(output.split(":")[1].split("\n")[0].lstrip().split(" ")[0])
+            memory = float(output)
         if osname == "Linux":
             for line in fileinput.input('/proc/meminfo'):
                 if 'MemTotal' in line:
@@ -186,7 +182,6 @@ class Computer(dict):
             mem = mem / 1000
             memory = float(mem)
         return memory
-    get_memory = Callable(get_memory)
 
 
     def get_load():
@@ -201,7 +196,6 @@ class Computer(dict):
             response = os.popen(cmd + ' 2>&1','r').read().strip().split("\r\n")
             load = response[1]
         return load
-    get_load = Callable(get_load)
 
 
     def get_pools(computer_name):
@@ -213,7 +207,6 @@ class Computer(dict):
                 if computer_name in pool['engine_names']:
                     engine_pools.append(pool['name'])
         return engine_pools
-    get_pools = Callable(get_pools)
 
 
     def set_pools(computer_name, pool_list):
@@ -255,7 +248,6 @@ class Computer(dict):
             # update information in db
             ComputerPool.update_db(pool)
         return True
-    set_pools = Callable(set_pools)
 
 
     def query_db(engine_id):
@@ -266,7 +258,6 @@ class Computer(dict):
         computers = db['drqueue_computers']
         computer = computers.find_one({"engine_id" : engine_id})
         return computer
-    query_db = Callable(query_db)
 
 
     def store_db(engine):
@@ -280,7 +271,6 @@ class Computer(dict):
         computer_id = computers.insert(engine)
         engine['_id'] = str(engine['_id'])
         return computer_id
-    store_db = Callable(store_db)
 
 
     def delete_from_db(engine_id):
@@ -292,7 +282,4 @@ class Computer(dict):
         computers = db['drqueue_computers']
         computers.remove({"engine_id" : engine_id})
         return True
-    delete_from_db = Callable(delete_from_db)
-
-
 
