@@ -2,7 +2,7 @@
 
 """
 DrQueue ComputerPool submodule
-Copyright (C) 2011 Andreas Schroeder
+Copyright (C) 2011,2012 Andreas Schroeder
 
 This file is part of DrQueue.
 
@@ -11,11 +11,6 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 
 import os
 import getpass
-
-
-class Callable:
-    def __init__(self, anycallable):
-        self.__call__ = anycallable
 
 
 class ComputerPool(dict):
@@ -35,6 +30,7 @@ class ComputerPool(dict):
         self.update(pool)
 
 
+    @staticmethod
     def store_db(pool):
         import pymongo
         """store pool information in MongoDB"""
@@ -44,9 +40,9 @@ class ComputerPool(dict):
         pool_id = pools.insert(pool)
         pool['_id'] = str(pool['_id'])
         return pool_id
-    store_db = Callable(store_db)
 
 
+    @staticmethod
     def update_db(pool):
         import pymongo
         """update pool information in MongoDB"""
@@ -56,9 +52,9 @@ class ComputerPool(dict):
         pool_id = pools.save(pool)
         pool['_id'] = str(pool['_id'])
         return pool_id
-    update_db = Callable(update_db)
 
 
+    @staticmethod
     def query_db(pool_id):
         import pymongo
         import bson
@@ -68,9 +64,9 @@ class ComputerPool(dict):
         pools = db['drqueue_pools']
         pool = pools.find_one({"_id": bson.ObjectId(pool_id)})
         return pool
-    query_db = Callable(query_db)
 
 
+    @staticmethod
     def delete_from_db(pool_id):
         import pymongo
         import bson
@@ -79,9 +75,9 @@ class ComputerPool(dict):
         db = connection['ipythondb']
         pools = db['drqueue_pools']
         return pools.remove({"_id": bson.ObjectId(pool_id)})
-    delete_from_db = Callable(delete_from_db)
 
 
+    @staticmethod
     def query_poolnames():
         import pymongo
         """query pool names from MongoDB"""
@@ -92,9 +88,9 @@ class ComputerPool(dict):
         for pool in pools.find():
             names.append(pool['name'])
         return names
-    query_poolnames = Callable(query_poolnames)
 
 
+    @staticmethod
     def query_pool_by_name(pool_name):
         import pymongo
         """query pool information from MongoDB by name"""
@@ -103,9 +99,9 @@ class ComputerPool(dict):
         pools = db['drqueue_pools']
         pool = pools.find_one({"name": pool_name})
         return pool
-    query_pool_by_name = Callable(query_pool_by_name)
 
 
+    @staticmethod
     def query_pool_list():
         import pymongo
         """query list of pools from MongoDB"""
@@ -116,9 +112,9 @@ class ComputerPool(dict):
         for pool in pools.find():
             pool_arr.append(pool)
         return pool_arr
-    query_pool_list = Callable(query_pool_list)
         
 
+    @staticmethod
     def query_pool_members(pool_name):
         import pymongo
         """query list of members of pool from MongoDB"""
@@ -130,5 +126,4 @@ class ComputerPool(dict):
             return None
         else:
             return list(pool['engine_names'])
-    query_pool_members = Callable(query_pool_members)
 

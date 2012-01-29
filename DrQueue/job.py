@@ -2,7 +2,7 @@
 
 """
 DrQueue Job submodule
-Copyright (C) 2011 Andreas Schroeder
+Copyright (C) 2011,2012 Andreas Schroeder
 
 This file is part of DrQueue.
 
@@ -99,6 +99,7 @@ class Job(dict):
         self.update(jb)
 
 
+    @staticmethod
     def store_db(job):
         import pymongo
         """store job information in MongoDB"""
@@ -110,6 +111,7 @@ class Job(dict):
         return job_id
 
 
+    @staticmethod
     def update_db(job):
         import pymongo
         """update job information in MongoDB"""
@@ -121,6 +123,7 @@ class Job(dict):
         return job_id
 
 
+    @staticmethod
     def query_db(job_id):
         import pymongo
         import bson
@@ -132,6 +135,7 @@ class Job(dict):
         return job
 
 
+    @staticmethod
     def delete_from_db(job_id):
         import pymongo
         import bson
@@ -142,6 +146,7 @@ class Job(dict):
         return jobs.remove({"_id": bson.ObjectId(job_id)})
 
 
+    @staticmethod
     def query_jobnames():
         import pymongo
         """query job names from MongoDB"""
@@ -154,6 +159,7 @@ class Job(dict):
         return names
 
 
+    @staticmethod
     def query_job_by_name(job_name):
         import pymongo
         """query job information from MongoDB by name"""
@@ -164,6 +170,7 @@ class Job(dict):
         return job
 
 
+    @staticmethod
     def query_job_list():
         import pymongo
         """query list of jobs from MongoDB"""

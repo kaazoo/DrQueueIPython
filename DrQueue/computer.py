@@ -2,7 +2,7 @@
 
 """
 DrQueue Computer submodule
-Copyright (C) 2011 Andreas Schroeder
+Copyright (C) 2011,2012 Andreas Schroeder
 
 This file is part of DrQueue.
 
@@ -36,16 +36,19 @@ class Computer(dict):
         self.update(comp)
 
 
+    @staticmethod
     def get_hostname():
         """get hostname of computer"""
         return platform.node()
 
 
+    @staticmethod
     def get_arch():
         """get hardware architecture of computer"""
         return platform.machine()
 
 
+    @staticmethod
     def get_os():
         """get operating system name of computer"""
         osname = platform.system()
@@ -60,6 +63,7 @@ class Computer(dict):
         return osname + " " + osver
 
 
+    @staticmethod
     def get_proctype():
         """get CPU type of computer"""
         osname = platform.system()
@@ -74,6 +78,7 @@ class Computer(dict):
         return proctype
 
 
+    @staticmethod
     def get_nbits():
         """get bitness of computer"""
         if sys.maxsize > 2**32:
@@ -82,6 +87,7 @@ class Computer(dict):
             return 32
 
 
+    @staticmethod
     def get_procspeed():
         """get CPU speed of computer"""
         osname = platform.system()
@@ -103,6 +109,7 @@ class Computer(dict):
         return speed
 
 
+    @staticmethod
     def get_ncpus():
         """get number of CPUs of computer"""
         osname = platform.system()
@@ -124,6 +131,7 @@ class Computer(dict):
         return ncpus
 
 
+    @staticmethod
     def get_ncorescpu():
         """get number of cores in CPU of computer"""
         osname = platform.system()
@@ -146,6 +154,7 @@ class Computer(dict):
         return ncorescpu
 
 
+    @staticmethod
     def get_memory():
         """get amount of memory of computer in GB"""
         osname = platform.system()
@@ -184,6 +193,7 @@ class Computer(dict):
         return memory
 
 
+    @staticmethod
     def get_load():
         """get load of computer"""
         osname = platform.system()
@@ -198,6 +208,7 @@ class Computer(dict):
         return load
 
 
+    @staticmethod
     def get_pools(computer_name):
         """list pools to which computer belongs"""
         engine_pools = []
@@ -209,6 +220,7 @@ class Computer(dict):
         return engine_pools
 
 
+    @staticmethod
     def set_pools(computer_name, pool_list):
         """add computer to list of pools"""
         if type(pool_list).__name__ != 'list':
@@ -250,6 +262,7 @@ class Computer(dict):
         return True
 
 
+    @staticmethod
     def query_db(engine_id):
         import pymongo
         """query computer information from MongoDB"""
@@ -260,6 +273,7 @@ class Computer(dict):
         return computer
 
 
+    @staticmethod
     def store_db(engine):
         import pymongo
         """store computer information in MongoDB"""
@@ -273,6 +287,7 @@ class Computer(dict):
         return computer_id
 
 
+    @staticmethod
     def delete_from_db(engine_id):
         import pymongo
         import bson
