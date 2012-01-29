@@ -23,6 +23,16 @@ MONGODB_PID = None
 IPCONTROLLER_PID = None
 
 
+def isOpen(ip,port):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.connect((ip, int(port)))
+        s.shutdown(2)
+        return True
+    except:
+        return False
+
+
 def sig_handler(signum, frame):
     global MONGODB_PID
     global IPCONTROLLER_PID
@@ -95,8 +105,12 @@ def main():
     MONGODB_PID = mongodb_daemon.pid
     print("MongoDB started with PID " + str(mongodb_daemon.pid) + ". Logging to " + mongodb_logpath + ".")
 
-    # wait a short while
-    time.sleep(5)
+    # wait until port 27017 of MongoDB is available
+    mongodb_available = False
+    while mongodb_available == False:
+        mongodb_available = isOpen("127.0.0.1", 27017)
+        time.sleep(2)
+        print("Waiting for MongoDB to start up . . . ")
 
     # start IPython controller
     command = "ipcontroller --url tcp://" + MASTER_IP + ":10101 --mongodb"
