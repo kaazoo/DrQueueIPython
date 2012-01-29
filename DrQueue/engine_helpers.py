@@ -36,13 +36,15 @@ class Helper():
     def openlog(self, file):
         """Open logfile and write header."""
         logfile = open(file, "ab")
-        logfile.write(bytes("Log started at " + strftime("%a, %d %b %Y %H:%M:%S", localtime()) + ".\n", "UTF-8"))
-        logfile.write(bytes("Running on " + DrQueueComputer.get_hostname() + " under " + DrQueueComputer.get_os() + ".\n\n", "UTF-8"))
+        msg = "Log started at " + strftime("%a, %d %b %Y %H:%M:%S", localtime()) + ".\n"
+        logfile.write(bytearray(msg.encode("UTF-8")))
+        msg = "Running on " + DrQueueComputer.get_hostname() + " under " + DrQueueComputer.get_os() + ".\n\n"
+        logfile.write(bytearray(msg.encode("UTF-8")))
         return logfile
 
     def log_write(self, message):
         """Write message to logfile."""
-        self.logfile.write(bytes(message, "UTF-8"))
+        self.logfile.write(bytearray(message.encode("UTF-8")))
         self.logfile.flush()
         return True
 
@@ -50,7 +52,7 @@ class Helper():
         """Check if scenefile is existing."""
         if os.path.isfile(scenefile) == False:
             message = "Scenefile was not found."
-            self.logfile.write(bytes(message, "UTF-8"))
+            self.logfile.write(bytearray(message.encode("UTF-8")))
             self.logfile.close()
             raise ValueError(message)
             return False
@@ -62,7 +64,7 @@ class Helper():
         except OSError as e:
             errno, strerror = e.args
             message = "OSError({0}) while executing renderer: {1}\n".format(errno, strerror)
-            self.logfile.write(bytes(message, "UTF-8"))
+            self.logfile.write(bytearray(message.encode("UTF-8")))
             self.logfile.close()
             raise OSError(message)
             return False
@@ -71,7 +73,8 @@ class Helper():
 
     def return_to_ipython(self, returncode):
         """Return exit status to IPython."""
-        self.logfile.write(bytes("Exiting with status " + str(returncode) + ".\n\n", "UTF-8"))
+        msg = "Exiting with status " + str(returncode) + ".\n\n"
+        self.logfile.write(bytearray(msg.encode("UTF-8")))
         self.logfile.close()
         if returncode > 0:
             return False
