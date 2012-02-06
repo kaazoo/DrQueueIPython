@@ -2,7 +2,7 @@
 
 """
 Control connected computers
-Copyright (C) 2011 Andreas Schroeder
+Copyright (C) 2011,2012 Andreas Schroeder
 
 This file is part of DrQueue.
 
@@ -12,10 +12,7 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 from optparse import OptionParser
 import os
 import DrQueue
-from DrQueue import Job as DrQueueJob
 from DrQueue import Client as DrQueueClient
-from DrQueue import Computer as DrQueueComputer
-from DrQueue import ComputerPool as DrQueueComputerPool
 
 
 def main():
@@ -59,7 +56,7 @@ def main():
     if options.pools:
         for computer in computers:
             comp = client.identify_computer(computer, cache_time)
-            DrQueueComputer.set_pools(comp['hostname'], options.pools.split(","))
+            client.computer_set_pools(comp, options.pools.split(","))
             print("Computer %i has been added to pools %s." % (computer, options.pools.split(",")))
         return True
     if options.info:
@@ -75,7 +72,7 @@ def main():
             print(" ncorescpu: " + str(comp['ncorescpu']))
             print(" memory: " + str(comp['memory']))
             print(" load: " + comp['load'])
-            print(" pools: " + str(DrQueueComputer.get_pools(comp['hostname'])) + "\n")
+            print(" pools: " + str(client.computer_get_pools(comp)) + "\n")
         return True
     if options.status:
         for computer in computers:

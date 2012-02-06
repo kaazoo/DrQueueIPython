@@ -2,7 +2,7 @@
 
 """
 DrQueue Client submodule
-Copyright (C) 2011 Andreas Schroeder
+Copyright (C) 2011,2012 Andreas Schroeder
 
 This file is part of DrQueue.
 
@@ -392,6 +392,17 @@ class Client():
             print("DEBUG: matching mincores: " + str(mincores))
             print(matching_mincores)
         return matching_mincores
+
+
+    def computer_get_pools(self, computer):
+        """Return all pool names where computer is member."""
+        pools = DrQueueComputer.get_pools(computer['hostname'])
+        return pools
+
+
+    def computer_set_pools(self, computer, pools):
+        """Set pool membership of computer."""
+        DrQueueComputer.set_pools(computer['hostname'], pools)
 
 
     def match_all_limits(self, os_list, minram_list, mincores_list, pool_list):
