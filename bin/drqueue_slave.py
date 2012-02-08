@@ -85,7 +85,7 @@ def main():
 
     # start IPython engine
     command = "ipengine --url tcp://" + MASTER_IP + ":10101"
-    ipengine_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipengine.log")
+    ipengine_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipengine_" + SLAVE_IP + ".log")
     ipengine_logfile = open(ipengine_logpath, "ab")
     ipengine_daemon = run_command(command, ipengine_logfile)
     global IPENGINE_PID
