@@ -267,7 +267,9 @@ class Computer(dict):
     @staticmethod
     def get_address():
         """Find out external IP address of computer."""
-        ex_ip = socket.gethostbyname_ex(socket.gethostname())[-1][0]
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect((os.environ["DRQUEUE_MASTER"], 1))
+        ex_ip = s.getsockname()[0]
         return ex_ip
 
 
