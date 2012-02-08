@@ -19,6 +19,7 @@ for comp_id in c.ip_client.ids:
     print("Engine " + str(comp_id) + ":")
     comp = c.identify_computer(comp_id, cache_time)
     print(" hostname: " + comp['hostname'])
+    print(" address: " + comp['address'])
     print(" arch: " + comp['arch'])
     print(" os: " + comp['os'])
     print(" proctype: " + str(comp['proctype']))

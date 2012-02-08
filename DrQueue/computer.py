@@ -13,6 +13,7 @@ import os
 import platform
 import sys
 import fileinput
+import socket
 from .computer_pool import ComputerPool
 
 
@@ -31,7 +32,8 @@ class Computer(dict):
               'ncpus' : Computer.get_ncpus(),
               'ncorescpu' : Computer.get_ncorescpu(),
               'memory' : Computer.get_memory(),
-              'load' : Computer.get_load()
+              'load' : Computer.get_load(),
+              'address' : Computer.get_address()
         }
         self.update(comp)
 
@@ -260,6 +262,13 @@ class Computer(dict):
             # update information in db
             ComputerPool.update_db(pool)
         return True
+
+
+    @staticmethod
+    def get_address():
+        """Find out external IP address of computer."""
+        ex_ip = socket.gethostbyname_ex(socket.gethostname())[-1][0]
+        return ex_ip
 
 
     @staticmethod
