@@ -311,7 +311,11 @@ class Client():
 
     def get_frame_nr(self, task):
         """Extract value of DRQUEUE_FRAME."""
-        return int(pickle.loads(task['buffers'][3])['DRQUEUE_FRAME'])
+        if 'buffers' in task:
+            frame_nr = int(pickle.loads(task['buffers'][3])['DRQUEUE_FRAME'])
+        else:
+            frame_nr = 1
+        return frame_nr
 
 
     def query_task_list(self, job_id):
