@@ -11,6 +11,9 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 
 
 import os, signal, subprocess, sys, platform, time, socket
+from collections import deque
+from DrQueue import Client as DrQueueClient
+
 
 if "DRQUEUE_SLAVE" in os.environ:
     SLAVE_IP = os.environ["DRQUEUE_SLAVE"]
@@ -53,7 +56,7 @@ def run_command(command, logfile):
         p = subprocess.Popen(command, shell=True, stdout=logfile, stderr=subprocess.STDOUT)
     except OSError as e:
         errno, strerror = e.args
-        message = "OSError({0}) while executing renderer: {1}\n".format(errno, strerror)
+        message = "OSError({0}) while executing command: {1}\n".format(errno, strerror)
         logfile.write(message)
         raise OSError(message)
         return False
@@ -63,6 +66,10 @@ def run_command(command, logfile):
 def main():
     signal.signal(signal.SIGTERM, sig_handler)
     signal.signal(signal.SIGINT, sig_handler)
+
+    # initialize DrQueue client
+    client = DrQueueClient()
+    cache_time = 60
 
     if "DRQUEUE_ROOT" not in os.environ:
         sys.stderr.write("DRQUEUE_ROOT environment variable is not set!\n")
@@ -92,8 +99,25 @@ def main():
     IPENGINE_PID = ipengine_daemon.pid
     print("IPython engine started with PID " + str(ipengine_daemon.pid) + ". Logging to " + ipengine_logpath + ".")
 
-    # wait for any child to exit
-    os.wait()
+    # set pool directly after startup
+    if "DRQUEUE_POOL" in os.environ:
+        # flush buffers
+        ipengine_logfile.flush()
+        os.fsync(ipengine_logfile.fileno())
+        time.sleep(1)
+        # get last line of logfile
+        line = deque(open(ipengine_logpath), 1)
+        # extract id
+        slave_id = int(str(line[0]).split(" ")[-1])
+        print("Registered with id " + str(slave_id) + ".")
+        time.sleep(6)
+        foo = client.ip_client.ids
+        comp = client.identify_computer(slave_id, cache_time)
+        client.computer_set_pools(comp, os.environ["DRQUEUE_POOL"].split(","))
+        print("Added engine %i to pools %s." % (slave_id, os.environ["DRQUEUE_POOL"].split(",")))
+
+    # wait for process to exit
+    os.waitpid(ipengine_daemon.pid, 0)
 
 
 if __name__== "__main__":

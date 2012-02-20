@@ -17,6 +17,7 @@ if "DRQUEUE_MASTER" in os.environ:
 else:
     MASTER_IP = socket.gethostbyname(socket.getfqdn())
 
+
 SIGTERM_SENT = False
 SIGINT_SENT = False
 MONGODB_PID = None
@@ -73,7 +74,7 @@ def run_command(command, logfile):
         p = subprocess.Popen(command, shell=True, stdout=logfile, stderr=subprocess.STDOUT)
     except OSError as e:
         errno, strerror = e.args
-        message = "OSError({0}) while executing renderer: {1}\n".format(errno, strerror)
+        message = "OSError({0}) while executing command: {1}\n".format(errno, strerror)
         logfile.write(message)
         raise OSError(message)
         return False
