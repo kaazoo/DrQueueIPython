@@ -87,14 +87,22 @@ class Client():
         task_frames = list(range(job['startframe'], job['endframe'] + 1, job['blocksize']))
         ar = None
         for x in task_frames:
+
             # prepare script input
             env_dict = {
             'DRQUEUE_FRAME' : x,
             'DRQUEUE_BLOCKSIZE' : job['blocksize'],
             'DRQUEUE_ENDFRAME' : job['endframe'],
-            'DRQUEUE_SCENEFILE' : job['scenefile'],
-            'DRQUEUE_LOGFILE' : job['name'] + "-" + str(x) + "_" + str(x + job['blocksize'] -1) + ".log"
+            'DRQUEUE_SCENEFILE' : job['scenefile']
             }
+
+            # log filename
+            if job['created_with'] == "DrQueueOnRails":
+                # take job directory name
+                env_dict['DRQUEUE_LOGFILE'] = job['scenefile'].split("/")[-2] + "-" + str(x) + "_" + str(x + job['blocksize'] -1) + ".log"
+            else:
+                # take job name
+                env_dict['DRQUEUE_LOGFILE'] = job['name'] + "-" + str(x) + "_" + str(x + job['blocksize'] -1) + ".log"
 
             # optional elements
             if 'renderdir' in job:
