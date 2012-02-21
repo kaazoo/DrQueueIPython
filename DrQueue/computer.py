@@ -306,6 +306,6 @@ class Computer(dict):
         connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
         db = connection['ipythondb']
         computers = db['drqueue_computers']
-        computers.remove({"engine_id" : engine_id})
-        return True
+        ret = computers.remove({"engine_id" : engine_id})
+        return ret
 

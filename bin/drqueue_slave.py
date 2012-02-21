@@ -99,22 +99,26 @@ def main():
     IPENGINE_PID = ipengine_daemon.pid
     print("IPython engine started with PID " + str(ipengine_daemon.pid) + ". Logging to " + ipengine_logpath + ".")
 
+    # flush buffers
+    ipengine_logfile.flush()
+    os.fsync(ipengine_logfile.fileno())
+    time.sleep(1)
+    # get last line of logfile
+    line = deque(open(ipengine_logpath), 1)
+    # extract id
+    slave_id = int(str(line[0]).split(" ")[-1])
+    print("Registered with id " + str(slave_id) + ".")
+    time.sleep(6)
+    foo = client.ip_client.ids
+    comp = client.identify_computer(slave_id, cache_time)
+
+    # remove pool membership if any
+    if client.computer_get_pools(comp) != []:
+        client.computer_delete(comp)
+
     # set pool directly after startup
     if "DRQUEUE_POOL" in os.environ:
-        # flush buffers
-        ipengine_logfile.flush()
-        os.fsync(ipengine_logfile.fileno())
-        time.sleep(1)
-        # get last line of logfile
-        line = deque(open(ipengine_logpath), 1)
-        # extract id
-        slave_id = int(str(line[0]).split(" ")[-1])
-        print("Registered with id " + str(slave_id) + ".")
-        time.sleep(6)
-        foo = client.ip_client.ids
-        comp = client.identify_computer(slave_id, cache_time)
         client.computer_set_pools(comp, os.environ["DRQUEUE_POOL"].split(","))
-        print("Added engine %i to pools %s." % (slave_id, os.environ["DRQUEUE_POOL"].split(",")))
 
     # wait for process to exit
     os.waitpid(ipengine_daemon.pid, 0)

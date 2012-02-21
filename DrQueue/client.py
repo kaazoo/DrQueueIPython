@@ -414,7 +414,17 @@ class Client():
 
     def computer_set_pools(self, computer, pools):
         """Set pool membership of computer."""
-        DrQueueComputer.set_pools(computer['hostname'], pools)
+        ret = DrQueueComputer.set_pools(computer['hostname'], pools)
+        return ret
+
+
+    def computer_delete(self, computer):
+        """Delete computer information and its pool membership from DB."""
+        # remove computer from all pools
+        self.computer_set_pools(computer, [])
+        # delete computer information from db
+        ret = DrQueueComputer.delete_from_db(computer['engine_id'])
+        return ret
 
 
     def match_all_limits(self, os_list, minram_list, mincores_list, pool_list):
