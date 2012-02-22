@@ -10,7 +10,7 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 """
 
 
-import os, signal, subprocess, sys, platform, time, socket
+import os, signal, subprocess, sys, platform, time, socket, datetime
 from collections import deque
 from DrQueue import Client as DrQueueClient
 
@@ -39,6 +39,7 @@ SIGINT_SENT = False
 IPENGINE_PID = None
 IPENGINE_LOGPATH = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipengine_" + SLAVE_IP + ".log")
 IPENGINE_LOGFILE = open(IPENGINE_LOGPATH, "ab")
+IPCONTROLLER_LOGPATH = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipcontroller.log")
 IPENGINE_ID = None
 CACHE_TIME = 86400
 
@@ -54,8 +55,11 @@ def sig_handler(signum, frame):
     global CACHE_TIME
     global CLIENT
 
-    # query information about computer
-    comp = CLIENT.identify_computer(IPENGINE_ID, CACHE_TIME)
+    try:
+        # query information about computer
+        comp = CLIENT.identify_computer(IPENGINE_ID, CACHE_TIME)
+    except:
+        kill_and_exit()
 
     # remove computer information and its pool membership if any
     if CLIENT.computer_get_pools(comp) != []:
@@ -108,10 +112,50 @@ def extract_engine_id():
     os.fsync(IPENGINE_LOGFILE.fileno())
     time.sleep(1)
     # get last line of logfile
-    line = deque(open(IPENGINE_LOGPATH), 1)
+    lines = deque(open(IPENGINE_LOGPATH), 1)
     # extract id
-    slave_id = int(str(line[0]).split(" ")[-1])
-    return slave_id
+    elements = str(lines[0]).split(" ")
+    slave_id = int(elements[-1])
+    timestamp = elements[0] + " " + elements[1]
+    return slave_id, timestamp
+
+
+def verify_engine_registration():
+    global IPCONTROLLER_LOGPATH
+    global IPENGINE_ID
+
+    # while time_spent < timeout
+    ## take last 10 lines of controller log in reverse order
+    ### search each line for "engine::Engine Connected: X"
+
+    # search string
+    search_for = "engine::Engine Connected: " + str(IPENGINE_ID)
+    found = False
+    timestamp = None
+    max = 30
+    i = 0
+    # search for a maximum of 30 seconds / until string is found
+    while (i < max) and (found == False):
+        # get last 10 lines of logfile
+        lines = deque(open(IPCONTROLLER_LOGPATH), 10)
+        lines.reverse()
+        for line in lines:
+            # search for registered id
+            if search_for in str(line):
+                found = True
+                elements = str(line).split(" ")
+                # extract timestamp from matching line
+                timestamp = elements[0] + " " + elements[1]
+                break
+        time.sleep(1)
+        i += 1
+    return found, timestamp
+
+
+def kill_and_exit():
+    print("DEBUG: Engine didn't finish registration. Killing process.")
+    os.kill(IPENGINE_PID, signal.SIGINT)
+    sys.exit(-1)
 
 
 def main():
@@ -138,12 +182,30 @@ def main():
     print("IPython engine started with PID " + str(IPENGINE_PID) + ". Logging to " + IPENGINE_LOGPATH + ".")
 
     # get engine id
-    IPENGINE_ID = extract_engine_id()
-    print("Registered with id " + str(IPENGINE_ID) + ".")
-    time.sleep(6)
+    IPENGINE_ID, timestamp_reg = extract_engine_id()
+    print("DEBUG: Registered with id " + str(IPENGINE_ID) + " at " + timestamp_reg + ".")
 
-    # query information about computer
-    comp = CLIENT.identify_computer(IPENGINE_ID, CACHE_TIME)
+    # check ipcontroller log to see if registration finished
+    ret, timestamp_ver = verify_engine_registration()
+    if ret == False:
+        kill_and_exit()
+    else:
+        print("DEBUG: Engine registration verified at " + timestamp_ver + ".")
+        # parse timestamp & ignore miliseconds
+        treg = datetime.datetime.strptime(timestamp_reg.split(".")[0], "%Y-%m-%d %H:%M:%S")
+        tver = datetime.datetime.strptime(timestamp_ver.split(".")[0], "%Y-%m-%d %H:%M:%S")
+        tdiff = tver - treg
+        print("DEBUG: Registration had a delay of " + str(tdiff.seconds) + " seconds.")
+        #time.sleep(tdiff.seconds)
+
+    # query known engines
+    known = CLIENT.ip_client.ids
+    print("DEBUG: Known engines = " + str(known))
+    try:
+        # query information about computer
+        comp = CLIENT.identify_computer(IPENGINE_ID, CACHE_TIME)
+    except:
+        kill_and_exit()
 
     # remove computer information and its pool membership if any
     if CLIENT.computer_get_pools(comp) != []:
@@ -154,7 +216,7 @@ def main():
         CLIENT.computer_set_pools(comp, os.environ["DRQUEUE_POOL"].split(","))
 
     # wait for process to exit
-    os.waitpid(ipengine_daemon.pid, 0)
+    os.waitpid(IPENGINE_PID, 0)
 
 
 if __name__== "__main__":
