@@ -40,7 +40,7 @@ IPENGINE_PID = None
 IPENGINE_LOGPATH = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipengine_" + SLAVE_IP + ".log")
 IPENGINE_LOGFILE = open(IPENGINE_LOGPATH, "ab")
 IPENGINE_ID = None
-CACHE_TIME = 60
+CACHE_TIME = 86400
 
 # initialize DrQueue client
 CLIENT = DrQueueClient()
