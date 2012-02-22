@@ -127,7 +127,11 @@ class Computer(dict):
                 if 'physical id' in line:
                     phyids.append(line)
             uniq = set(phyids)
-            ncpus = len(uniq)
+            # TODO: fix this for virtual machines
+            if len(uniq) == 0:
+                ncpus = 1
+            else:
+                ncpus = len(uniq)
         if osname in ["Windows", "Win32"]:
             ncpus = int(os.environ['NUMBER_OF_PROCESSORS'])
         return ncpus
@@ -150,7 +154,11 @@ class Computer(dict):
                 if 'physical id' in line:
                     phyids.append(line)
             uniq = set(phyids)
-            ncorescpu = len(phyids) / len(uniq)
+            # TODO: fix this for virtual machines
+            if len(uniq) == 0:
+                ncorescpu = 1
+            else:
+                ncorescpu = len(phyids) / len(uniq)
         if osname in ["Windows", "Win32"]:
             ncorescpu = 1
         return ncorescpu
