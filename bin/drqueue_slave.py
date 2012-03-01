@@ -55,16 +55,6 @@ def sig_handler(signum, frame):
     global CACHE_TIME
     global CLIENT
 
-    try:
-        # query information about computer
-        comp = CLIENT.identify_computer(IPENGINE_ID, CACHE_TIME)
-    except:
-        kill_and_exit()
-
-    # remove computer information and its pool membership if any
-    if CLIENT.computer_get_pools(comp) != []:
-        CLIENT.computer_delete(comp)
-
     # handle SIGINT
     if signum == signal.SIGINT:
         sys.stderr.write("Received SIGINT. Shutting Down.\n")
@@ -191,29 +181,19 @@ def main():
         kill_and_exit()
     else:
         print("DEBUG: Engine registration verified at " + timestamp_ver + ".")
-        # parse timestamp & ignore miliseconds
+        # parse timestamp & ignore milliseconds
         treg = datetime.datetime.strptime(timestamp_reg.split(".")[0], "%Y-%m-%d %H:%M:%S")
         tver = datetime.datetime.strptime(timestamp_ver.split(".")[0], "%Y-%m-%d %H:%M:%S")
         tdiff = tver - treg
         print("DEBUG: Registration had a delay of " + str(tdiff.seconds) + " seconds.")
-        #time.sleep(tdiff.seconds)
 
     # query known engines
     known = CLIENT.ip_client.ids
-    print("DEBUG: Known engines = " + str(known))
     try:
         # query information about computer
         comp = CLIENT.identify_computer(IPENGINE_ID, CACHE_TIME)
     except:
         kill_and_exit()
-
-    # remove computer information and its pool membership if any
-    if CLIENT.computer_get_pools(comp) != []:
-        CLIENT.computer_delete(comp)
-
-    # set pool directly after startup
-    if "DRQUEUE_POOL" in os.environ:
-        CLIENT.computer_set_pools(comp, os.environ["DRQUEUE_POOL"].split(","))
 
     # wait for process to exit
     os.waitpid(IPENGINE_PID, 0)

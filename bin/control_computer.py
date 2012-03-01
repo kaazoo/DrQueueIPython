@@ -72,7 +72,7 @@ def main():
             print(" ncorescpu: " + str(comp['ncorescpu']))
             print(" memory: " + str(comp['memory']))
             print(" load: " + comp['load'])
-            print(" pools: " + str(client.computer_get_pools(comp)) + "\n")
+            print(" pools: " + ','.join(comp['pools']) + "\n")
         return True
     if options.status:
         for computer in computers:

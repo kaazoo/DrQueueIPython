@@ -110,7 +110,7 @@ def run_script_with_env(render_script, env_dict):
 
 
 def check_deps(dep_dict):
-    """Run all dependency checking functions."""
+    """Run all dependency checking functions.  This method runs directly on the engine."""
     if ('os_name' in dep_dict) and (engine_has_os(dep_dict['os_name']) == False):
         return False
     elif ('minram' in dep_dict) and (engine_has_minram(dep_dict['minram']) == False):
@@ -124,17 +124,17 @@ def check_deps(dep_dict):
 
 
 def engine_is_in_pool(pool_name):
-    """Check if engine belongs to certain pool."""
-    computer_name = Computer.get_hostname()
-    computers = ComputerPool.query_pool_members(pool_name)
-    if computer_name in computers:
-        belongs = True
+    """Check if engine belongs to certain pool. This method runs directly on the engine."""
+
+    # check os.environ["DRQUEUE_POOL"]
+    if ("DRQUEUE_POOL" in os.environ) and (pool_name in os.environ["DRQUEUE_POOL"]):
+        return True
     else:
         return False
 
 
 def engine_has_os(os_name):
-    """Check if engine is running on certain OS."""
+    """Check if engine is running on certain OS. This method runs directly on the engine."""
     running_os = get_osname()
     if os_name == running_os:
         return True
@@ -143,7 +143,7 @@ def engine_has_os(os_name):
 
 
 def engine_has_minram(minram):
-    """Check if engine has at least minram GB RAM."""
+    """Check if engine has at least minram GB RAM. This method runs directly on the engine."""
     mem = Computer.get_memory()
     if mem >= minram:
         return True
@@ -152,7 +152,7 @@ def engine_has_minram(minram):
 
 
 def engine_has_mincores(mincores):
-    """Check if engine has at least mincores CPU cores."""
+    """Check if engine has at least mincores CPU cores. This method runs directly on the engine."""
     ncpus = Computer.get_ncpus()
     ncorescpu = Computer.get_ncorescpu()
     cores = ncpus * ncorescpu

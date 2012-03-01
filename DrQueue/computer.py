@@ -14,7 +14,6 @@ import platform
 import sys
 import fileinput
 import socket
-from .computer_pool import ComputerPool
 
 
 class Computer(dict):
@@ -33,7 +32,8 @@ class Computer(dict):
               'ncorescpu' : Computer.get_ncorescpu(),
               'memory' : Computer.get_memory(),
               'load' : Computer.get_load(),
-              'address' : Computer.get_address()
+              'address' : Computer.get_address(),
+              'pools' : Computer.get_pools()
         }
         self.update(comp)
 
@@ -219,57 +219,13 @@ class Computer(dict):
 
 
     @staticmethod
-    def get_pools(computer_name):
+    def get_pools():
         """list pools to which computer belongs"""
-        engine_pools = []
-        pools = ComputerPool.query_pool_list()
-        for pool in pools:
-            if ('engine_names' in pool) and (type(pool['engine_names']).__name__ == 'list'):
-                if computer_name in pool['engine_names']:
-                    engine_pools.append(pool['name'])
+        if "DRQUEUE_POOL" in os.environ:
+            engine_pools = os.environ["DRQUEUE_POOL"].split(",")
+        else:
+            engine_pools = []
         return engine_pools
-
-
-    @staticmethod
-    def set_pools(computer_name, pool_list):
-        """add computer to list of pools"""
-        if type(pool_list).__name__ != 'list':
-            raise ValueError("argument is not of type list")
-            return False
-        # prepare list of pools of which computer should be taken out
-        old_pools = Computer.get_pools(computer_name)
-        old_pools_to_delete = old_pools
-        for pool_name in pool_list:
-            # remove name from list
-            if pool_name in old_pools_to_delete:
-                old_pools_to_delete.remove(pool_name)
-            # look if pool is already existing
-            pool = ComputerPool.query_pool_by_name(pool_name)
-            # create new pool if not existing
-            if pool == None:
-                pool = ComputerPool(pool_name, [computer_name])
-                # store information in db
-                ComputerPool.store_db(pool)
-            # pool is already existing
-            else:
-                # look if computer is already in pool
-                if computer_name in pool['engine_names']:
-                    print("Computer \"%s\" is already in pool \"%s\"" % (computer_name, pool_name))
-                else:
-                    # add computer to pool
-                    print("Computer \"%s\" added to pool \"%s\"" % (computer_name, pool_name))
-                    pool['engine_names'].append(computer_name)
-                # update information in db
-                ComputerPool.update_db(pool)
-        # work on list of old pools
-        for pool_name in old_pools_to_delete:
-            pool = ComputerPool.query_pool_by_name(pool_name)
-            if pool != None:
-                print("Computer \"%s\" removed from pool \"%s\"" % (computer_name, pool_name))
-                pool['engine_names'].remove(computer_name)
-            # update information in db
-            ComputerPool.update_db(pool)
-        return True
 
 
     @staticmethod

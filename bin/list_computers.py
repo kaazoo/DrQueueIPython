@@ -29,6 +29,7 @@ for comp_id in c.ip_client.ids:
     print(" ncorescpu: " + str(comp['ncorescpu']))
     print(" memory: " + str(comp['memory']) + " GB")
     print(" load: " + comp['load'])
+    print(" pools: " + ','.join(comp['pools']))
     status = c.ip_client.queue_status(comp_id, verbose=True)
     print(" status:")
     print("  in queue: " + str(status['queue']))

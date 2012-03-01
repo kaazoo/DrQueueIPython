@@ -20,7 +20,7 @@ from IPython.parallel import dependent
 import DrQueue
 from .job import Job as DrQueueJob
 from .computer import Computer as DrQueueComputer
-from .computer_pool import ComputerPool as DrQueueComputerPool
+
 
 class Client():
     """DrQueue client actions"""
@@ -250,6 +250,27 @@ class Client():
         return engine
 
 
+    def computer_set_pools(self, computer, pool_list):
+        """add computer to list of pools"""
+        # convert to string
+        pool_str = ','.join(pool_list)
+        # update environment variable on engine
+        dview = self.ip_client[computer['engine_id']]
+        dview.block = True
+        command = "import os\nos.environ[\"DRQUEUE_POOL\"] = \"" + pool_str + "\""
+        dview.execute(command)
+        computer['pools'] = pool_list
+        # update database
+        DrQueueComputer.store_db(computer)
+        print("DEBUG: Engine " + str(computer['engine_id']) + " added to pools " + pool_str + ".")
+        return computer
+
+
+    def computer_get_pools(self, computer):
+        """Return all pool names where computer is member."""
+        return computer['pools']
+
+
     def task_wait(self, task_id):
         """Wait for task to finish"""
         ar = self.ip_client.get_result(task_id)
@@ -404,18 +425,6 @@ class Client():
             print("DEBUG: matching mincores: " + str(mincores))
             print(matching_mincores)
         return matching_mincores
-
-
-    def computer_get_pools(self, computer):
-        """Return all pool names where computer is member."""
-        pools = DrQueueComputer.get_pools(computer['hostname'])
-        return pools
-
-
-    def computer_set_pools(self, computer, pools):
-        """Set pool membership of computer."""
-        ret = DrQueueComputer.set_pools(computer['hostname'], pools)
-        return ret
 
 
     def computer_delete(self, computer):
