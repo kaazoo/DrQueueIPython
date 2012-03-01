@@ -19,7 +19,6 @@ from email.mime.text import MIMEText
 from .client import Client
 from .job import Job
 from .computer import Computer
-from .computer_pool import ComputerPool
 
 
 supported_renderers = ['3delight', '3dsmax', 'aftereffects', 'aqsis', 'blender', 'cinema4d', 'general', 'lightwave', 'luxrender', 'mantra', 'maya', 'mentalray', 'nuke', 'shake', 'terragen', 'turtle', 'vray', 'xsi']

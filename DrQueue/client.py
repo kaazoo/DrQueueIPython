@@ -365,68 +365,6 @@ class Client():
         return self.ip_client.ids
 
 
-    def query_engines_of_pool(self, pool_name):
-        """Return available engines of certain pool."""
-        pool_computers = self.ip_client.ids
-        if pool_name != None:
-            computers = DrQueueComputerPool.query_pool_members(pool_name)
-            if computers == None:
-                raise ValueError("Pool \"%s\" is not existing!" % pool_name)
-                return False
-            for comp in pool_computers:
-                if not comp in computers:
-                    pool_computers.remove(comp)
-            if pool_computers == []:
-                raise ValueError("No computer of pool %s is available!" % pool_name)
-                return False
-            print("DEBUG: matching pool: " + pool_name)
-            print(pool_computers)
-        return pool_computers
-
-
-    def query_engines_of_os(self, os_name):
-        """Return only engines running certain OS."""
-        # run job only on matching os
-        matching_os = self.ip_client.ids
-        if os_name != None:
-            for engine_id in self.ip_client.ids:
-                engine = self.identify_computer(engine_id, 1000)
-                # os string has to contain os_name
-                if not os_name in engine['os']:
-                    matching_os.remove(engine_id)
-            print("DEBUG: matching os: " + os_name)
-            print(matching_os)
-        return matching_os
-
-
-    def query_engines_with_minram(self, minram):
-        """Return only engines with at least minram GB RAM."""
-        # run job only on matching minram
-        matching_minram = self.ip_client.ids
-        if minram > 0:
-            for engine_id in self.ip_client.ids:
-                engine = self.identify_computer(engine_id, 1000)
-                if engine['memory'] < minram:
-                    matching_minram.remove(engine_id)
-            print("DEBUG: matching minram: " + str(minram))
-            print(matching_minram)
-        return matching_minram
-
-
-    def query_engines_with_mincores(self, mincores):
-        """Return only engines with at least mincores CPU cores."""
-        # run job only on matching mincores
-        matching_mincores = self.ip_client.ids
-        if mincores > 0:
-            for engine_id in self.ip_client.ids:
-                engine = self.identify_computer(engine_id, 1000)
-                if engine['ncorescpu'] * engine['ncpus'] < mincores:
-                    matching_mincores.remove(engine_id)
-            print("DEBUG: matching mincores: " + str(mincores))
-            print(matching_mincores)
-        return matching_mincores
-
-
     def computer_delete(self, computer):
         """Delete computer information and its pool membership from DB."""
         # remove computer from all pools
