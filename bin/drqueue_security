@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# lock or unlock IPython security directory
+
+sec_dir=$DRQUEUE_ROOT/ipython/profile_default/security
+
+case "$1" in
+    lock)
+        echo "will lock $sec_dir"
+        chmod -R 755 $sec_dir
+        chown -R root $sec_dir
+        ;;
+    unlock)
+        echo "will unlock $sec_dir"
+        chown -R drqueue:drqueue $sec_dir
+        ;;
+    *)
+        echo "specify \"lock\" or \"unlock\" as argument"
+        ;;
+esac
+
+exit 0

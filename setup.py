@@ -91,7 +91,8 @@ class CreateDrQueueWorkDirs(Command):
 
 # register extra command
 cmdclass = {'create_drqueue_dirs': CreateDrQueueWorkDirs}
-
+allscripts = glob.glob(os.path.join('bin', '*.py'))
+allscripts.append(os.path.join('bin', 'drqueue_security'))
 
 setup(
     name = "DrQueueIPython",
@@ -103,7 +104,7 @@ setup(
     keywords = "render renderfarm management drqueue",
     url = "https://ssl.drqueue.org/redmine/projects/drqueueipython",
     packages = ['DrQueue'],
-    scripts = glob.glob(os.path.join('bin', '*.py')),
+    scripts = allscripts,
     install_requires = ['ipython>=0.12', 'pyzmq>=2.1.4'],
     long_description = read('README.md'),
     classifiers = [
