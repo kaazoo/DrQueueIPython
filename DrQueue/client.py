@@ -228,7 +228,7 @@ class Client():
         return True
 
 
-    def identify_computer(self, engine_id, cache_time):
+    def identify_computer(self, engine_id, cache_time, timeout=15):
         """Gather information about computer"""
         # look if engine info is already stored
         engine = DrQueueComputer.query_db(engine_id)
@@ -241,12 +241,19 @@ class Client():
             print("DEBUG: Engine %i was not found in DB" % engine_id)
             # run command only on specific computer
             dview = self.ip_client[engine_id]
-            dview.block = True
+            # run command in async mode
+            dview.block = False
             command = "import DrQueue\nfrom DrQueue import Computer as DrQueueComputer\nengine = DrQueueComputer(" + str(engine_id) + ")"
-            dview.execute(command)
-            engine = dview['engine']
-            engine['date'] = int(time.time())
-            DrQueueComputer.store_db(engine)
+            ar = dview.execute(command)
+            try:
+                # try to get results & wait until timeout
+                ar.get(timeout)
+            except Exception:
+                engine = None
+            else:
+                engine = dview['engine']
+                engine['date'] = int(time.time())
+                DrQueueComputer.store_db(engine)
         return engine
 
 
@@ -410,7 +417,10 @@ class Client():
         tasks = self.query_task_list(job_id)
         # abort all queued tasks
         for task in tasks:
-            self.ip_client.abort(task['msg_id'])
+            try:
+                self.ip_client.abort(task['msg_id'])
+            except NoEnginesRegistered:
+                print("ERROR: IPython can't abort tasks when no engines are registered.")
         return True
 
 
