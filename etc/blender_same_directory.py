@@ -21,7 +21,7 @@
 # USA
 #
 # same directory rendering for blender
-# usage: curframe=N blender -b scene.blend -P blender_same_directory.py
+# usage: curframe=N blender -noaudio -b scene.blend -P blender_same_directory.py
 #
 
 import os
@@ -68,7 +68,7 @@ if float(version) > 2.5:
   print("endframe: " + str(endframe))
 
   # get scenefile from args
-  scenefile = sys.argv[2]
+  scenefile = sys.argv[3]
   print("scenefile: " + scenefile)
 
   # set output path
@@ -98,7 +98,7 @@ elif float(version) > 2.4:
   print("endframe: " + str(endframe))
 
   # get scenefile from args
-  scenefile = sys.argv[2]
+  scenefile = sys.argv[3]
   print("scenefile: " + scenefile)
 
   # set output path

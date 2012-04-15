@@ -44,11 +44,11 @@ def run_renderer(env_dict):
     if DRQUEUE_RENDERTYPE == "animation":
         os.putenv("startframe", str(DRQUEUE_FRAME))
         os.putenv("endframe", str(block))
-        command = engine_path + " -b " + DRQUEUE_SCENEFILE + " -P " + os.path.join(DRQUEUE_ETC, "blender_same_directory.py")
+        command = engine_path + " -noaudio -b \"" + DRQUEUE_SCENEFILE + "\" -P " + os.path.join(DRQUEUE_ETC, "blender_same_directory.py")
     else:
         os.putenv("curpart", str(DRQUEUE_FRAME))
         os.outenv("maxparts", str(DRQUEUE_ENDFRAME))
-        command = engine_path + " -b " + DRQUEUE_SCENEFILE + " -P " + os.path.join(DRQUEUE_ETC, "blender_region_rendering.py")
+        command = engine_path + " -noaudio -b \"" + DRQUEUE_SCENEFILE + "\" -P " + os.path.join(DRQUEUE_ETC, "blender_region_rendering.py")
 
     # log command line
     helper.log_write(command + "\n")
