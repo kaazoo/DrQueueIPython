@@ -18,10 +18,11 @@ import socket
 
 class Computer(dict):
     """Subclass of dict for collecting Computer attribute values."""
-    def __init__(self, engine_id):
+    def __init__(self):
         dict.__init__(self)
         comp = {
-              'engine_id' : engine_id,
+              'engine_id' : None,
+              'created_at' : None,
               'hostname' : Computer.get_hostname(),
               'arch' : Computer.get_arch(),
               'os' : Computer.get_os(),
@@ -238,7 +239,7 @@ class Computer(dict):
 
 
     @staticmethod
-    def query_db(engine_id):
+    def query_db_by_engine_id(engine_id):
         import pymongo
         """query computer information from MongoDB"""
         connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
@@ -249,21 +250,32 @@ class Computer(dict):
 
 
     @staticmethod
+    def query_db_by_hostname(hostname):
+        import pymongo
+        """query computer information from MongoDB"""
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        db = connection['ipythondb']
+        computers = db['drqueue_computers']
+        computer = computers.find_one({"hostname" : hostname})
+        return computer
+
+
+    @staticmethod
     def store_db(engine):
         import pymongo
         """store computer information in MongoDB"""
         connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
         db = connection['ipythondb']
         computers = db['drqueue_computers']
-        # remove old entry
-        computers.remove({"engine_id" : engine['engine_id']})
+        # remove old entry by hostname
+        computers.remove({"hostname" : engine['hostname']})
         computer_id = computers.insert(engine)
         engine['_id'] = str(engine['_id'])
         return computer_id
 
 
     @staticmethod
-    def delete_from_db(engine_id):
+    def delete_from_db_by_engine_id(engine_id):
         import pymongo
         import bson
         """delete comouter information from MongoDB"""
@@ -271,5 +283,17 @@ class Computer(dict):
         db = connection['ipythondb']
         computers = db['drqueue_computers']
         ret = computers.remove({"engine_id" : engine_id})
+        return ret
+
+
+    @staticmethod
+    def delete_from_db_by_hostname(hostname):
+        import pymongo
+        import bson
+        """delete comouter information from MongoDB"""
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        db = connection['ipythondb']
+        computers = db['drqueue_computers']
+        ret = computers.remove({"hostname" : hostname})
         return ret
 

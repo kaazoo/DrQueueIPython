@@ -231,30 +231,44 @@ class Client():
     def identify_computer(self, engine_id, cache_time, timeout=15):
         """Gather information about computer"""
         # look if engine info is already stored
-        engine = DrQueueComputer.query_db(engine_id)
+        engine = DrQueueComputer.query_db_by_engine_id(engine_id)
         now = int(time.time())
         # check existence and age of info
-        if (engine != None) and (now <= engine['date'] + cache_time):
-            print("DEBUG: Engine %i was found in DB" % engine_id)
+        if (engine != None) and (now <= engine['created_at'] + cache_time):
+            print("DEBUG: Engine %i was found in DB and info is up-to-date." % engine_id)
+            return engine
         # store new info
         else:
-            print("DEBUG: Engine %i was not found in DB" % engine_id)
+            if engine != None:
+                print("DEBUG: Engine %i was found in DB, but info needs to be updated." % engine_id)
+            else:
+                print("DEBUG: Engine %i was not found in DB." % engine_id)
             # run command only on specific computer
             dview = self.ip_client[engine_id]
             # run command in async mode
             dview.block = False
-            command = "import DrQueue\nfrom DrQueue import Computer as DrQueueComputer\nengine = DrQueueComputer(" + str(engine_id) + ")"
+            command = "import DrQueue\nfrom DrQueue import Computer as DrQueueComputer\nengine = DrQueueComputer()"
             ar = dview.execute(command)
             try:
                 # try to get results & wait until timeout
                 ar.get(timeout)
             except Exception:
-                engine = None
+                if engine != None:
+                    print("DEBUG: Update request for engine %i timed out. Using old information from DB." % engine_id)
+                    new_engine = engine
+                else:
+                    print("DEBUG: Information request for engine %i timed out." % engine_id)
+                    new_engine = None
             else:
-                engine = dview['engine']
-                engine['date'] = int(time.time())
-                DrQueueComputer.store_db(engine)
-        return engine
+                # get computer dict from engine namespace
+                new_engine = dview['engine']
+                # set to known engine_id
+                new_engine['engine_id'] = engine_id
+                # set creation time
+                new_engine['created_at'] = int(time.time())
+                # store entry in database
+                DrQueueComputer.store_db(new_engine)
+            return new_engine
 
 
     def computer_set_pools(self, computer, pool_list):
@@ -266,8 +280,8 @@ class Client():
         dview.block = True
         command = "import os\nos.environ[\"DRQUEUE_POOL\"] = \"" + pool_str + "\""
         dview.execute(command)
+        # update database entry
         computer['pools'] = pool_list
-        # update database
         DrQueueComputer.store_db(computer)
         print("DEBUG: Engine " + str(computer['engine_id']) + " added to pools " + pool_str + ".")
         return computer
