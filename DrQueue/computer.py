@@ -239,6 +239,19 @@ class Computer(dict):
 
 
     @staticmethod
+    def query_all():
+        import pymongo
+        """query all computer entries from MongoDB"""
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        db = connection['ipythondb']
+        computers = db['drqueue_computers']
+        entries = []
+        for entry in computers.find():
+            entries.append(entry['engine_id'])
+        return entries
+
+
+    @staticmethod
     def query_db_by_engine_id(engine_id):
         import pymongo
         """query computer information from MongoDB"""
