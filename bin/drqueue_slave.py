@@ -102,14 +102,19 @@ def main():
     print("Running DrQueue slave on " + SLAVE_IP + " with PID " + str(pid) + ".")
     print("Connecting to DrQueue master at " + MASTER_IP + ".")
 
-    # start IPython engine along with startup script
-    command = "ipengine --url tcp://" + MASTER_IP + ":10101 -s " + STARTUP_SCRIPT
-    ipengine_daemon = run_command(command)
-    IPENGINE_PID = ipengine_daemon.pid
-    print("IPython engine started with PID " + str(IPENGINE_PID) + ". Logging to " + IPENGINE_LOGPATH + ".")
+    # restart ipengine if it was shut down by IPython
+    while True:
+        # start IPython engine along with startup script
+        command = "ipengine --url tcp://" + MASTER_IP + ":10101 -s " + STARTUP_SCRIPT
+        ipengine_daemon = run_command(command)
+        IPENGINE_PID = ipengine_daemon.pid
+        print("IPython engine started with PID " + str(IPENGINE_PID) + ". Logging to " + IPENGINE_LOGPATH + ".")
 
-    # wait for process to exit
-    os.waitpid(IPENGINE_PID, 0)
+        # wait for process to exit
+        os.waitpid(IPENGINE_PID, 0)
+
+        print("IPython was shut down. Restarting ...")
+        time.sleep(5)
 
 
 if __name__== "__main__":
