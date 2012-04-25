@@ -30,6 +30,7 @@ class Job(dict):
               'submit_time' : datetime.datetime.now(),
               'requeue_time' : False,
               'created_with' : created_with,
+              'enabled' : True,
               'limits' : {}
              }
         if name == "":

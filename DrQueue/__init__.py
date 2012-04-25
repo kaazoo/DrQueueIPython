@@ -118,6 +118,8 @@ def check_deps(dep_dict):
         return False
     elif ('pool_name' in dep_dict) and (engine_is_in_pool(dep_dict['pool_name']) == False):
         return False
+    elif ('job_id' in dep_dict) and (job_is_enabled(dep_dict['job_id']) == False):
+        return False
     else:
         return True
 
@@ -156,6 +158,15 @@ def engine_has_mincores(mincores):
     ncorescpu = Computer.get_ncorescpu()
     cores = ncpus * ncorescpu
     if cores >= mincores:
+        return True
+    else:
+        return False
+
+
+def job_is_enabled(job_id):
+    """Check if job is enabled. This method runs directly on the engine."""
+    job = Job.query_db(job_id)
+    if job["enabled"] == True:
         return True
     else:
         return False
