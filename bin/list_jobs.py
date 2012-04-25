@@ -28,7 +28,7 @@ def main():
         
         print("\nJob \"%s\" (ID: %s):" % (job['name'], job['_id']))
         print("Overall status: " + client.job_status(job['_id']))
-        print("Submit time: "+ str(job['submit_time']))
+        print("Submit time: " + str(job['submit_time']))
         if job['requeue_time'] != False:
             print("Requeue time: "+ str(job['requeue_time']))
         print("Time per task: " + str(meantime))
@@ -37,6 +37,10 @@ def main():
             print("Estimated finish time: " + str(finish_time))
         else:
             print("Finish time: " + str(finish_time))
+        if 'pool_name' in job['limits']:
+        	print("Pool: " + str(job['limits']['pool_name']))
+        else:
+        	print("Pool: Not set.")
         print("Task id                                 status    owner       completed at")
         
         for task in tasks:
