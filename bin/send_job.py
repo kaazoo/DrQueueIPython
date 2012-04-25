@@ -91,7 +91,7 @@ def main():
 
     # wait for all tasks of job to finish
     if options.wait:
-        if (tasks == []) and (client.query_engine_list() == []):
+        if (tasks == []) and (client.query_computer_list() == []):
             print("Tasks have been sent but no render node is running at the moment.")
             exit(0)
 

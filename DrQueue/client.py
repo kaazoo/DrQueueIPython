@@ -202,6 +202,7 @@ class Client():
 
             # set dependencies
             dep_dict = {}
+            dep_dict['job_id'] = job_id
             if ('os' in job['limits']) and (job['limits']['os'] != None):
                 dep_dict['os_name'] = job['limits']['os']
             if ('minram' in job['limits']) and (job['limits']['minram'] > 0):
@@ -305,6 +306,7 @@ class Client():
         return DrQueueJob.query_job_list()
 
 
+    ### TODO: not used?
     def query_running_job_list(self):
         """Query a list of all running jobs"""
         jobs = DrQueueJob.query_job_list()
@@ -313,23 +315,26 @@ class Client():
             if self.query_job_tasks_left(job['_id']) > 0:
                 running_jobs.append(job)
         return running_jobs
+    ###
 
 
+    ### TODO: not used?
     def query_jobname(self, task_id):
-        """Query jobname from task id"""
+        """Query jobname by given task id"""
         data = self.ip_client.db_query({"msg_id" : task_id})
         job_id = data[0]['header']['session']
         job = DrQueueJob.query_db(job_id)
         return job.name
+    ###
 
 
-    def query_job(self, job_id):
-        """Query job from id"""
+    def query_job_by_id(self, job_id):
+        """Query job by given id"""
         return DrQueueJob.query_db(job_id)
 
 
     def query_job_by_name(self, job_name):
-        """Query job from name"""
+        """Query job by given name"""
         return DrQueueJob.query_job_by_name(job_name)
 
 
@@ -343,9 +348,10 @@ class Client():
         return left
 
 
+    ### TODO: not used?
     def query_job_finish_time(self, job_id):
         """Query oldest finish time of all tasks."""
-        job = self.query_job(job_id)
+        job = self.query_job_by_id(job_id)
         # use requeue time as starting point if available
         if ('requeue_time' in job ) and (job['requeue_time'] != False):
             finish_time = job['requeue_time']
@@ -357,6 +363,7 @@ class Client():
             if (task['completed'] != None) and (task['completed'] > finish_time):
                 finish_time = task['completed']
         return finish_time
+    ###
 
 
     def get_frame_nr(self, task):
@@ -369,23 +376,24 @@ class Client():
 
 
     def query_task_list(self, job_id):
-        """Query a list of tasks objects of certain job"""
+        """Query a list of tasks objects of certain job. Sort by frame number."""
         task_list =  self.ip_client.db_query({'header.session' : str(job_id)})
         sorted_task_list = sorted(task_list, key=self.get_frame_nr)
         return sorted_task_list
 
 
     def query_task(self, task_id):
-        """Query a single task"""
+        """Query a single task."""
         task = self.ip_client.db_query({'msg_id' : task_id })[0]
         return task
 
 
-    def query_engine_list(self):
-        """Query a list of all engines"""
+    def query_computer_list(self):
+        """Query a list of all computers."""
         return self.ip_client.ids
 
 
+    ### TODO: not used?
     def computer_delete(self, computer):
         """Delete computer information and its pool membership from DB."""
         # remove computer from all pools
@@ -393,8 +401,10 @@ class Client():
         # delete computer information from db
         ret = DrQueueComputer.delete_from_db(computer['engine_id'])
         return ret
+    ###
 
 
+    ### TODO: not used?
     def match_all_limits(self, os_list, minram_list, mincores_list, pool_list):
         """Match all limits for job."""
         tmp_list = []
@@ -424,17 +434,35 @@ class Client():
             self.lbview = self.ip_client.load_balanced_view(matching_limits)
         else:
             self.lbview = self.ip_client.load_balanced_view()
+    ###
 
 
     def job_stop(self, job_id):
         """Stop job and all tasks which are not currently running"""
         tasks = self.query_task_list(job_id)
-        # abort all queued tasks
+        tasks_to_abort = []
+        # abort all not yet queued tasks
         for task in tasks:
+            stats = self.ip_client.queue_status('all', True)
+            # check if tasks is already running on an engine
+            for key,status in list(stats.items()):
+                if ('tasks' in status) and (task['msg_id'] in status['tasks']):
+                    # skip tasks which are already running on an engine
+                    continue
+                else:
+                    tasks_to_abort.append(task['msg_id'])
+        for task_id in set(tasks_to_abort):
+            # try to abort all other tasks
             try:
-                self.ip_client.abort(task['msg_id'])
-            except NoEnginesRegistered:
-                print("ERROR: IPython can't abort tasks when no engines are registered.")
+                self.ip_client.debug = True
+                print("aborting task %s " % task_id)
+                self.ip_client.abort(task_id, self.ip_client.ids, False)
+            except Exception as e:
+                print("ERROR: " + e)
+        # disable job
+        job = self.query_job_by_id(job_id)
+        job['enabled'] = False
+        DrQueueJob.update_db(job)
         return True
 
 
@@ -450,15 +478,28 @@ class Client():
                 if ('tasks' in status) and (task['msg_id'] in status['tasks']):
                     running_engines.append(key)
             self.ip_client.abort(task['msg_id'])
+
+        ### TODO: this workaround leads to having the restarted engine register with a new engine_id
+        ### which will then get all killed task, which is not really what we want
+        ###
+        ### TODO: we could create an impossible dependency which could act as on/off switch for a task
+        ###
+
+        # disable job
+        job = self.query_job_by_id(job_id)
+        job['enabled'] = False
+        DrQueueJob.update_db(job)
         # restart all engines which still run a task
         running_engines = set(running_engines)
+        for engine_id in running_engines:
+            self.engine_restart(engine_id)
         return True
 
 
     def job_delete(self, job_id):
         """Delete job and all of it's tasks"""
         tasks = self.query_task_list(job_id)
-        engines = self.query_engine_list()
+        engines = self.query_computer_list()
         # abort and delete all queued tasks
         for task in tasks:
             if len(engines) > 0:
@@ -472,9 +513,42 @@ class Client():
     def task_continue(self, task_id):
         """Continue aborted or failed task"""
         task = self.query_task(task_id)
+        print("\n")
+        print(task)
+        if ('pyerr' in task) and (task['pyerr'] != None):
+            if ('ename' in task['pyerr']):
+                print(task['pyerr']['ename'])
         # check if action is needed
-        if (task['completed'] != None) and ((task['result_header']['status'] == "error") or (task['result_header']['status'] == "aborted")):
-            self.task_requeue(task_id)
+        if (task['completed'] == None) and (task['resubmitted'] != None):
+            print("Task %s was requeued and is in pending state." % task_id)
+            ### TODO: remove inflight task on every slave
+            print("continuing %s" % task_id)
+            try:
+                self.task_requeue(task_id)
+            except Exception as e:
+                print("ERROR: Failed to requeue task: \n %s" % e)
+        elif (task['completed'] == None) and (task['pyerr']['ename'] == "UnmetDependency"):
+            print("Task %s was disabled before and is in pending state." % task_id)
+            print("continuing %s" % task_id)
+            try:
+                self.task_requeue(task_id)
+            except Exception as e:
+                print("ERROR: Failed to requeue task: \n %s" % e)
+        elif (task['resubmitted'] != None) and (task['completed'] != None):
+            print("Task %s was requeued and is in finished state." % task_id)
+            print("not continuing %s" % task_id)
+        elif (task['resubmitted'] == None) and (task['completed'] != None) and (task['result_header']['status'] == "ok"):
+            print("Task %s is in finished state." % task_id)
+            print("not continuing %s" % task_id)
+        #if (task['completed'] != None) and ((task['result_header']['status'] == "error") or (task['result_header']['status'] == "aborted")):
+        #or (task['result_header']['status'] == "pending"):
+        elif (task['completed'] != None):
+            print("Task %s was requeued and is in finished state." % task_id)
+            print("not continuing %s" % task_id)
+        #if (task['completed'] != None) and ((task['result_header']['status'] == "error") or (task['result_header']['status'] == "aborted")):
+        #or (task['result_header']['status'] == "pending"):
+        else:
+            print("ERROR: Unsure what to do with task %s." % task_id)
         return True
 
 
@@ -487,7 +561,10 @@ class Client():
 
     def job_continue(self, job_id):
         """Continue stopped job and all of it's tasks"""
-        job = self.query_job(job_id)
+        job = self.query_job_by_id(job_id)
+        # enable job
+        job['enabled'] = True
+        DrQueueJob.update_db(job)
         tasks = self.query_task_list(job_id)
         # continue tasks
         for task in tasks:
@@ -497,7 +574,7 @@ class Client():
 
     def job_rerun(self, job_id):
         """Run all tasks of job another time"""
-        job = self.query_job(job_id)
+        job = self.query_job_by_id(job_id)
         tasks = self.query_task_list(job_id)
         # rerun tasks
         for task in tasks:
@@ -579,7 +656,7 @@ class Client():
             tasks_left = len(tasks) - len(spent_times)
             time_left = tasks_left * meantime
             # query job object
-            job = self.query_job(job_id)
+            job = self.query_job_by_id(job_id)
             # look if all tasks are already done
             if self.query_job_tasks_left(job_id) == 0:
                 finish_time = self.query_job_finish_time(job_id)
@@ -599,15 +676,24 @@ class Client():
     def engine_stop(self, engine_id):
         """Stop a specific engine"""
         # delete computer information in db
-        DrQueueComputer.delete_from_db(engine_id)
+        DrQueueComputer.delete_from_db_by_engine_id(engine_id)
         # shutdown computer
-        self.ip_client.shutdown(engine_id)
+        try:
+            self.ip_client.shutdown(engine_id, False, False, True)
+        except Exception:
+            return False
         return True
 
 
     def engine_restart(self, engine_id):
         """Restart a specific engine"""
-        self.ip_client.shutdown(engine_id, True, False, True)
+        # delete computer information in db
+        DrQueueComputer.delete_from_db_by_engine_id(engine_id)
+        # restart computer
+        try:
+            self.ip_client.shutdown(engine_id, True, False, True)
+        except Exception:
+            return False
         return True
 
 
