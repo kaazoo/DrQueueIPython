@@ -439,37 +439,46 @@ class Client():
 
     def job_stop(self, job_id):
         """Stop job and all tasks which are not currently running"""
-        tasks = self.query_task_list(job_id)
-        tasks_to_abort = []
-        # abort all not yet queued tasks
-        for task in tasks:
-            stats = self.ip_client.queue_status('all', True)
-            # check if tasks is already running on an engine
-            for key,status in list(stats.items()):
-                if ('tasks' in status) and (task['msg_id'] in status['tasks']):
-                    # skip tasks which are already running on an engine
-                    continue
-                else:
-                    tasks_to_abort.append(task['msg_id'])
-        for task_id in set(tasks_to_abort):
-            # try to abort all other tasks
-            try:
-                self.ip_client.debug = True
-                print("aborting task %s " % task_id)
-                self.ip_client.abort(task_id, self.ip_client.ids, False)
-            except Exception as e:
-                print("ERROR: " + e)
+
         # disable job
-        job = self.query_job_by_id(job_id)
-        job['enabled'] = False
-        DrQueueJob.update_db(job)
+        self.job_disable(job_id)
+
+        tasks = self.query_task_list(job_id)
+        tasks_to_stop = []
+        for task in tasks:
+            print("Task " + task["msg_id"] + ": ")
+            if ("result_header" in task) and (task["result_header"] != None) and (task["result_header"]["status"] == "ok"):
+                print("  finished at " + str(task["completed"]))
+            else:
+                # get task stats of all computers
+                stats = self.ip_client.queue_status('all', True)
+                # check if tasks is already running on an engine
+                for key,status in list(stats.items()):
+                    if ('tasks' in status) and (task['msg_id'] in status['tasks']):
+                        # skip tasks which are already running on an engine
+                        print("  not finished yet but already queued to engine. will leave it there.")
+                        continue
+                    else:
+                        print("  not finished yet. will abort.")
+                        tasks_to_stop.append(task['msg_id'])
+
+        try:
+            self.ip_client.abort(tasks_to_stop)
+        except Exception as e:
+            print("ERROR: " + e)
+
         return True
 
 
     def job_kill(self, job_id):
         """Stop job and all of it's tasks wether running or not"""
+
+        # disable job
+        self.job_disable(job_id)
+
         tasks = self.query_task_list(job_id)
         running_engines = []
+        tasks_to_stop = []
         # abort all queued tasks
         for task in tasks:
             stats = self.ip_client.queue_status('all', True)
@@ -477,22 +486,33 @@ class Client():
             for key,status in list(stats.items()):
                 if ('tasks' in status) and (task['msg_id'] in status['tasks']):
                     running_engines.append(key)
-            self.ip_client.abort(task['msg_id'])
+            tasks_to_stop.append(task['msg_id'])
+        # stop all matching tasks at once
+        try:
+            self.ip_client.abort(tasks_to_stop)
+        except Exception as e:
+            print("ERROR: " + e)
 
-        ### TODO: this workaround leads to having the restarted engine register with a new engine_id
-        ### which will then get all killed task, which is not really what we want
-        ###
-        ### TODO: we could create an impossible dependency which could act as on/off switch for a task
-        ###
-
-        # disable job
-        job = self.query_job_by_id(job_id)
-        job['enabled'] = False
-        DrQueueJob.update_db(job)
         # restart all engines which still run a task
         running_engines = set(running_engines)
         for engine_id in running_engines:
             self.engine_restart(engine_id)
+        return True
+
+
+    def job_disable(self, job_id):
+        """Disable job in database."""
+        job = self.query_job_by_id(job_id)
+        job['enabled'] = False
+        DrQueueJob.update_db(job)
+        return True
+
+
+    def job_enable(self, job_id):
+        """Disable job in database."""
+        job = self.query_job_by_id(job_id)
+        job['enabled'] = False
+        DrQueueJob.update_db(job)
         return True
 
 
@@ -510,55 +530,6 @@ class Client():
         return True
 
 
-    def task_continue(self, task_id):
-        """Continue aborted or failed task"""
-        task = self.query_task(task_id)
-        print("\n")
-        print(task)
-        if ('pyerr' in task) and (task['pyerr'] != None):
-            if ('ename' in task['pyerr']):
-                print(task['pyerr']['ename'])
-        # check if action is needed
-        if (task['completed'] == None) and (task['resubmitted'] != None):
-            print("Task %s was requeued and is in pending state." % task_id)
-            ### TODO: remove inflight task on every slave
-            print("continuing %s" % task_id)
-            try:
-                self.task_requeue(task_id)
-            except Exception as e:
-                print("ERROR: Failed to requeue task: \n %s" % e)
-        elif (task['completed'] == None) and (task['pyerr']['ename'] == "UnmetDependency"):
-            print("Task %s was disabled before and is in pending state." % task_id)
-            print("continuing %s" % task_id)
-            try:
-                self.task_requeue(task_id)
-            except Exception as e:
-                print("ERROR: Failed to requeue task: \n %s" % e)
-        elif (task['resubmitted'] != None) and (task['completed'] != None):
-            print("Task %s was requeued and is in finished state." % task_id)
-            print("not continuing %s" % task_id)
-        elif (task['resubmitted'] == None) and (task['completed'] != None) and (task['result_header']['status'] == "ok"):
-            print("Task %s is in finished state." % task_id)
-            print("not continuing %s" % task_id)
-        #if (task['completed'] != None) and ((task['result_header']['status'] == "error") or (task['result_header']['status'] == "aborted")):
-        #or (task['result_header']['status'] == "pending"):
-        elif (task['completed'] != None):
-            print("Task %s was requeued and is in finished state." % task_id)
-            print("not continuing %s" % task_id)
-        #if (task['completed'] != None) and ((task['result_header']['status'] == "error") or (task['result_header']['status'] == "aborted")):
-        #or (task['result_header']['status'] == "pending"):
-        else:
-            print("ERROR: Unsure what to do with task %s." % task_id)
-        return True
-
-
-    def task_requeue(self, task_id):
-        """Requeue task"""
-        self.ip_client.resubmit(task_id)
-        print("requeuing %s" % task_id)
-        return True
-
-
     def job_continue(self, job_id):
         """Continue stopped job and all of it's tasks"""
         job = self.query_job_by_id(job_id)
@@ -566,22 +537,77 @@ class Client():
         job['enabled'] = True
         DrQueueJob.update_db(job)
         tasks = self.query_task_list(job_id)
-        # continue tasks
+        tasks_to_resubmit = []
         for task in tasks:
-            self.task_continue(task['msg_id'])
+            print("Task " + task["msg_id"] + ": ")
+            if ("result_header" in task) and (task["result_header"] != None) and (task["result_header"]["status"] == "ok"):
+                print("  finished at " + str(task["completed"]))
+            else:
+                print("  not finished yet. will resubmit.")
+                tasks_to_resubmit.append(task["msg_id"])
+
+        # job_id from db is be used as session name
+        self.ip_client.session.session = str(job_id)
+
+        # set owner of job
+        self.ip_client.session.username = job['owner']
+
+        # set number of retries for each task
+        self.lbview.retries = job['retries']
+
+        # resubmit all matching msg_ids at once
+        async_results = self.ip_client.resubmit(tasks_to_resubmit)
+
+        # IPython seems to give out new msg_ids instead of re-using the old ones
+        for msg_id in async_results.msg_ids:
+            print("got new msg_id: " + msg_id)
+
         return True
 
 
     def job_rerun(self, job_id):
         """Run all tasks of job another time"""
         job = self.query_job_by_id(job_id)
-        tasks = self.query_task_list(job_id)
-        # rerun tasks
-        for task in tasks:
-            self.task_requeue(task['msg_id'])
+        # enable job
+        job['enabled'] = True
         # set resubmit time
         job['requeue_time'] = datetime.datetime.now()
         DrQueueJob.update_db(job)
+        tasks = self.query_task_list(job_id)
+        tasks_to_resubmit = []
+        # get all msg_ids of job
+        for task in tasks:
+            tasks_to_resubmit.append(task["msg_id"])
+
+        # job_id from db is be used as session name
+        self.ip_client.session.session = str(job_id)
+
+        # set owner of job
+        self.ip_client.session.username = job['owner']
+
+        # set number of retries for each task
+        self.lbview.retries = job['retries']
+
+        # resubmit all msg_ids at once
+        async_results = self.ip_client.resubmit(tasks_to_resubmit)
+
+        # IPython seems to give out new msg_ids instead of re-using the old ones
+        for msg_id in async_results.msg_ids:
+            print("got new msg_id: " + msg_id)
+
+        # kickstart all computers
+        running_engines = []
+        for task in tasks:
+            stats = self.ip_client.queue_status('all', True)
+            # check if tasks is already running on an engine
+            for key,status in list(stats.items()):
+                if ('tasks' in status) and (task['msg_id'] in status['tasks']):
+                    running_engines.append(key)
+        # restart all engines which still run a task
+        running_engines = set(running_engines)
+        for engine_id in running_engines:
+            self.engine_restart(engine_id)
+
         return True
 
 
