@@ -28,6 +28,7 @@ def main():
         
         print("\nJob \"%s\" (ID: %s):" % (job['name'], job['_id']))
         print("Overall status: " + client.job_status(job['_id']))
+        print("Enabled: %s" % job['enabled'])
         print("Submit time: " + str(job['submit_time']))
         if job['requeue_time'] != False:
             print("Requeue time: "+ str(job['requeue_time']))
