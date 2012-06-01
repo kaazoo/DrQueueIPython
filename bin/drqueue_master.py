@@ -93,12 +93,12 @@ def main():
         sys.stderr.write("DRQUEUE_ROOT environment variable is not set!\n")
         sys.exit(-1)
 
-    if "IPYTHON_DIR" not in os.environ:
-        sys.stderr.write("IPYTHON_DIR environment variable is not set!\n")
+    if "IPYTHONDIR" not in os.environ:
+        sys.stderr.write("IPYTHONDIR environment variable is not set!\n")
         sys.exit(-1)
 
     # start MongoDB daemon
-    command = "mongod --dbpath $IPYTHON_DIR/db"
+    command = "mongod --dbpath $IPYTHONDIR/db --rest"
     mongodb_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "mongodb.log")
     mongodb_logfile = open(mongodb_logpath, "ab")
     mongodb_daemon = run_command(command, mongodb_logfile)

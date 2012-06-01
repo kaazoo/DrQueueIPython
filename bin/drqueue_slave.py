@@ -19,8 +19,8 @@ if "DRQUEUE_ROOT" not in os.environ:
     sys.stderr.write("DRQUEUE_ROOT environment variable is not set!\n")
     sys.exit(-1)
 
-if "IPYTHON_DIR" not in os.environ:
-    sys.stderr.write("IPYTHON_DIR environment variable is not set!\n")
+if "IPYTHONDIR" not in os.environ:
+    sys.stderr.write("IPYTHONDIR environment variable is not set!\n")
     sys.exit(-1)
 
 if "DRQUEUE_MASTER" not in os.environ:
