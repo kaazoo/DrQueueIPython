@@ -555,16 +555,20 @@ class Client():
         if len(tasks_to_resubmit) > 0:
 
             # resubmit all matching msg_ids at once
-            async_results = self.ip_client.resubmit(tasks_to_resubmit)
+            try:
+                async_results = self.ip_client.resubmit(tasks_to_resubmit)
+            except Exception as e:
+                print("ERROR: " + str(e))
 
             # IPython seems to give out new msg_ids instead of re-using the old ones
             for msg_id in async_results.msg_ids:
                 print("got new msg_id: " + msg_id)
 
             # delete old tasks which now have a resubmitted clone
-            self.ip_client.purge_results(tasks_to_resubmit)
-
-            ### TODO: handle error when task is still in pending state
+            try:
+                self.ip_client.purge_results(tasks_to_resubmit)
+            except Exception as e:
+                print("ERROR: " + str(e))
 
         return True
 
@@ -572,11 +576,13 @@ class Client():
     def job_rerun(self, job_id):
         """Run all tasks of job another time"""
         job = self.query_job_by_id(job_id)
+
         # enable job
         job['enabled'] = True
         # set resubmit time
         job['requeue_time'] = datetime.datetime.now()
         DrQueueJob.update_db(job)
+
         tasks = self.query_task_list(job_id)
         tasks_to_resubmit = []
         # get all msg_ids of job
@@ -584,14 +590,20 @@ class Client():
             tasks_to_resubmit.append(task["msg_id"])
 
         # resubmit all msg_ids at once
-        async_results = self.ip_client.resubmit(tasks_to_resubmit)
+        try:
+            async_results = self.ip_client.resubmit(tasks_to_resubmit)
+        except Exception as e:
+            print("ERROR: " + str(e))
 
         # IPython seems to give out new msg_ids instead of re-using the old ones
         for msg_id in async_results.msg_ids:
             print("got new msg_id: " + msg_id)
 
         # delete old tasks which now have a resubmitted clone
-        self.ip_client.purge_results(tasks_to_resubmit)
+        try:
+            self.ip_client.purge_results(tasks_to_resubmit)
+        except Exception as e:
+            print("ERROR: " + str(e))
 
         # kickstart all computers
         running_engines = []
