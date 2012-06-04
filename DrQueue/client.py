@@ -306,28 +306,6 @@ class Client():
         return DrQueueJob.query_job_list()
 
 
-    ### TODO: not used?
-    def query_running_job_list(self):
-        """Query a list of all running jobs"""
-        jobs = DrQueueJob.query_job_list()
-        running_jobs = []
-        for job in jobs:
-            if self.query_job_tasks_left(job['_id']) > 0:
-                running_jobs.append(job)
-        return running_jobs
-    ###
-
-
-    ### TODO: not used?
-    def query_jobname(self, task_id):
-        """Query jobname by given task id"""
-        data = self.ip_client.db_query({"msg_id" : task_id})
-        job_id = data[0]['header']['session']
-        job = DrQueueJob.query_db(job_id)
-        return job.name
-    ###
-
-
     def query_job_by_id(self, job_id):
         """Query job by given id"""
         return DrQueueJob.query_db(job_id)
@@ -348,7 +326,6 @@ class Client():
         return left
 
 
-    ### TODO: not used?
     def query_job_finish_time(self, job_id):
         """Query oldest finish time of all tasks."""
         job = self.query_job_by_id(job_id)
@@ -363,7 +340,6 @@ class Client():
             if (task['completed'] != None) and (task['completed'] > finish_time):
                 finish_time = task['completed']
         return finish_time
-    ###
 
 
     def get_frame_nr(self, task):
@@ -391,50 +367,6 @@ class Client():
     def query_computer_list(self):
         """Query a list of all computers."""
         return self.ip_client.ids
-
-
-    ### TODO: not used?
-    def computer_delete(self, computer):
-        """Delete computer information and its pool membership from DB."""
-        # remove computer from all pools
-        self.computer_set_pools(computer, [])
-        # delete computer information from db
-        ret = DrQueueComputer.delete_from_db(computer['engine_id'])
-        return ret
-    ###
-
-
-    ### TODO: not used?
-    def match_all_limits(self, os_list, minram_list, mincores_list, pool_list):
-        """Match all limits for job."""
-        tmp_list = []
-        # build list with all list members
-        tmp_list.extend(os_list)
-        tmp_list.extend(minram_list)
-        tmp_list.extend(mincores_list)
-        tmp_list.extend(pool_list)
-        # make entries unique
-        tmp_list = set(tmp_list)
-        tmp_list = list(tmp_list)
-        matching_limits = []
-        for entry in tmp_list:
-            # look if entry is in all lists
-            if (entry in os_list) and (entry in minram_list) and (entry in mincores_list) and (entry in pool_list):
-                matching_limits.append(entry)
-            else:
-                print("DEBUG: %i isn't matching limits" % entry)
-        print("DEBUG: matching limits:")
-        print(matching_limits)
-        if len(matching_limits) == 0:
-            message = "No engine meets the requirements."
-            print(message)
-            raise Exception(message)
-        elif len(matching_limits) > 0:
-            # only run on matching engines
-            self.lbview = self.ip_client.load_balanced_view(matching_limits)
-        else:
-            self.lbview = self.ip_client.load_balanced_view()
-    ###
 
 
     def job_stop(self, job_id):
