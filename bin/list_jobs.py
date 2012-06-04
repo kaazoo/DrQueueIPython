@@ -25,6 +25,7 @@ def main():
     for job in jobs:
         tasks = client.query_task_list(job['_id'])
         meantime, time_left, finish_time = client.job_estimated_finish_time(job['_id'])
+        frame = job['startframe']
         
         print("\nJob \"%s\" (ID: %s):" % (job['name'], job['_id']))
         print("Overall status: " + client.job_status(job['_id']))
@@ -42,7 +43,7 @@ def main():
         	print("Pool: " + str(job['limits']['pool_name']))
         else:
         	print("Pool: Not set.")
-        print("Task id                                 status    owner       completed at")
+        print("Task id\t\t\t\t\tframe\tstatus\towner\tcompleted at")
         
         for task in tasks:
             tmsg_id = task['msg_id']
@@ -51,16 +52,21 @@ def main():
         
             if task['completed'] == None:
                 status = "pending"
-                print("%s   %s  %s" % (tmsg_id, status.ljust(8), username.ljust(10)))
+                print("%s\t%i\t%s\t%s" % (tmsg_id, frame, status, username))
             else:
                 result_header = task['result_header']
                 result_content = task['result_content']
                 status = result_header['status']
                 cpl = task['completed']
-                print("%s   %s  %s  %i-%02i-%02i %02i:%02i:%02i" % (tmsg_id, status.ljust(8), username.ljust(10), cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
+                print("%s\t%i\t%s\t%s\t%i-%02i-%02i %02i:%02i:%02i" % (tmsg_id, frame, status, username, cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
 
                 if result_header['status'] == 'error':
-                    print("  Error was: " + result_content['evalue'])
+                	print("  Error was: " + result_content['evalue'])
+            if int(job['blocksize']) > 1:
+            	frame += int(job['blocksize'])
+            else:
+            	frame += 1
+
             # for debugging:
             #print(task)
     
