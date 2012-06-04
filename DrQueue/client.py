@@ -453,19 +453,24 @@ class Client():
                 # get task stats of all computers
                 stats = self.ip_client.queue_status('all', True)
                 # check if tasks is already running on an engine
+                found_on_engine = False
                 for key,status in list(stats.items()):
                     if ('tasks' in status) and (task['msg_id'] in status['tasks']):
                         # skip tasks which are already running on an engine
                         print("  not finished yet but already queued to engine. will leave it there.")
-                        continue
-                    else:
-                        print("  not finished yet. will abort.")
-                        tasks_to_stop.append(task['msg_id'])
+                        found_on_engine = True
+                        break
 
-        try:
-            self.ip_client.abort(tasks_to_stop)
-        except Exception as e:
-            print("ERROR: " + e)
+                # if a task isn't already queueed/running on an engine, it should be safe to abort it
+                if found_on_engine == False:
+                    print("  not finished yet. will abort.")
+                    tasks_to_stop.append(task['msg_id'])
+
+        if len(tasks_to_stop) > 0:
+            try:
+                self.ip_client.abort(tasks_to_stop)
+            except Exception as e:
+                print("ERROR: " + str(e))
 
         return True
 
@@ -491,7 +496,7 @@ class Client():
         try:
             self.ip_client.abort(tasks_to_stop)
         except Exception as e:
-            print("ERROR: " + e)
+            print("ERROR: " + str(e))
 
         # restart all engines which still run a task
         running_engines = set(running_engines)
@@ -511,7 +516,7 @@ class Client():
     def job_enable(self, job_id):
         """Disable job in database."""
         job = self.query_job_by_id(job_id)
-        job['enabled'] = False
+        job['enabled'] = True
         DrQueueJob.update_db(job)
         return True
 
@@ -533,9 +538,10 @@ class Client():
     def job_continue(self, job_id):
         """Continue stopped job and all of it's tasks"""
         job = self.query_job_by_id(job_id)
+
         # enable job
-        job['enabled'] = True
-        DrQueueJob.update_db(job)
+        self.job_enable(job_id)
+
         tasks = self.query_task_list(job_id)
         tasks_to_resubmit = []
         for task in tasks:
@@ -546,21 +552,19 @@ class Client():
                 print("  not finished yet. will resubmit.")
                 tasks_to_resubmit.append(task["msg_id"])
 
-        # job_id from db is be used as session name
-        self.ip_client.session.session = str(job_id)
+        if len(tasks_to_resubmit) > 0:
 
-        # set owner of job
-        self.ip_client.session.username = job['owner']
+            # resubmit all matching msg_ids at once
+            async_results = self.ip_client.resubmit(tasks_to_resubmit)
 
-        # set number of retries for each task
-        self.lbview.retries = job['retries']
+            # IPython seems to give out new msg_ids instead of re-using the old ones
+            for msg_id in async_results.msg_ids:
+                print("got new msg_id: " + msg_id)
 
-        # resubmit all matching msg_ids at once
-        async_results = self.ip_client.resubmit(tasks_to_resubmit)
+            # delete old tasks which now have a resubmitted clone
+            self.ip_client.purge_results(tasks_to_resubmit)
 
-        # IPython seems to give out new msg_ids instead of re-using the old ones
-        for msg_id in async_results.msg_ids:
-            print("got new msg_id: " + msg_id)
+            ### TODO: handle error when task is still in pending state
 
         return True
 
@@ -579,21 +583,15 @@ class Client():
         for task in tasks:
             tasks_to_resubmit.append(task["msg_id"])
 
-        # job_id from db is be used as session name
-        self.ip_client.session.session = str(job_id)
-
-        # set owner of job
-        self.ip_client.session.username = job['owner']
-
-        # set number of retries for each task
-        self.lbview.retries = job['retries']
-
         # resubmit all msg_ids at once
         async_results = self.ip_client.resubmit(tasks_to_resubmit)
 
         # IPython seems to give out new msg_ids instead of re-using the old ones
         for msg_id in async_results.msg_ids:
             print("got new msg_id: " + msg_id)
+
+        # delete old tasks which now have a resubmitted clone
+        self.ip_client.purge_results(tasks_to_resubmit)
 
         # kickstart all computers
         running_engines = []
