@@ -1,0 +1,168 @@
+# -*- coding: utf-8 -*-
+
+"""
+Console management program for DrQueue.
+Copyright (C) 2012 Andreas Schroeder
+
+This file is part of DrQueue.
+
+Licensed under GNU General Public License version 3. See LICENSE for details.
+"""
+
+import string
+import argparse
+import DrQueue
+from DrQueue import Job as DrQueueJob
+from DrQueue import Client as DrQueueClient
+
+# initialize DrQueue client
+client = DrQueueClient()
+
+# 
+# drqueue job list (list_jobs.py)
+# drqueue job add (send_job.py)
+# drqueue job delete job_name|job_id (control_job.py)
+# drqueue job requeue job_name|job_id (control_job.py)
+# 
+# drqueue computer list (list_computers.py)
+# drqueue computer restart computer_name|conputer_id (control_computer.py)
+# drqueue computer pool computer_name|conputer_id pool_name (control_computer.py)
+#
+# drqueue security lock (drqueue_security)
+# drqueue security unlock (drqueue_security)
+# 
+
+def main():
+
+    # create the top-level parser
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(help="choose one action")
+    
+    # create the parser for the job command
+    parser_job = subparsers.add_parser("job", help="job management")
+    parser_job.add_argument("job_action", help="list / add / delete / requeue")
+    parser_job.add_argument('-id', help="job id")
+    parser_job.add_argument('-name', help="job name")
+    
+    
+    # create the parser for the computer command
+    parser_computer = subparsers.add_parser("computer", help="computer management")
+    parser_computer.add_argument("computer_action", help="list / restart / pool")
+    
+    # create the parser for the security command
+    parser_security = subparsers.add_parser("security", help="toggle IPython security folder permissions")
+    parser_security.add_argument("security_action", help="lock / unlock")
+    
+    #parser_computer.add_argument('--baz', choices='XYZ', help='baz help')
+    
+    # parse arguments
+    args = parser.parse_args()
+    args_dict = vars(args)
+    
+    # debug parsed arguments
+    print args
+    print args_dict
+    
+    if ("job_action" in args_dict):
+        # drqueue job list
+        if args_dict["job_action"] == "list":
+            print "user chose list action"
+            if ("id" in args_dict) and (args_dict["id"] != None):
+                list_jobs(args_dict["id"], None)
+            elif ("name" in args_dict) and (args_dict["name"] != None):
+                list_jobs(None, args_dict["name"])
+            else:
+                list_jobs()
+        # drqueue job add
+        elif args_dict["job_action"] == "add":
+            print "user chose add action"
+        # drqueue job delete job_name|job_id
+        elif args_dict["job_action"] == "delete":
+            print "user chose delete action"
+        # drqueue job requeue job_name|job_id
+        elif args_dict["job_action"] == "requeue":
+            print "user chose requeue action"
+        else:
+            print("Error: Unknown parameter specified.")
+            exit(1)
+    
+    if ("computer_action" in args_dict):
+        # drqueue computer list
+        if args_dict["computer_action"] == "list":
+            print "user chose list action"
+        # drqueue computer restart computer_name|conputer_id
+        elif args_dict["computer_action"] == "restart":
+            print "user chose restart action"
+        # drqueue computer pool computer_name|conputer_id pool_name
+        elif args_dict["computer_action"] == "pool":
+            print "user chose pool action"
+        else:
+            print("Error: Unknown parameter specified.")
+            exit(1)
+
+
+def list_jobs(job_id=None, job_name=None):
+    global client
+
+    if (job_id != None) and (job_name == None):
+        # fetch information about single job
+        jobs = [client.query_job_by_id(job_id)]
+    elif (job_id == None) and (job_name != None):
+        # fetch information about single job
+        jobs = [client.query_job_by_name(job_name)]
+    else:
+        # fetch a list of all jobs
+        jobs = client.query_job_list()
+        
+    # walk through tasks of every job
+    for job in jobs:
+        tasks = client.query_task_list(job['_id'])
+        meantime, time_left, finish_time = client.job_estimated_finish_time(job['_id'])
+        frame = job['startframe']
+        
+        print("\nJob \"%s\" (ID: %s):" % (job['name'], job['_id']))
+        print("Overall status: " + client.job_status(job['_id']))
+        print("Enabled: %s" % job['enabled'])
+        print("Submit time: " + str(job['submit_time']))
+        if job['requeue_time'] != False:
+            print("Requeue time: "+ str(job['requeue_time']))
+        print("Time per task: " + str(meantime))
+        if client.query_job_tasks_left(job['_id']) > 0:
+            print("Time left: " + str(time_left))
+            print("Estimated finish time: " + str(finish_time))
+        else:
+            print("Finish time: " + str(finish_time))
+        if 'pool_name' in job['limits']:
+        	print("Pool: " + str(job['limits']['pool_name']))
+        else:
+        	print("Pool: Not set.")
+        print("Task id\t\t\t\t\tframe\tstatus\towner\tcompleted at")
+        
+        for task in tasks:
+            tmsg_id = task['msg_id']
+            theader = task['header']
+            username = theader['username']
+        
+            if task['completed'] == None:
+                status = "pending"
+                print("%s\t%i\t%s\t%s" % (tmsg_id, frame, status, username))
+            else:
+                result_header = task['result_header']
+                result_content = task['result_content']
+                status = result_header['status']
+                cpl = task['completed']
+                print("%s\t%i\t%s\t%s\t%i-%02i-%02i %02i:%02i:%02i" % (tmsg_id, frame, status, username, cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
+
+                if result_header['status'] == 'error':
+                	print("  Error was: " + result_content['evalue'])
+            if int(job['blocksize']) > 1:
+            	frame += int(job['blocksize'])
+            else:
+            	frame += 1
+
+            # for debugging:
+            #print(task)
+
+
+if __name__ == "__main__":
+    main()

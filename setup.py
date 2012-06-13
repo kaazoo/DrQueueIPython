@@ -93,6 +93,7 @@ class CreateDrQueueWorkDirs(Command):
 cmdclass = {'create_drqueue_dirs': CreateDrQueueWorkDirs}
 allscripts = glob.glob(os.path.join('bin', '*.py'))
 allscripts.append(os.path.join('bin', 'drqueue_security'))
+allscripts.append(os.path.join('bin', 'drqueue'))
 
 setup(
     name = "DrQueueIPython",
