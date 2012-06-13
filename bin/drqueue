@@ -11,6 +11,7 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 
 import string
 import argparse
+import getpass
 import DrQueue
 from DrQueue import Job as DrQueueJob
 from DrQueue import Client as DrQueueClient
@@ -32,7 +33,10 @@ client = DrQueueClient()
 # drqueue security unlock (drqueue_security)
 # 
 
+args_dict = None
+
 def main():
+    global args_dict
 
     # create the top-level parser
     parser = argparse.ArgumentParser()
@@ -40,10 +44,30 @@ def main():
     
     # create the parser for the job command
     parser_job = subparsers.add_parser("job", help="job management")
-    parser_job.add_argument("job_action", help="list / add / delete / requeue")
+    parser_job.add_argument("job_action", help="list / add / stop / kill / delete / continue / rerun")
+
+    # options for list action
     parser_job.add_argument('-id', help="job id")
     parser_job.add_argument('-name', help="job name")
-    
+
+    # options for the add action
+    parser_job.add_argument("-s", "--startframe", dest="startframe", default=1, help="first frame")
+    parser_job.add_argument("-e", "--endframe", dest="endframe", default=1, help="last frame")
+    parser_job.add_argument("-b", "--blocksize", dest="blocksize", default=1, help="size of block")
+    parser_job.add_argument("-n", "--name", dest="name", default=None, help="name of job")
+    parser_job.add_argument("-r", "--renderer", dest="renderer", help="render type (maya|blender|mentalray)")
+    parser_job.add_argument("-f", "--scenefile", dest="scenefile", default=None, help="path to scenefile")
+    parser_job.add_argument("-p", "--pool", dest="pool", default=None, help="pool of computers")
+    parser_job.add_argument("-o", "--options", dest="options", default="{}", help="specific options for renderer as Python dict")
+    parser_job.add_argument("--retries", dest="retries", default=1, help="number of retries for every task")
+    parser_job.add_argument("--owner", dest="owner", default=getpass.getuser(), help="Owner of job. Default is current username.")
+    parser_job.add_argument("--os", dest="os", default=None, help="Operating system")
+    parser_job.add_argument("--minram", dest="minram", default=0, help="Minimal RAM in GB")
+    parser_job.add_argument("--mincores", dest="mincores", default=0, help="Minimal CPU cores")
+    parser_job.add_argument("--send-email", action="store_true", dest="send_email", default=False, help="Send notification email when job is finished")
+    parser_job.add_argument("--email-recipients", dest="email_recipients", default=None, help="Recipients for notification email")
+    parser_job.add_argument("-w", "--wait", action="store_true", dest="wait", default=False, help="wait for job to finish")
+    parser_job.add_argument("-v", "--verbose", action="store_true", dest="verbose", default=False, help="verbose output")
     
     # create the parser for the computer command
     parser_computer = subparsers.add_parser("computer", help="computer management")
@@ -76,12 +100,22 @@ def main():
         # drqueue job add
         elif args_dict["job_action"] == "add":
             print "user chose add action"
+            add_job()
+        # drqueue job stop job_name|job_id
+        elif args_dict["job_action"] == "stop":
+            print "user chose stop action"
+        # drqueue job kill job_name|job_id
+        elif args_dict["job_action"] == "kill":
+            print "user chose kill action"
         # drqueue job delete job_name|job_id
         elif args_dict["job_action"] == "delete":
             print "user chose delete action"
-        # drqueue job requeue job_name|job_id
-        elif args_dict["job_action"] == "requeue":
-            print "user chose requeue action"
+        # drqueue job continue job_name|job_id
+        elif args_dict["job_action"] == "continue":
+            print "user chose continue action"
+        # drqueue job rerun job_name|job_id
+        elif args_dict["job_action"] == "rerun":
+            print "user chose rerun action"
         else:
             print("Error: Unknown parameter specified.")
             exit(1)
@@ -162,6 +196,59 @@ def list_jobs(job_id=None, job_name=None):
 
             # for debugging:
             #print(task)
+
+
+def add_job():
+    global args_dict
+    global client
+
+    # set limits
+    limits = dict()
+    limits['pool_name'] = args_dict["pool"]
+    limits['os'] = args_dict["os"]
+    limits['minram'] = int(args_dict["minram"])
+    limits['mincores'] = int(args_dict["mincores"])
+
+    options_var = eval(args_dict["options"])
+    options_var['send_email'] = args_dict["send_email"]
+    options_var['email_recipients'] = args_dict["email_recipients"]
+
+    # add standard Blender option
+    if (args_dict["renderer"] == "blender") and ("rendertype" not in options_var):
+        options_var['rendertype'] = "animation"
+
+    # initialize DrQueue job
+    job = DrQueueJob(args_dict["name"], int(args_dict["startframe"]), int(args_dict["endframe"]), int(args_dict["blocksize"]), args_dict["renderer"], args_dict["scenefile"], args_dict["retries"], args_dict["owner"], options_var, "send_job.py", limits)
+
+    # run job with client
+    try:
+        client.job_run(job)
+    except ValueError:
+        print("One of your the specified values produced an error:")
+        raise
+        exit(1)
+
+    # tasks which have been created
+    tasks = client.query_task_list(job['_id'])
+
+    # wait for all tasks of job to finish
+    if args_dict["wait"]:
+        if (tasks == []) and (client.query_computer_list() == []):
+            print("Tasks have been sent but no render node is running at the moment.")
+            exit(0)
+
+        for task in tasks:
+            ar = client.task_wait(task['msg_id'])
+            # add some verbose output
+            if args_dict["verbose"]:
+                cpl = ar.metadata.completed
+                msg_id = ar.metadata.msg_id
+                status = ar.status
+                engine_id = ar.metadata.engine_id
+                print("Task %s finished with status '%s' on engine %i at %i-%02i-%02i %02i:%02i:%02i." % (msg_id, status, engine_id, cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
+                if ar.pyerr != None:
+                    print(ar.pyerr)
+        print("Job %s finished." % job['name'])
 
 
 if __name__ == "__main__":
