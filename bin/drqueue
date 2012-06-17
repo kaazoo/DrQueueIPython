@@ -38,29 +38,32 @@ args_dict = None
 def main():
     global args_dict
 
+    # create parent parser for global options
+    parent_parser = argparse.ArgumentParser(add_help=False)
+    parent_parser.add_argument("-v", "--verbose", action="store_true", dest="verbose", default=False, help="verbose output")
+
     # create the top-level parser
-    parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(help="choose one action")
-    
+    parser = argparse.ArgumentParser(parents=[parent_parser])
+    subparsers = parser.add_subparsers(title="subcommands")
+
     # create the parser for the job command
-    parser_job = subparsers.add_parser("job", help="job management")
-    #parser_job.add_argument("job_action", help="list / add / stop / kill / delete / continue / rerun")
+    parser_job = subparsers.add_parser("job", help="job management", parents=[parent_parser])
 
-    subparsers_job = parser_job.add_subparsers(help="choose one action")
-    parser_job_list = subparsers_job.add_parser("list", help="list one or more jobs")
-    parser_job_add = subparsers_job.add_parser("add", help="add a new job")
-    parser_job_stop = subparsers_job.add_parser("stop", help="stop running job")
-    parser_job_kill = subparsers_job.add_parser("kill", help="kill running job")
-    parser_job_delete = subparsers_job.add_parser("delete", help="delete existing job")
-    parser_job_continue = subparsers_job.add_parser("continue", help="continue stopped job")
-    parser_job_rerun = subparsers_job.add_parser("rerun", help="rerun stopped job")
+    # create the parsers for job subcommands
+    subparsers_job = parser_job.add_subparsers(title="subcommands")
+    parser_job_list = subparsers_job.add_parser("list", help="list one or more jobs", parents=[parent_parser])
+    parser_job_add = subparsers_job.add_parser("add", help="add a new job", parents=[parent_parser])
+    parser_job_stop = subparsers_job.add_parser("stop", help="stop running job", parents=[parent_parser])
+    parser_job_kill = subparsers_job.add_parser("kill", help="kill running job", parents=[parent_parser])
+    parser_job_delete = subparsers_job.add_parser("delete", help="delete existing job", parents=[parent_parser])
+    parser_job_continue = subparsers_job.add_parser("continue", help="continue stopped job", parents=[parent_parser])
+    parser_job_rerun = subparsers_job.add_parser("rerun", help="rerun stopped job", parents=[parent_parser])
 
+    # options for job list action
+    parser_job_list.add_argument("-i", "--id", help="job id")
+    parser_job_list.add_argument("-n", "--name", help="job name")
 
-    # options for list action
-    parser_job_list.add_argument('-id', help="job id")
-    parser_job_list.add_argument('-name', help="job name")
-
-    # options for the add action
+    # options for job add action
     parser_job_add.add_argument("-s", "--startframe", dest="startframe", default=1, help="first frame")
     parser_job_add.add_argument("-e", "--endframe", dest="endframe", default=1, help="last frame")
     parser_job_add.add_argument("-b", "--blocksize", dest="blocksize", default=1, help="size of block")
@@ -77,14 +80,32 @@ def main():
     parser_job_add.add_argument("--send-email", action="store_true", dest="send_email", default=False, help="Send notification email when job is finished")
     parser_job_add.add_argument("--email-recipients", dest="email_recipients", default=None, help="Recipients for notification email")
     parser_job_add.add_argument("-w", "--wait", action="store_true", dest="wait", default=False, help="wait for job to finish")
-    parser_job_add.add_argument("-v", "--verbose", action="store_true", dest="verbose", default=False, help="verbose output")
     
     # create the parser for the computer command
-    parser_computer = subparsers.add_parser("computer", help="computer management")
-    parser_computer.add_argument("computer_action", help="list / restart / pool")
+    parser_computer = subparsers.add_parser("computer", help="computer management", parents=[parent_parser])
+
+    # create the parsers for computer subcommands
+    subparsers_computer = parser_computer.add_subparsers(title="subcommands")
+    parser_computer_list = subparsers_computer.add_parser("list", help="list known computers", parents=[parent_parser])
+    parser_computer_restart = subparsers_computer.add_parser("restart", help="restart computer", parents=[parent_parser])
+    parser_computer_pool = subparsers_computer.add_parser("pool", help="set pool membership of computers", parents=[parent_parser])
+
+    # options for computer list action
+    parser_computer_list.add_argument("-i", "--id", help="computer id")
+    parser_computer_list.add_argument("-n", "--name", help="computer name")
+
+    # options for computer restart action
+    parser_computer_restart.add_argument("-i", "--id", help="computer id")
+    parser_computer_restart.add_argument("-n", "--name", help="computer name")
+
+    # options for computer pool action
+    parser_computer_pool.add_argument("-i", "--id", help="computer id")
+    parser_computer_pool.add_argument("-n", "--name", help="computer name")
+    parser_computer_pool.add_argument("-p", "--pools", help="list of pools")
+
     
     # create the parser for the security command
-    parser_security = subparsers.add_parser("security", help="toggle IPython security folder permissions")
+    parser_security = subparsers.add_parser("security", help="toggle IPython security folder permissions", parents=[parent_parser])
     parser_security.add_argument("security_action", help="lock / unlock")
     
     #parser_computer.add_argument('--baz', choices='XYZ', help='baz help')
