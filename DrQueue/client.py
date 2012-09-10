@@ -245,30 +245,35 @@ class Client():
             else:
                 print("DEBUG: Engine %i was not found in DB." % engine_id)
             # run command only on specific computer
-            dview = self.ip_client[engine_id]
-            # run command in async mode
-            dview.block = False
-            command = "import DrQueue\nfrom DrQueue import Computer as DrQueueComputer\nengine = DrQueueComputer()"
-            ar = dview.execute(command)
             try:
-                # try to get results & wait until timeout
-                ar.get(timeout)
-            except Exception:
-                if engine != None:
-                    print("DEBUG: Update request for engine %i timed out. Using old information from DB." % engine_id)
-                    new_engine = engine
-                else:
-                    print("DEBUG: Information request for engine %i timed out." % engine_id)
-                    new_engine = None
+                dview = self.ip_client[engine_id]
+            except IndexError:
+                print("DEBUG: Engine with id %i unkown." % engine_id)
+                new_engine = None
             else:
-                # get computer dict from engine namespace
-                new_engine = dview['engine']
-                # set to known engine_id
-                new_engine['engine_id'] = engine_id
-                # set creation time
-                new_engine['created_at'] = int(time.time())
-                # store entry in database
-                DrQueueComputer.store_db(new_engine)
+                # run command in async mode
+                dview.block = False
+                command = "import DrQueue\nfrom DrQueue import Computer as DrQueueComputer\nengine = DrQueueComputer()"
+                ar = dview.execute(command)
+                try:
+                    # try to get results & wait until timeout
+                    ar.get(timeout)
+                except Exception:
+                    if engine != None:
+                        print("DEBUG: Update request for engine %i timed out. Using old information from DB." % engine_id)
+                        new_engine = engine
+                    else:
+                        print("DEBUG: Information request for engine %i timed out." % engine_id)
+                        new_engine = None
+                else:
+                    # get computer dict from engine namespace
+                    new_engine = dview['engine']
+                    # set to known engine_id
+                    new_engine['engine_id'] = engine_id
+                    # set creation time
+                    new_engine['created_at'] = int(time.time())
+                    # store entry in database
+                    DrQueueComputer.store_db(new_engine)
             return new_engine
 
 
