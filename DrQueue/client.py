@@ -558,6 +558,49 @@ class Client():
         return True
 
 
+    def task_rerun(self, task_id):
+        """Run task another time"""
+        task = self.query_task(task_id)
+
+        #print(task)
+
+        # enable job
+        #job['enabled'] = True
+        # set resubmit time
+        #job['requeue_time'] = datetime.datetime.now()
+        #DrQueueJob.update_db(job)
+
+        # resubmit msg_id of task
+        try:
+            async_results = self.ip_client.resubmit(task["msg_id"])
+        except Exception as e:
+            print("ERROR: " + str(e))
+
+        # IPython seems to give out new msg_ids instead of re-using the old ones
+        for msg_id in async_results.msg_ids:
+            print("got new msg_id: " + msg_id)
+
+        # delete old tasks which now have a resubmitted clone
+        try:
+            self.ip_client.purge_results(task["msg_id"])
+        except Exception as e:
+            print("ERROR: " + str(e))
+
+        # kickstart all computers
+        running_engines = []
+        stats = self.ip_client.queue_status('all', True)
+        # check if tasks is already running on an engine
+        for key,status in list(stats.items()):
+            if ('tasks' in status) and (task['msg_id'] in status['tasks']):
+                running_engines.append(key)
+        # restart all engines which still run a task
+        running_engines = set(running_engines)
+        for engine_id in running_engines:
+            self.engine_restart(engine_id)
+
+        return True
+
+
     def job_status(self, job_id):
         """Return status string of job"""
         tasks = self.query_task_list(job_id)

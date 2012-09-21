@@ -34,6 +34,8 @@ def main():
                       action="store_true", dest="cont", default=False, help="continue a previously stopped job")
     parser.add_option("-r", "--rerun",
                       action="store_true", dest="rerun", default=False, help="rerun job")
+    parser.add_option("-R", "--rerun_task",
+                      action="store_true", dest="rerun_task", default=False, help="rerun task")
     parser.add_option("-t", "--status",
                       action="store_true", dest="status", default=False, help="show the status of the job")
     parser.add_option("-v", "--verbose",
@@ -52,12 +54,13 @@ def main():
         job_id = job['_id']
         job_name = options.name
     else:
-        job_id = options.id
-        job = DrQueueJob.query_db(job_id)
-        if job == None:
-            print("Specified job does not exist.")
-            sys.exit(1)
-        job_name = job['name']
+        if not options.rerun_task:
+            job_id = options.id
+            job = DrQueueJob.query_db(job_id)
+            if job == None:
+                print("Specified job does not exist.")
+                sys.exit(1)
+            job_name = job['name']
 
     # run specified action on job
     if options.stop:
@@ -79,6 +82,10 @@ def main():
     if options.rerun:
         client.job_rerun(job_id)
         print("Job %s is running another time." % job_name)
+        return
+    if options.rerun_task:
+        client.task_rerun(options.id)
+        print("Task %s is running another time." % options.id)
         return
     if options.status:
         status = client.job_status(job_id)
