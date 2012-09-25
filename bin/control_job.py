@@ -36,6 +36,8 @@ def main():
                       action="store_true", dest="rerun", default=False, help="rerun job")
     parser.add_option("-R", "--rerun_task",
                       action="store_true", dest="rerun_task", default=False, help="rerun task")
+    parser.add_option("-F", "--rerun_interrupted_tasks",
+                      action="store_true", dest="rerun_interrupted_tasks", default=False, help="rerun interrupted tasks")
     parser.add_option("-t", "--status",
                       action="store_true", dest="status", default=False, help="show the status of the job")
     parser.add_option("-v", "--verbose",
@@ -86,6 +88,10 @@ def main():
     if options.rerun_task:
         client.task_rerun(options.id)
         print("Task %s is running another time." % options.id)
+        return
+    if options.rerun_interrupted_tasks:
+        client.job_rerun_interrupted_tasks(job_id)
+        print("Interrupted tasks of job %s are running another time." % job_name)
         return
     if options.status:
         status = client.job_status(job_id)

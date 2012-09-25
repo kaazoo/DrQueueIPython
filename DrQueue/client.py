@@ -11,6 +11,7 @@ Licensed under GNU General Public License version 3. See LICENSE for details.
 
 import os
 import os.path
+import glob
 import time
 import pickle
 import datetime
@@ -34,6 +35,9 @@ class Client():
 
         # enable tracking
         self.lbview.track = True
+
+        # list of all available query keys
+        self.all_task_query_keys = ['msg_id', 'header', 'content', 'buffers', 'submitted', 'client_uuid', 'engine_uuid', 'started', 'completed', 'resubmitted', 'result_header', 'result_content', 'result_buffers', 'queue', 'pyin', 'pyout', 'pyerr', 'stdout', 'stderr']
 
 
     def job_run(self, job):
@@ -349,7 +353,7 @@ class Client():
 
     def get_frame_nr(self, task):
         """Extract value of DRQUEUE_FRAME."""
-        if 'buffers' in task:
+        if ('buffers' in task) and task['buffers'] != []:
             frame_nr = int(pickle.loads(task['buffers'][3])['DRQUEUE_FRAME'])
         else:
             frame_nr = 1
@@ -358,14 +362,48 @@ class Client():
 
     def query_task_list(self, job_id):
         """Query a list of tasks objects of certain job. Sort by frame number."""
-        task_list =  self.ip_client.db_query({'header.session' : str(job_id)})
+        task_list =  self.ip_client.db_query({'header.session' : str(job_id)}, keys=self.all_task_query_keys)
         sorted_task_list = sorted(task_list, key=self.get_frame_nr)
         return sorted_task_list
 
 
+    def query_interrupted_task_list(self, job_id):
+        """Query a list of interrupted tasks of certain job. Sort by frame number."""
+        job = self.query_job_by_id(job_id)
+        task_list =  self.ip_client.db_query({'header.session' : str(job_id)}, keys=self.all_task_query_keys)
+        interrupted_task_list = []
+
+        for task in task_list:
+            frame_nr = self.get_frame_nr(task)
+            print("frame_nr: " + str(frame_nr))
+            # log filename
+            if job['renderer'] == "blender":
+                filesearch = job['scenefile'] + str("%04d" % frame_nr) + ".???"
+                found = glob.glob(filesearch)
+                # file was found
+                if len(found) > 0:
+                    outputfile = found[0]
+                    print("outputfile: "+ str(outputfile))
+                    filesize = os.path.getsize(outputfile)
+                    print(filesize)
+                    # file exists, but is empty
+                    if filesize == 0:
+                        interrupted_task_list.append(task)
+                # file was not found
+                else:
+                    outputfile = None
+                    print("outputfile: "+ str(outputfile))
+                    if (task['completed'] == None) and (task['started'] == None):
+                        interrupted_task_list.append(task)
+            else:
+                raise ValueError("Only Blender renderer supported so far.")
+
+        return interrupted_task_list
+
+
     def query_task(self, task_id):
         """Query a single task."""
-        task = self.ip_client.db_query({'msg_id' : task_id })[0]
+        task = self.ip_client.db_query({'msg_id' : task_id }, keys=self.all_task_query_keys)[0]
         return task
 
 
@@ -593,6 +631,58 @@ class Client():
         for key,status in list(stats.items()):
             if ('tasks' in status) and (task['msg_id'] in status['tasks']):
                 running_engines.append(key)
+        # restart all engines which still run a task
+        running_engines = set(running_engines)
+        for engine_id in running_engines:
+            self.engine_restart(engine_id)
+
+        return True
+
+
+    def job_rerun_interrupted_tasks(self, job_id):
+        """Run interrupted tasks of job another time"""
+        job = self.query_job_by_id(job_id)
+
+        # enable job
+        job['enabled'] = True
+        # set resubmit time
+        job['requeue_time'] = datetime.datetime.now()
+        DrQueueJob.update_db(job)
+
+        tasks = self.query_interrupted_task_list(job_id)
+
+        if len(tasks) == 0:
+            return True
+
+        tasks_to_resubmit = []
+        # get all msg_ids of job
+        for task in tasks:
+            tasks_to_resubmit.append(task["msg_id"])
+
+        # resubmit all msg_ids at once
+        try:
+            async_results = self.ip_client.resubmit(tasks_to_resubmit)
+        except Exception as e:
+            print("ERROR: " + str(e))
+
+        # IPython seems to give out new msg_ids instead of re-using the old ones
+        for msg_id in async_results.msg_ids:
+            print("got new msg_id: " + msg_id)
+
+        # delete old tasks which now have a resubmitted clone
+        try:
+            self.ip_client.purge_results(tasks_to_resubmit)
+        except Exception as e:
+            print("ERROR: " + str(e))
+
+        # kickstart all computers
+        running_engines = []
+        for task in tasks:
+            stats = self.ip_client.queue_status('all', True)
+            # check if tasks is already running on an engine
+            for key,status in list(stats.items()):
+                if ('tasks' in status) and (task['msg_id'] in status['tasks']):
+                    running_engines.append(key)
         # restart all engines which still run a task
         running_engines = set(running_engines)
         for engine_id in running_engines:
