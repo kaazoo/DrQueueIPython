@@ -253,6 +253,9 @@ class Client():
                 dview = self.ip_client[engine_id]
             except IndexError:
                 print("DEBUG: Engine with id %i unkown." % engine_id)
+                # delete old entry from database
+                DrQueueComputer.delete_from_db_by_engine_id(engine_id)
+                print("DEBUG: Engine with id %i deleted from database." % engine_id)
                 new_engine = None
             else:
                 # run command in async mode
