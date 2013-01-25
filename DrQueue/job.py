@@ -132,7 +132,11 @@ class Job(dict):
         connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
         db = connection['ipythondb']
         jobs = db['drqueue_jobs']
-        job = jobs.find_one({"_id": bson.ObjectId(job_id)})
+        try:
+            job = jobs.find_one({"_id": bson.ObjectId(job_id)})
+        except bson.errors.InvalidId:
+            print("Format error: Invalid BSON.")
+            job = None
         return job
 
 
