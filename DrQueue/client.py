@@ -709,25 +709,28 @@ class Client():
             if task['completed'] == None:
                 status_pending += 1
             else:
-                if 'result_header' in list(task.keys()):
-                    result_header = task['result_header']
+                if 'result_content' in list(task.keys()):
+                    result_content = task['result_content']
                     # look for done tasks
-                    if ('status' in list(result_header.keys())) and (result_header['status'] == "ok"):
+                    if ('status' in list(result_content.keys())) and (result_content['status'] == "ok"):
                         status_ok += 1
                     # look for aborted tasks
-                    elif ('status' in list(result_header.keys())) and (result_header['status'] == "aborted"):
+                    elif ('status' in list(result_content.keys())) and (result_content['status'] == "aborted"):
                         status_aborted += 1
                     # look for done tasks
-                    elif ('status' in list(result_header.keys())) and (result_header['status'] == "resubmitted"):
+                    elif ('status' in list(result_content.keys())) and (result_content['status'] == "resubmitted"):
                         status_resubmitted += 1
                     # look for tasks with error
-                    elif ('status' in list(result_header.keys())) and (result_header['status'] == "error"):
+                    elif ('status' in list(result_content.keys())) and (result_content['status'] == "error"):
                         status_error += 1
                     else:
                         status_unknown += 1
         # if at least 1 task is ok, job status is ok
         if status_ok > 0:
             status = "ok"
+        # if at least 1 task has unknown status, job status is unknown
+        if status_unknown > 0:
+            status = "unknown"
         # if at least 1 task is pending, job status is pending
         if status_pending > 0:
             status = "pending"
