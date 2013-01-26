@@ -75,7 +75,7 @@ class Computer(dict):
             import subprocess
             proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Processor Name\" | cut -d \":\" -f2"], shell=True, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
-            proctype = output.lstrip()
+            proctype = output.lstrip().rstrip('\n')
         if osname == ["Linux", "Windows", "Win32"]:
             proctype = platform.processor()
         return proctype
@@ -99,7 +99,7 @@ class Computer(dict):
             import subprocess
             proc = subprocess.Popen(["system_profiler SPHardwareDataType | grep \"Processor Speed\" | cut -d \":\" -f2"], shell=True, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
-            speed = output.lstrip()
+            speed = output.lstrip().rstrip('\n')
         if osname == "Linux":
             for line in fileinput.input('/proc/cpuinfo'):
                 if 'MHz' in line:
