@@ -71,8 +71,8 @@ def main():
     options_var['send_email'] = options.send_email
     options_var['email_recipients'] = options.email_recipients
 
-    # add standard Blender option
-    if (options.renderer == "blender") and ("rendertype" not in options_var):
+    # add default rendertype if missing
+    if "rendertype" not in options_var:
         options_var['rendertype'] = "animation"
 
     # initialize DrQueue job
