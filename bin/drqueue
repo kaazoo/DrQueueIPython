@@ -16,7 +16,7 @@ import DrQueue
 from DrQueue import Job as DrQueueJob
 from DrQueue import Client as DrQueueClient
 
-import os, signal, subprocess, sys, platform, time, socket, datetime
+import os, signal, subprocess, sys, platform, time, socket, datetime, glob
 from collections import deque
 import pkg_resources
 
@@ -26,7 +26,9 @@ SIGINT_SENT = False
 MONGODB_PID = None
 IPCONTROLLER_PID = None
 IPENGINE_PID = None
-
+CACHE_TIME = 60
+ADMIN_USER = "root"
+DRQUEUE_USER = "drqueue"
 
 
 # 
@@ -165,8 +167,14 @@ def main():
 
     
     # create the parser for the security command
-    parser_security = subparsers.add_parser("security", help="toggle IPython security folder permissions", parents=[parent_parser])
-    parser_security.add_argument("security_action", help="lock / unlock")
+    parser_security = subparsers.add_parser("security", help="toggle IPython security permissions", parents=[parent_parser])
+
+    # create the parsers for security subcommands and set their handler functions
+    subparsers_security = parser_security.add_subparsers(title="subcommands")
+    parser_security_lock = subparsers_security.add_parser("lock", help="lock IPython security permissions", parents=[parent_parser])
+    parser_security_lock.set_defaults(func=security_lock)
+    parser_security_unlock = subparsers_security.add_parser("unlock", help="unlock IPython security permissions", parents=[parent_parser])
+    parser_security_unlock.set_defaults(func=security_unlock)
 
 
     # create the parser for the master command
@@ -502,7 +510,7 @@ def computer_list(args):
     # initialize DrQueue client
     client = DrQueueClient()
 
-    cache_time = 60
+    global CACHE_TIME
 
     computer_id = args.id
 
@@ -517,7 +525,7 @@ def computer_list(args):
 
     for comp_id in computers:
         print("Engine " + str(comp_id) + ":")
-        comp = client.identify_computer(comp_id, cache_time)
+        comp = client.identify_computer(comp_id, CACHE_TIME)
         if comp == None:
             print(" Engine is blocked. Try again later.")
         else:
@@ -544,8 +552,6 @@ def computer_stop(args):
     # initialize DrQueue client
     client = DrQueueClient()
 
-    cache_time = 60
-
     computer_id = args.id
 
     if computer_id != None:
@@ -566,7 +572,7 @@ def computer_pool(args):
     # initialize DrQueue client
     client = DrQueueClient()
 
-    cache_time = 60
+    global CACHE_TIME
 
     computer_id = args.id
 
@@ -585,12 +591,63 @@ def computer_pool(args):
 
     for comp_id in computers:
         print("Engine " + str(comp_id) + ":")
-        comp = client.identify_computer(comp_id, cache_time)
+        comp = client.identify_computer(comp_id, CACHE_TIME)
         if comp == None:
             print(" Engine is blocked. Try again later.")
         else:
             client.computer_set_pools(comp, args.pools.split(","))
             print("Computer %i has been added to pools %s." % (comp_id, args.pools.split(",")))
+
+
+def recursive_permissions(path, filemode, dirmode, uid=-1, gid=-1):
+    # Recursively updates permissions on a given path.
+    # UID and GID default to -1, and mode is required
+    try:
+        os.chown(path,uid,gid)
+        os.chmod(path,dirmode)
+    except:
+        print('Directory permissions on {0} not updated due to error.'.format(path))
+    for item in glob.glob(path + '/*'):
+        print(item)
+        if os.path.isdir(item):
+            try:
+                os.chown(os.path.join(path,item),uid,gid)
+                os.chmod(os.path.join(path,item),dirmode)
+            except:
+                print('Directory permissions on {0} not updated due to error.'.format(os.path.join(path,item)))
+            recursive_permissions(os.path.join(path,item),filemode,dirmode,uid,gid)
+        else:
+            try:
+                os.chown(os.path.join(path,item),uid,gid)
+                os.chmod(os.path.join(path,item),filemode)
+            except:
+                print('File permissions on {0} not updated due to error.'.format(os.path.join(path,item)))
+
+
+def security_lock(args):
+
+    if "DRQUEUE_ROOT" not in os.environ:
+        sys.stderr.write("DRQUEUE_ROOT environment variable is not set!\n")
+        sys.exit(-1)
+
+    sec_dir = os.path.join(os.environ["DRQUEUE_ROOT"], "ipython", "profile_default", "security")
+
+    print("Will lock " + sec_dir)
+    global ADMIN_USER
+    recursive_permissions(sec_dir, 644, 755, ADMIN_USER, ADMIN_USER)
+
+
+def security_unlock(args):
+
+    if "DRQUEUE_ROOT" not in os.environ:
+        sys.stderr.write("DRQUEUE_ROOT environment variable is not set!\n")
+        sys.exit(-1)
+
+    sec_dir = os.path.join(os.environ["DRQUEUE_ROOT"], "ipython", "profile_default", "security")
+
+    print("Will unlock " + sec_dir)
+    global DRQUEUE_USER
+    recursive_permissions(sec_dir, 644, 755, DRQUEUE_USER, DRQUEUE_USER)
 
 
 def is_port_open(ip, port):
