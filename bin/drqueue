@@ -76,11 +76,12 @@ def main():
     parser_job_continue.set_defaults(func=job_continue)
     parser_job_rerun = subparsers_job.add_parser("rerun", help="rerun stopped job", parents=[parent_parser])
     parser_job_rerun.set_defaults(func=job_rerun)
+    parser_job_rerun_interrupted_tasks = subparsers_job.add_parser("rerun_interrupted_tasks", help="rerun interrupted tasks", parents=[parent_parser])
+    parser_job_rerun_interrupted_tasks.set_defaults(func=job_rerun_interrupted_tasks)
 
     # options for job list action
     parser_job_list.add_argument("-i", "--id", dest="id", help="job id")
     parser_job_list.add_argument("-n", "--name", dest="name", help="job name")
-    parser_job_list.add_argument("-a", "--all ", action="store_true", dest="all", default=False, help="use all jobs")
 
     # options for job add action
     parser_job_add.add_argument("-s", "--startframe", dest="startframe", default=1, help="first frame")
@@ -104,27 +105,40 @@ def main():
     # options for job stop action
     parser_job_stop.add_argument("-i", "--id", dest="id", help="job id")
     parser_job_stop.add_argument("-n", "--name", dest="name", help="job name")
-    parser_job_stop.add_argument("-a", "--all ", action="store_true", dest="all", default=False, help="use all jobs")
 
     # options for job kill action
     parser_job_kill.add_argument("-i", "--id", dest="id", help="job id")
     parser_job_kill.add_argument("-n", "--name", dest="name", help="job name")
-    parser_job_kill.add_argument("-a", "--all ", action="store_true", dest="all", default=False, help="use all jobs")
 
     # options for job delete action
     parser_job_delete.add_argument("-i", "--id", dest="id", help="job id")
     parser_job_delete.add_argument("-n", "--name", dest="name", help="job name")
-    parser_job_delete.add_argument("-a", "--all ", action="store_true", dest="all", default=False, help="use all jobs")
 
     # options for job continue action
     parser_job_continue.add_argument("-i", "--id", dest="id", help="job id")
     parser_job_continue.add_argument("-n", "--name", dest="name", help="job name")
-    parser_job_continue.add_argument("-a", "--all ", action="store_true", dest="all", default=False, help="use all jobs")
 
     # options for job rerun action
     parser_job_rerun.add_argument("-i", "--id", dest="id", help="job id")
     parser_job_rerun.add_argument("-n", "--name", dest="name", help="job name")
-    parser_job_rerun.add_argument("-a", "--all ", action="store_true", dest="all", default=False, help="use all jobs")
+
+    # options for job rerun_interrupted_tasks action
+    parser_job_rerun_interrupted_tasks.add_argument("-i", "--id", dest="id", help="job id")
+    parser_job_rerun_interrupted_tasks.add_argument("-n", "--name", dest="name", help="job name")
+
+
+    # create the parser for the task command
+    parser_task = subparsers.add_parser("task", help="task management", parents=[parent_parser])
+
+    # create the parsers for task subcommands and set their handler functions
+    subparsers_task = parser_task.add_subparsers(title="subcommands")
+    parser_task_rerun = subparsers_task.add_parser("rerun", help="rerun task with ID 'tid' of job identified by ID 'id' or NAME 'n'", parents=[parent_parser])
+    parser_task_rerun.set_defaults(func=task_rerun)
+
+    # options for computer list action
+    parser_task_rerun.add_argument("-t", "--tid", dest="tid", help="task id")
+    parser_task_rerun.add_argument("-i", "--id", dest="id", help="computer id")
+    parser_task_rerun.add_argument("-n", "--name", dest="name", help="computer name")
 
 
     # create the parser for the computer command
@@ -181,60 +195,9 @@ def main():
     args.func(args)
 
 
-    # if ("job_action" in args_dict):
-    #     # drqueue job list
-    #     if args_dict["job_action"] == "list":
-    #         print "user chose list action"
-    #         if ("id" in args_dict) and (args_dict["id"] != None):
-    #             list_jobs(args_dict["id"], None)
-    #         elif ("name" in args_dict) and (args_dict["name"] != None):
-    #             list_jobs(None, args_dict["name"])
-    #         else:
-    #             list_jobs()
-    #     # drqueue job add
-    #     elif args_dict["job_action"] == "add":
-    #         print "user chose add action"
-    #         add_job()
-    #     # drqueue job stop job_name|job_id
-    #     elif args_dict["job_action"] == "stop":
-    #         print "user chose stop action"
-    #     # drqueue job kill job_name|job_id
-    #     elif args_dict["job_action"] == "kill":
-    #         print "user chose kill action"
-    #     # drqueue job delete job_name|job_id
-    #     elif args_dict["job_action"] == "delete":
-    #         print "user chose delete action"
-    #     # drqueue job continue job_name|job_id
-    #     elif args_dict["job_action"] == "continue":
-    #         print "user chose continue action"
-    #     # drqueue job rerun job_name|job_id
-    #     elif args_dict["job_action"] == "rerun":
-    #         print "user chose rerun action"
-    #     else:
-    #         print("Error: Unknown parameter specified.")
-    #         exit(1)
-    
-    # if ("computer_action" in args_dict):
-    #     cache_time = 60
-    #     # drqueue computer list
-    #     if args_dict["computer_action"] == "list":
-    #         print "user chose list action"
-    #     # drqueue computer restart computer_name|conputer_id
-    #     elif args_dict["computer_action"] == "restart":
-    #         print "user chose restart action"
-    #     # drqueue computer pool computer_name|conputer_id pool_name
-    #     elif args_dict["computer_action"] == "pool":
-    #         print "user chose pool action"
-    #     else:
-    #         print("Error: Unknown parameter specified.")
-    #         exit(1)
-
-
 def job_list(args):
     # initialize DrQueue client
     client = DrQueueClient()
-
-    print "user chose list action"
 
     job_id = args.id
     job_name = args.name
@@ -242,15 +205,19 @@ def job_list(args):
     if (job_id != None) and (job_name == None):
         # fetch information about single job
         jobs = [client.query_job_by_id(job_id)]
+        print "Listing job with id " + str(job_id)
     elif (job_id == None) and (job_name != None):
         # fetch information about single job
         jobs = [client.query_job_by_name(job_name)]
+        print "Listing job with name " + str(job_name)
     else:
         # fetch a list of all jobs
         jobs = client.query_job_list()
-        
-    # walk through tasks of every job
+        print "Listing all jobs"
+
+    # run action on every job
     for job in jobs:
+        # walk through tasks of every job
         tasks = client.query_task_list(job['_id'])
         meantime, time_left, finish_time = client.job_estimated_finish_time(job['_id'])
         frame = job['startframe']
@@ -356,25 +323,185 @@ def job_stop(args):
     # initialize DrQueue client
     client = DrQueueClient()
 
+    job_id = args.id
+    job_name = args.name
+
+    if (job_id != None) and (job_name == None):
+        # fetch information about single job
+        jobs = [client.query_job_by_id(job_id)]
+        print "Stopping job with id " + str(job_id)
+    elif (job_id == None) and (job_name != None):
+        # fetch information about single job
+        jobs = [client.query_job_by_name(job_name)]
+        print "Stopping job with name " + str(job_name)
+    else:
+        # fetch a list of all jobs
+        jobs = client.query_job_list()
+        print "Stopping all jobs"
+
+    # run action on every job
+    for job in jobs:
+        client.job_stop(job['_id'])
+        print("Job %s has been stopped.\n" % job['name'])
+
 
 def job_kill(args):
     # initialize DrQueue client
     client = DrQueueClient()
+
+    job_id = args.id
+    job_name = args.name
+
+    if (job_id != None) and (job_name == None):
+        # fetch information about single job
+        jobs = [client.query_job_by_id(job_id)]
+        print "Killing job with id " + str(job_id)
+    elif (job_id == None) and (job_name != None):
+        # fetch information about single job
+        jobs = [client.query_job_by_name(job_name)]
+        print "Killing job with name " + str(job_name)
+    else:
+        # fetch a list of all jobs
+        jobs = client.query_job_list()
+        print "Killing all jobs"
+
+    # run action on every job
+    for job in jobs:
+        client.job_kill(job['_id'])
+        print("Job %s has been killed.\n" % job['name'])
 
 
 def job_delete(args):
     # initialize DrQueue client
     client = DrQueueClient()
 
+    job_id = args.id
+    job_name = args.name
+
+    if (job_id != None) and (job_name == None):
+        # fetch information about single job
+        jobs = [client.query_job_by_id(job_id)]
+        print "Deleting job with id " + str(job_id)
+    elif (job_id == None) and (job_name != None):
+        # fetch information about single job
+        jobs = [client.query_job_by_name(job_name)]
+        print "Deleting job with name " + str(job_name)
+    else:
+        # fetch a list of all jobs
+        jobs = client.query_job_list()
+        print "Deleting all jobs"
+
+    # run action on every job
+    for job in jobs:
+        client.job_delete(job['_id'])
+        print("Job %s has been deleted.\n" % job['name'])
+
 
 def job_continue(args):
     # initialize DrQueue client
     client = DrQueueClient()
 
+    job_id = args.id
+    job_name = args.name
+
+    if (job_id != None) and (job_name == None):
+        # fetch information about single job
+        jobs = [client.query_job_by_id(job_id)]
+        print "Continuing job with id " + str(job_id)
+    elif (job_id == None) and (job_name != None):
+        # fetch information about single job
+        jobs = [client.query_job_by_name(job_name)]
+        print "Continuing job with name " + str(job_name)
+    else:
+        # fetch a list of all jobs
+        jobs = client.query_job_list()
+        print "Continuing all jobs"
+
+    # run action on every job
+    for job in jobs:
+        client.job_continue(job['_id'])
+        print("Job %s is running again.\n" % job['name'])
+
 
 def job_rerun(args):
     # initialize DrQueue client
     client = DrQueueClient()
+
+    job_id = args.id
+    job_name = args.name
+
+    if (job_id != None) and (job_name == None):
+        # fetch information about single job
+        jobs = [client.query_job_by_id(job_id)]
+        print "Rerunning job with id " + str(job_id)
+    elif (job_id == None) and (job_name != None):
+        # fetch information about single job
+        jobs = [client.query_job_by_name(job_name)]
+        print "Rerunning job with name " + str(job_name)
+    else:
+        # fetch a list of all jobs
+        jobs = client.query_job_list()
+        print "Rerunning all jobs"
+
+    # run action on every job
+    for job in jobs:
+        client.job_rerun(job['_id'])
+        print("Job %s is running another time.\n" % job['name'])
+
+
+def job_rerun_interrupted_tasks(args):
+    # initialize DrQueue client
+    client = DrQueueClient()
+
+    job_id = args.id
+    job_name = args.name
+
+    if (job_id != None) and (job_name == None):
+        # fetch information about single job
+        jobs = [client.query_job_by_id(job_id)]
+        print "Rerunning interrupted tasks of job with id " + str(job_id)
+    elif (job_id == None) and (job_name != None):
+        # fetch information about single job
+        jobs = [client.query_job_by_name(job_name)]
+        print "Rerunning interrupted tasks of job with name " + str(job_name)
+    else:
+        # fetch a list of all jobs
+        jobs = client.query_job_list()
+        print "Rerunning interrupted tasks of all jobs"
+
+    # run action on every job
+    for job in jobs:
+        client.job_rerun_interrupted_tasks(job['_id'])
+        print("Interrupted tasks of job %s are running another time.\n" % job['name'])
+
+
+def task_rerun(args):
+    # initialize DrQueue client
+    client = DrQueueClient()
+
+    job_id = args.id
+    job_name = args.name
+
+    if (job_id != None) and (job_name == None):
+        # fetch information about single job
+        jobs = [client.query_job_by_id(job_id)]
+        print "Rerunning interrupted tasks of job with id " + str(job_id)
+    elif (job_id == None) and (job_name != None):
+        # fetch information about single job
+        jobs = [client.query_job_by_name(job_name)]
+        print "Rerunning interrupted tasks of job with name " + str(job_name)
+    else:
+        # fetch a list of all jobs
+        jobs = client.query_job_list()
+        print "Rerunning interrupted tasks of all jobs"
+
+    # work on task id
+    if args.tid != 0:
+        client.task_rerun(args.tid)
+        print("Task %s of job %s is running another time." % (args.tid, jobs[0]['name']))
+    else:
+        print("Please a task id.")
+        sys.exit(-1)
 
 
 def computer_list(args):
