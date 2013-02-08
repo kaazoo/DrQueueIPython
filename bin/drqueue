@@ -148,26 +148,20 @@ def main():
     subparsers_computer = parser_computer.add_subparsers(title="subcommands")
     parser_computer_list = subparsers_computer.add_parser("list", help="list known computers", parents=[parent_parser])
     parser_computer_list.set_defaults(func=computer_list)
-    parser_computer_restart = subparsers_computer.add_parser("restart", help="restart computer", parents=[parent_parser])
-    parser_computer_restart.set_defaults(func=computer_restart)
+    parser_computer_stop = subparsers_computer.add_parser("stop", help="stop computer", parents=[parent_parser])
+    parser_computer_stop.set_defaults(func=computer_stop)
     parser_computer_pool = subparsers_computer.add_parser("pool", help="set pool membership of computers", parents=[parent_parser])
     parser_computer_pool.set_defaults(func=computer_pool)
 
     # options for computer list action
     parser_computer_list.add_argument("-i", "--id", dest="id", help="computer id")
-    parser_computer_list.add_argument("-n", "--name", dest="name", help="computer name")
-    parser_computer_list.add_argument("-a", "--all ", action="store_true", dest="all", default=False, help="use all computers")
 
-    # options for computer restart action
-    parser_computer_restart.add_argument("-i", "--id", dest="id", help="computer id")
-    parser_computer_restart.add_argument("-n", "--name", dest="name", help="computer name")
-    parser_computer_restart.add_argument("-a", "--all ", action="store_true", dest="all", default=False, help="use all computers")
+    # options for computer stop action
+    parser_computer_stop.add_argument("-i", "--id", dest="id", help="computer id")
 
     # options for computer pool action
     parser_computer_pool.add_argument("-i", "--id", dest="id", help="computer id")
-    parser_computer_pool.add_argument("-n", "--name", dest="name", help="computer name")
     parser_computer_pool.add_argument("-p", "--pools", dest="pools", help="list of pools")
-    parser_computer_pool.add_argument("-a", "--all ", action="store_true", dest="all", default=False, help="use all computers")
 
     
     # create the parser for the security command
@@ -500,7 +494,7 @@ def task_rerun(args):
         client.task_rerun(args.tid)
         print("Task %s of job %s is running another time." % (args.tid, jobs[0]['name']))
     else:
-        print("Please a task id.")
+        print("Please specify a task id.")
         sys.exit(-1)
 
 
@@ -508,15 +502,95 @@ def computer_list(args):
     # initialize DrQueue client
     client = DrQueueClient()
 
+    cache_time = 60
 
-def computer_restart(args):
+    computer_id = args.id
+
+    if computer_id != None:
+        # fetch information about single computer
+        computers = [computer_id]
+        print "Listing computer with id " + str(computer_id)
+    else:
+        # fetch a list of all computers
+        computers = client.ip_client.ids
+        print "Listing all computers"
+
+    for comp_id in computers:
+        print("Engine " + str(comp_id) + ":")
+        comp = client.identify_computer(comp_id, cache_time)
+        if comp == None:
+            print(" Engine is blocked. Try again later.")
+        else:
+            print(" hostname: " + comp['hostname'])
+            print(" address: " + comp['address'])
+            print(" arch: " + comp['arch'])
+            print(" os: " + comp['os'])
+            print(" proctype: " + str(comp['proctype']))
+            print(" nbits: " + str(comp['nbits']))
+            print(" procspeed: " + str(comp['procspeed']))
+            print(" ncpus: " + str(comp['ncpus']))
+            print(" ncorescpu: " + str(comp['ncorescpu']))
+            print(" memory: " + str(comp['memory']) + " GB")
+            print(" load: " + comp['load'])
+            print(" pools: " + ','.join(comp['pools']))
+            status = client.ip_client.queue_status(comp_id, verbose=True)
+            print(" status:")
+            print("  in queue: " + str(status['queue']))
+            print("  completed: " + str(status['completed']))
+            print("  tasks: " + str(status['tasks']))
+
+
+def computer_stop(args):
     # initialize DrQueue client
     client = DrQueueClient()
+
+    cache_time = 60
+
+    computer_id = args.id
+
+    if computer_id != None:
+        # fetch information about single computer
+        computers = [computer_id]
+        print "Stopping computer with id " + str(computer_id)
+    else:
+        # fetch a list of all computers
+        computers = client.ip_client.ids
+        print "Stopping all computers"
+
+    for computer in computers:
+        client.engine_stop(computer)
+        print("Computer %s has been stopped." % str(computer))
 
 
 def computer_pool(args):
     # initialize DrQueue client
     client = DrQueueClient()
+
+    cache_time = 60
+
+    computer_id = args.id
+
+    if computer_id != None:
+        # fetch information about single computer
+        computers = [computer_id]
+        print "Setting pools for computer with id " + str(computer_id)
+    else:
+        # fetch a list of all computers
+        computers = client.ip_client.ids
+        print "Setting pools for all computers"
+
+    if args.pools == None:
+        print("Please specify one or more pools.")
+        sys.exit(-1)
+
+    for comp_id in computers:
+        print("Engine " + str(comp_id) + ":")
+        comp = client.identify_computer(comp_id, cache_time)
+        if comp == None:
+            print(" Engine is blocked. Try again later.")
+        else:
+            client.computer_set_pools(comp, args.pools.split(","))
+            print("Computer %i has been added to pools %s." % (comp_id, args.pools.split(",")))
 
 
 def is_port_open(ip, port):
