@@ -16,8 +16,18 @@ import DrQueue
 from DrQueue import Job as DrQueueJob
 from DrQueue import Client as DrQueueClient
 
-# initialize DrQueue client
-client = DrQueueClient()
+import os, signal, subprocess, sys, platform, time, socket, datetime
+from collections import deque
+import pkg_resources
+
+
+SIGTERM_SENT = False
+SIGINT_SENT = False
+MONGODB_PID = None
+IPCONTROLLER_PID = None
+IPENGINE_PID = None
+
+
 
 # 
 # drqueue job list (list_jobs.py)
@@ -50,22 +60,27 @@ def main():
     # create the parser for the job command
     parser_job = subparsers.add_parser("job", help="job management", parents=[parent_parser])
 
-    # create the parsers for job subcommands
+    # create the parsers for job subcommands and set their handler functions
     subparsers_job = parser_job.add_subparsers(title="subcommands")
     parser_job_list = subparsers_job.add_parser("list", help="list one or more jobs", parents=[parent_parser])
+    parser_job_list.set_defaults(func=job_list)
     parser_job_add = subparsers_job.add_parser("add", help="add a new job", parents=[parent_parser])
+    parser_job_add.set_defaults(func=job_add)
     parser_job_stop = subparsers_job.add_parser("stop", help="stop running job", parents=[parent_parser])
+    parser_job_stop.set_defaults(func=job_stop)
     parser_job_kill = subparsers_job.add_parser("kill", help="kill running job", parents=[parent_parser])
+    parser_job_kill.set_defaults(func=job_kill)
     parser_job_delete = subparsers_job.add_parser("delete", help="delete existing job", parents=[parent_parser])
+    parser_job_delete.set_defaults(func=job_delete)
     parser_job_continue = subparsers_job.add_parser("continue", help="continue stopped job", parents=[parent_parser])
+    parser_job_continue.set_defaults(func=job_continue)
     parser_job_rerun = subparsers_job.add_parser("rerun", help="rerun stopped job", parents=[parent_parser])
+    parser_job_rerun.set_defaults(func=job_rerun)
 
     # options for job list action
     parser_job_list.add_argument("-i", "--id", dest="id", help="job id")
     parser_job_list.add_argument("-n", "--name", dest="name", help="job name")
     parser_job_list.add_argument("-a", "--all ", action="store_true", dest="all", default=False, help="use all jobs")
-    parser_job_list.set_defaults(func=job_list)
-
 
     # options for job add action
     parser_job_add.add_argument("-s", "--startframe", dest="startframe", default=1, help="first frame")
@@ -115,11 +130,14 @@ def main():
     # create the parser for the computer command
     parser_computer = subparsers.add_parser("computer", help="computer management", parents=[parent_parser])
 
-    # create the parsers for computer subcommands
+    # create the parsers for computer subcommands and set their handler functions
     subparsers_computer = parser_computer.add_subparsers(title="subcommands")
     parser_computer_list = subparsers_computer.add_parser("list", help="list known computers", parents=[parent_parser])
+    parser_computer_list.set_defaults(func=computer_list)
     parser_computer_restart = subparsers_computer.add_parser("restart", help="restart computer", parents=[parent_parser])
+    parser_computer_restart.set_defaults(func=computer_restart)
     parser_computer_pool = subparsers_computer.add_parser("pool", help="set pool membership of computers", parents=[parent_parser])
+    parser_computer_pool.set_defaults(func=computer_pool)
 
     # options for computer list action
     parser_computer_list.add_argument("-i", "--id", dest="id", help="computer id")
@@ -141,6 +159,16 @@ def main():
     # create the parser for the security command
     parser_security = subparsers.add_parser("security", help="toggle IPython security folder permissions", parents=[parent_parser])
     parser_security.add_argument("security_action", help="lock / unlock")
+
+
+    # create the parser for the master command
+    parser_master = subparsers.add_parser("master", help="start in master daemon", parents=[parent_parser])
+    parser_master.set_defaults(func=master_daemon)
+
+
+    # create the parser for the slave command
+    parser_slave = subparsers.add_parser("slave", help="start in slave daemon", parents=[parent_parser])
+    parser_slave.set_defaults(func=slave_daemon)
 
 
     # parse arguments
@@ -203,7 +231,8 @@ def main():
 
 
 def job_list(args):
-    global client
+    # initialize DrQueue client
+    client = DrQueueClient()
 
     print "user chose list action"
 
@@ -271,8 +300,8 @@ def job_list(args):
 
 
 def job_add(args):
-    # global args_dict
-    global client
+    # initialize DrQueue client
+    client = DrQueueClient()
 
     # set limits
     limits = dict()
@@ -321,6 +350,231 @@ def job_add(args):
                 if ar.pyerr != None:
                     print(ar.pyerr)
         print("Job %s finished." % job['name'])
+
+
+def job_stop(args):
+    # initialize DrQueue client
+    client = DrQueueClient()
+
+
+def job_kill(args):
+    # initialize DrQueue client
+    client = DrQueueClient()
+
+
+def job_delete(args):
+    # initialize DrQueue client
+    client = DrQueueClient()
+
+
+def job_continue(args):
+    # initialize DrQueue client
+    client = DrQueueClient()
+
+
+def job_rerun(args):
+    # initialize DrQueue client
+    client = DrQueueClient()
+
+
+def computer_list(args):
+    # initialize DrQueue client
+    client = DrQueueClient()
+
+
+def computer_restart(args):
+    # initialize DrQueue client
+    client = DrQueueClient()
+
+
+def computer_pool(args):
+    # initialize DrQueue client
+    client = DrQueueClient()
+
+
+def is_port_open(ip, port):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.connect((ip, int(port)))
+        s.shutdown(2)
+        return True
+    except:
+        return False
+
+
+def master_sig_handler(signum, frame):
+    global MONGODB_PID
+    global IPCONTROLLER_PID
+
+    if signum == signal.SIGINT:
+        sys.stderr.write("Received SIGINT. Shutting Down.\n")
+        global SIGINT_SENT
+        if not SIGINT_SENT:
+            SIGINT_SENT = True
+            if IPCONTROLLER_PID > 0:
+                sys.stderr.write("Sending INT to IPython controller.\n")
+                os.kill(IPCONTROLLER_PID, signal.SIGINT)
+                os.waitpid(IPCONTROLLER_PID, 0)
+            if MONGODB_PID > 0:
+                sys.stderr.write("Sending INT to MongoDB.\n")
+                os.kill(MONGODB_PID, signal.SIGINT)
+                os.waitpid(MONGODB_PID, 0)
+
+    if signum == signal.SIGTERM:
+        sys.stderr.write("Received SIGTERM. Shutting Down.\n")
+        global SIGTERM_SENT
+        if not SIGTERM_SENT:
+            SIGTERM_SENT = True
+            if IPCONTROLLER_PID > 0:
+                sys.stderr.write("Sending TERM to IPython controller.\n")
+                os.kill(IPCONTROLLER_PID, signal.SIGTERM)
+                os.waitpid(IPCONTROLLER_PID, 0)
+            if MONGODB_PID > 0:
+                sys.stderr.write("Sending TERM to MongoDB.\n")
+                os.kill(MONGODB_PID, signal.SIGTERM)
+                os.waitpid(MONGODB_PID, 0)
+
+    sys.exit()
+
+
+def slave_sig_handler(signum, frame):
+    global IPENGINE_PID
+
+    # handle SIGINT
+    if signum == signal.SIGINT:
+        sys.stderr.write("Received SIGINT. Shutting Down.\n")
+        global SIGINT_SENT
+        if not SIGINT_SENT:
+            SIGINT_SENT = True
+            if IPENGINE_PID > 0:
+                sys.stderr.write("Sending INT to IPython engine.\n")
+                os.kill(IPENGINE_PID, signal.SIGINT)
+                os.waitpid(IPENGINE_PID, 0)
+
+    # handle SIGTERM
+    if signum == signal.SIGTERM:
+        sys.stderr.write("Received SIGTERM. Shutting Down.\n")
+        global SIGTERM_SENT
+        if not SIGTERM_SENT:
+            SIGTERM_SENT = True
+            if IPENGINE_PID > 0:
+                sys.stderr.write("Sending TERM to IPython engine.\n")
+                os.kill(IPENGINE_PID, signal.SIGTERM)
+                os.waitpid(IPENGINE_PID, 0)
+
+    sys.exit()
+
+
+def run_command(command, logfile):
+    try:
+        p = subprocess.Popen(command, shell=True, stdout=logfile, stderr=subprocess.STDOUT)
+    except OSError as e:
+        errno, strerror = e.args
+        message = "OSError({0}) while executing command: {1}\n".format(errno, strerror)
+        logfile.write(message)
+        raise OSError(message)
+        return False
+    return p
+
+
+def master_daemon(args):
+
+    if "DRQUEUE_MASTER" in os.environ:
+        master_ip = os.environ["DRQUEUE_MASTER"]
+    else:
+        master_ip = socket.gethostbyname(socket.getfqdn())
+
+    signal.signal(signal.SIGTERM, master_sig_handler)
+    signal.signal(signal.SIGINT, master_sig_handler)
+
+    pid = os.getpid()
+    print("Running DrQueue master on " + master_ip + " with PID " + str(pid) + ".")
+
+    if "DRQUEUE_ROOT" not in os.environ:
+        sys.stderr.write("DRQUEUE_ROOT environment variable is not set!\n")
+        sys.exit(-1)
+
+    if "IPYTHONDIR" not in os.environ:
+        sys.stderr.write("IPYTHONDIR environment variable is not set!\n")
+        sys.exit(-1)
+
+    # start MongoDB daemon
+    command = "mongod --dbpath $IPYTHONDIR/db --rest"
+    mongodb_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "mongodb.log")
+    mongodb_logfile = open(mongodb_logpath, "ab")
+    mongodb_daemon = run_command(command, mongodb_logfile)
+    global MONGODB_PID
+    MONGODB_PID = mongodb_daemon.pid
+    print("MongoDB started with PID " + str(mongodb_daemon.pid) + ". Logging to " + mongodb_logpath + ".")
+
+    # wait until port 27017 of MongoDB is available
+    mongodb_available = False
+    while mongodb_available == False:
+        mongodb_available = is_port_open("127.0.0.1", 27017)
+        time.sleep(2)
+        print("Waiting for MongoDB to start up . . . ")
+
+    # start IPython controller
+    command = "ipcontroller --url tcp://" + master_ip + ":10101 --mongodb"
+    ipcontroller_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipcontroller.log")
+    ipcontroller_logfile = open(ipcontroller_logpath, "ab")
+    ipcontroller_daemon = run_command(command, ipcontroller_logfile)
+    global IPCONTROLLER_PID
+    IPCONTROLLER_PID = ipcontroller_daemon.pid
+    print("IPython controller started with PID " + str(ipcontroller_daemon.pid) + ". Logging to " + ipcontroller_logpath + ".")
+
+    # wait for any child to exit
+    os.wait()
+
+
+def slave_daemon(args):
+
+    if "DRQUEUE_ROOT" not in os.environ:
+        sys.stderr.write("DRQUEUE_ROOT environment variable is not set!\n")
+        sys.exit(-1)
+
+    if "IPYTHONDIR" not in os.environ:
+        sys.stderr.write("IPYTHONDIR environment variable is not set!\n")
+        sys.exit(-1)
+
+    if "DRQUEUE_MASTER" not in os.environ:
+        sys.stderr.write("DRQUEUE_MASTER environment variable is not set!\n")
+        sys.exit(-1)
+    else:
+        master_ip = os.environ["DRQUEUE_MASTER"]
+
+    if "DRQUEUE_SLAVE" in os.environ:
+        slave_ip = os.environ["DRQUEUE_SLAVE"]
+    else:
+        slave_ip = socket.gethostbyname(socket.getfqdn())
+
+    ipengine_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipengine_" + slave_ip + ".log")
+    ipengine_logfile = open(ipengine_logpath, "ab")
+    dist_egg = pkg_resources.get_distribution("DrQueueIPython")
+    startup_script = dist_egg.get_resource_filename(__name__, "EGG-INFO/scripts/get_slave_information.py")
+
+    # register signal handler for SIGINT & SIGTERM
+    signal.signal(signal.SIGTERM, slave_sig_handler)
+    signal.signal(signal.SIGINT, slave_sig_handler)
+
+    pid = os.getpid()
+    print("Running DrQueue slave on " + slave_ip + " with PID " + str(pid) + ".")
+    print("Connecting to DrQueue master at " + master_ip + ".")
+
+    # restart ipengine if it was shut down by IPython
+    while True:
+        # start IPython engine along with startup script
+        command = "ipengine --url tcp://" + master_ip + ":10101 -s " + startup_script
+        ipengine_daemon = run_command(command, ipengine_logfile)
+        global IPENGINE_PID
+        IPENGINE_PID = ipengine_daemon.pid
+        print("IPython engine started with PID " + str(IPENGINE_PID) + ". Logging to " + ipengine_logpath + ".")
+
+        # wait for process to exit
+        os.waitpid(IPENGINE_PID, 0)
+
+        print("IPython was shut down. Restarting ...")
+        time.sleep(5)
 
 
 if __name__ == "__main__":
