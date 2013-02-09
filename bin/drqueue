@@ -31,24 +31,7 @@ ADMIN_USER = "root"
 DRQUEUE_USER = "drqueue"
 
 
-# 
-# drqueue job list (list_jobs.py)
-# drqueue job add (send_job.py)
-# drqueue job delete job_name|job_id (control_job.py)
-# drqueue job requeue job_name|job_id (control_job.py)
-# 
-# drqueue computer list (list_computers.py)
-# drqueue computer restart computer_name|conputer_id (control_computer.py)
-# drqueue computer pool computer_name|conputer_id pool_name (control_computer.py)
-#
-# drqueue security lock (drqueue_security)
-# drqueue security unlock (drqueue_security)
-# 
-
-args_dict = None
-
 def main():
-    global args_dict
 
     # create parent parser for global options
     parent_parser = argparse.ArgumentParser(add_help=False)
@@ -186,6 +169,9 @@ def main():
     parser_slave = subparsers.add_parser("slave", help="start in slave daemon", parents=[parent_parser])
     parser_slave.set_defaults(func=slave_daemon)
 
+    # options for slave command
+    parser_slave.add_argument("-n", "--no-restart", action="store_true", dest="no_restart", help="don't restart engine process automatically")
+
 
     # parse arguments
     args = parser.parse_args()
@@ -274,21 +260,21 @@ def job_add(args):
 
     # set limits
     limits = dict()
-    limits['pool_name'] = args_dict["pool"]
-    limits['os'] = args_dict["os"]
-    limits['minram'] = int(args_dict["minram"])
-    limits['mincores'] = int(args_dict["mincores"])
+    limits['pool_name'] = args.pool
+    limits['os'] = args.os
+    limits['minram'] = int(args.minram)
+    limits['mincores'] = int(args.mincores)
 
-    options_var = eval(args_dict["options"])
-    options_var['send_email'] = args_dict["send_email"]
-    options_var['email_recipients'] = args_dict["email_recipients"]
+    options_var = eval(args.options)
+    options_var['send_email'] = args.send_email
+    options_var['email_recipients'] = args.email_recipients
 
     # add standard Blender option
-    if (args_dict["renderer"] == "blender") and ("rendertype" not in options_var):
+    if (args.renderer == "blender") and ("rendertype" not in options_var):
         options_var['rendertype'] = "animation"
 
     # initialize DrQueue job
-    job = DrQueueJob(args_dict["name"], int(args_dict["startframe"]), int(args_dict["endframe"]), int(args_dict["blocksize"]), args_dict["renderer"], args_dict["scenefile"], args_dict["retries"], args_dict["owner"], options_var, "send_job.py", limits)
+    job = DrQueueJob(args.name, int(args.startframe), int(args.endframe), int(args.blocksize), args.renderer, args.scenefile, args.retries, args.owner, options_var, "drqueue", limits)
 
     # run job with client
     try:
@@ -302,7 +288,7 @@ def job_add(args):
     tasks = client.query_task_list(job['_id'])
 
     # wait for all tasks of job to finish
-    if args_dict["wait"]:
+    if args.wait:
         if (tasks == []) and (client.query_computer_list() == []):
             print("Tasks have been sent but no render node is running at the moment.")
             exit(0)
@@ -310,7 +296,7 @@ def job_add(args):
         for task in tasks:
             ar = client.task_wait(task['msg_id'])
             # add some verbose output
-            if args_dict["verbose"]:
+            if args.verbose:
                 cpl = ar.metadata.completed
                 msg_id = ar.metadata.msg_id
                 status = ar.status
@@ -831,8 +817,12 @@ def slave_daemon(args):
         # wait for process to exit
         os.waitpid(IPENGINE_PID, 0)
 
-        print("IPython was shut down. Restarting ...")
-        time.sleep(5)
+        # run only once if option given
+        if args.no_restart == True:
+            break
+        else:
+            print("IPython was shut down. Restarting ...")
+            time.sleep(5)
 
 
 if __name__ == "__main__":
