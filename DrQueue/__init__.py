@@ -2,7 +2,7 @@
 
 """
 DrQueue main module
-Copyright (C) 2011 Andreas Schroeder
+Copyright (C) 2011-2013 Andreas Schroeder
 
 This file is part of DrQueue.
 
@@ -167,7 +167,7 @@ def engine_has_mincores(mincores):
 def job_is_enabled(job_id):
     """Check if job is enabled. This method runs directly on the engine."""
     job = Job.query_db(job_id)
-    if job["enabled"] == True:
+    if (job != None) and (job["enabled"] == True):
         return True
     else:
         return False
