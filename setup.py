@@ -91,13 +91,13 @@ class CreateDrQueueWorkDirs(Command):
 
 # register extra command
 cmdclass = {'create_drqueue_dirs': CreateDrQueueWorkDirs}
-allscripts = glob.glob(os.path.join('bin', '*.py'))
-allscripts.append(os.path.join('bin', 'drqueue_security'))
+allscripts = []
 allscripts.append(os.path.join('bin', 'drqueue'))
+allscripts.append(os.path.join('bin', 'get_slave_information.py'))
 
 setup(
     name = "DrQueueIPython",
-    version = "0.0.1",
+    version = "0.2.0",
     author = "Andreas Schroeder",
     author_email = "andreas@drqueue.org",
     description = ("This is a port of DrQueue to Python. IPython is used for network communication and task management."),
@@ -106,7 +106,7 @@ setup(
     url = "https://ssl.drqueue.org/redmine/projects/drqueueipython",
     packages = ['DrQueue'],
     scripts = allscripts,
-    install_requires = ['ipython>=0.12', 'pyzmq>=2.1.4'],
+    install_requires = ['ipython>=0.13', 'pyzmq>=2.1.4'],
     long_description = read('README.md'),
     classifiers = [
         "Development Status :: 3 - Alpha",
