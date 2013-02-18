@@ -252,7 +252,7 @@ class Client():
             try:
                 dview = self.ip_client[engine_id]
             except IndexError:
-                print("DEBUG: Engine with id %i unkown." % engine_id)
+                print("DEBUG: Engine with id %i unknown." % engine_id)
                 # delete old entry from database
                 DrQueueComputer.delete_from_db_by_engine_id(engine_id)
                 print("DEBUG: Engine with id %i deleted from database." % engine_id)
@@ -476,10 +476,11 @@ class Client():
         except Exception as e:
             print("ERROR: " + str(e))
 
-        # restart all engines which still run a task
+        # stop all engines which still run a task
+        # the slave wrapper will restart the engine
         running_engines = set(running_engines)
         for engine_id in running_engines:
-            self.engine_restart(engine_id)
+            self.engine_stop(engine_id)
         return True
 
 
@@ -591,10 +592,11 @@ class Client():
             for key,status in list(stats.items()):
                 if ('tasks' in status) and (task['msg_id'] in status['tasks']):
                     running_engines.append(key)
-        # restart all engines which still run a task
+        # stop all engines which still run a task
+        # the slave wrapper will restart the engine
         running_engines = set(running_engines)
         for engine_id in running_engines:
-            self.engine_restart(engine_id)
+            self.engine_stop(engine_id)
 
         return True
 
@@ -634,10 +636,11 @@ class Client():
         for key,status in list(stats.items()):
             if ('tasks' in status) and (task['msg_id'] in status['tasks']):
                 running_engines.append(key)
-        # restart all engines which still run a task
+        # stop all engines which still run a task
+        # the slave wrapper will restart the engine
         running_engines = set(running_engines)
         for engine_id in running_engines:
-            self.engine_restart(engine_id)
+            self.engine_stop(engine_id)
 
         return True
 
@@ -686,10 +689,11 @@ class Client():
             for key,status in list(stats.items()):
                 if ('tasks' in status) and (task['msg_id'] in status['tasks']):
                     running_engines.append(key)
-        # restart all engines which still run a task
+        # stop all engines which still run a task
+        # the slave wrapper will restart the engine
         running_engines = set(running_engines)
         for engine_id in running_engines:
-            self.engine_restart(engine_id)
+            self.engine_stop(engine_id)
 
         return True
 
@@ -789,23 +793,12 @@ class Client():
         """Stop a specific engine"""
         # delete computer information in db
         DrQueueComputer.delete_from_db_by_engine_id(engine_id)
-        # shutdown computer
+        # we stop the engine
         try:
             self.ip_client.shutdown(engine_id, False, False, True)
         except Exception:
             return False
         return True
 
-
-    def engine_restart(self, engine_id):
-        """Restart a specific engine"""
-        # delete computer information in db
-        DrQueueComputer.delete_from_db_by_engine_id(engine_id)
-        # restart computer
-        try:
-            self.ip_client.shutdown(engine_id, True, False, True)
-        except Exception:
-            return False
-        return True
 
 
