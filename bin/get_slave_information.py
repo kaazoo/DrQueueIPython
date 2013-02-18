@@ -11,7 +11,7 @@ if "DRQUEUE_SLAVE" in os.environ:
 else:
     SLAVE_IP = socket.gethostbyname(socket.getfqdn())
 
-IPENGINE_STARTUP_LOGPATH = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipengine_startup_" + SLAVE_IP + ".log")
+IPENGINE_STARTUP_LOGPATH = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipengine_" + SLAVE_IP + ".log")
 IPENGINE_STARTUP_LOGFILE = open(IPENGINE_STARTUP_LOGPATH, "ab")
 
 # connect to current IPython engine instance
@@ -29,7 +29,7 @@ engine['engine_id'] = engine_id
 DrQueueComputer.store_db(engine)
 
 IPENGINE_STARTUP_LOGFILE.write("\nComputer info: \n")
-IPENGINE_STARTUP_LOGFILE.write(str(engine) + "\n")
+IPENGINE_STARTUP_LOGFILE.write(str(engine) + "\n\n")
 
 # flush buffers
 IPENGINE_STARTUP_LOGFILE.flush()
