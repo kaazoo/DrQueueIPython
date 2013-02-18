@@ -163,12 +163,12 @@ def main():
 
 
     # create the parser for the master command
-    parser_master = subparsers.add_parser("master", help="start in master daemon", parents=[parent_parser])
+    parser_master = subparsers.add_parser("master", help="start master daemon", parents=[parent_parser])
     parser_master.set_defaults(func=master_daemon)
 
 
     # create the parser for the slave command
-    parser_slave = subparsers.add_parser("slave", help="start in slave daemon", parents=[parent_parser])
+    parser_slave = subparsers.add_parser("slave", help="start slave daemon", parents=[parent_parser])
     parser_slave.set_defaults(func=slave_daemon)
 
     # options for slave command
