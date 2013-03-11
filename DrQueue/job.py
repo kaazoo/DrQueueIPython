@@ -85,6 +85,8 @@ class Job(dict):
             jb['send_email'] = options['send_email']
         if 'email_recipients' in options:
             jb['email_recipients'] = options['email_recipients']
+        if 'custom_command' in options:
+            jb['custom_command'] = options_var['custom_command']
         # limits
         if 'os' in limits:
             jb['limits']['os'] = limits['os']

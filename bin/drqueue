@@ -70,7 +70,7 @@ def main():
     parser_job_add.add_argument("-e", "--endframe", dest="endframe", default=1, help="last frame")
     parser_job_add.add_argument("-b", "--blocksize", dest="blocksize", default=1, help="size of block")
     parser_job_add.add_argument("-n", "--name", dest="name", default=None, help="name of job")
-    parser_job_add.add_argument("-r", "--renderer", dest="renderer", help="render type (maya|blender|mentalray)")
+    parser_job_add.add_argument("-r", "--renderer", dest="renderer", help="render type (maya|blender|mentalray|custom)")
     parser_job_add.add_argument("-f", "--scenefile", dest="scenefile", default=None, help="path to scenefile")
     parser_job_add.add_argument("-p", "--pool", dest="pool", default=None, help="pool of computers")
     parser_job_add.add_argument("-o", "--options", dest="options", default="{}", help="specific options for renderer as Python dict")
@@ -81,6 +81,7 @@ def main():
     parser_job_add.add_argument("--mincores", dest="mincores", default=0, help="Minimal CPU cores")
     parser_job_add.add_argument("--send-email", action="store_true", dest="send_email", default=False, help="Send notification email when job is finished")
     parser_job_add.add_argument("--email-recipients", dest="email_recipients", default=None, help="Recipients for notification email")
+    parser_job_add.add_argument("--custom-command", dest="custom_command", default=None, help="Custom command")
     parser_job_add.add_argument("-w", "--wait", action="store_true", dest="wait", default=False, help="wait for job to finish")
     parser_job_add.set_defaults(func=job_add)
 
@@ -173,6 +174,7 @@ def main():
 
     # options for slave command
     parser_slave.add_argument("-n", "--no-restart", action="store_true", dest="no_restart", help="don't restart engine process automatically")
+    parser_slave.add_argument("--no-ssh", action="store_true", dest="no_ssh", help="don't use SSH tunnel to connect to master")
 
 
     # parse arguments
@@ -270,6 +272,7 @@ def job_add(args):
     options_var = eval(args.options)
     options_var['send_email'] = args.send_email
     options_var['email_recipients'] = args.email_recipients
+    options_var['custom_command'] = custom_command
 
     # add standard Blender option
     if (args.renderer == "blender") and ("rendertype" not in options_var):
@@ -509,9 +512,6 @@ def task_show(args):
         print("Task %s has the following contents:\n" % args.tid)
         pprint(task2)
 
-        foo = newserialized.unserialize(task['result_buffers'])
-        print(foo)
-
         if task['pyerr'] != None:
             e = error.unwrap_exception(task['pyerr'])
             e.print_traceback()
@@ -710,6 +710,7 @@ def master_sig_handler(signum, frame):
 
 
 def slave_sig_handler(signum, frame):
+    global SSH_PID
     global IPENGINE_PID
 
     # handle SIGINT
@@ -722,6 +723,10 @@ def slave_sig_handler(signum, frame):
                 sys.stderr.write("Sending INT to IPython engine.\n")
                 os.kill(IPENGINE_PID, signal.SIGINT)
                 os.waitpid(IPENGINE_PID, 0)
+            if SSH_PID > 0:
+                sys.stderr.write("Sending INT to SSH.\n")
+                os.kill(SSH_PID, signal.SIGINT)
+                os.waitpid(SSH_PID, 0)
 
     # handle SIGTERM
     if signum == signal.SIGTERM:
@@ -733,6 +738,10 @@ def slave_sig_handler(signum, frame):
                 sys.stderr.write("Sending TERM to IPython engine.\n")
                 os.kill(IPENGINE_PID, signal.SIGTERM)
                 os.waitpid(IPENGINE_PID, 0)
+            if SSH_PID > 0:
+                sys.stderr.write("Sending TERM to SSH.\n")
+                os.kill(SSH_PID, signal.SIGTERM)
+                os.waitpid(SSH_PID, 0)
 
     sys.exit()
 
@@ -831,12 +840,39 @@ def slave_daemon(args):
 
     pid = os.getpid()
     print("Running DrQueue slave on " + slave_ip + " with PID " + str(pid) + ".")
-    print("Connecting to DrQueue master at " + master_ip + ".")
+
+    global SSH_PID
+
+    # start SSH tunnel for MongoDB connection
+    if args.no_ssh != True:
+        command = "/usr/bin/ssh -f -L 127.0.0.1:27017:127.0.0.1:27017 " + master_ip + " sleep 60"
+        ssh_tunnel_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ssh_tunnel_logfile_" + slave_ip + ".log")
+        ssh_tunnel_logfile = open(ssh_tunnel_logpath, "ab")
+        ssh_tunnel_client = run_command(command, ssh_tunnel_logfile)
+        SSH_PID = ssh_tunnel_client.pid
+        print("SSH tunnel started with PID " + str(ssh_tunnel_client.pid) + ". Logging to " + ssh_tunnel_logpath + ".")
+
+        # wait until port 27017 of MongoDB is available
+        mongodb_available = False
+        while mongodb_available == False:
+            mongodb_available = is_port_open("127.0.0.1", 27017)
+            time.sleep(2)
+            print("Waiting for SSH tunnel to start up . . . ")
+    else:
+        # deactivate signal handling for SSH
+        SSH_PID = 0
 
     # restart ipengine if it was shut down by IPython
     while True:
         # start IPython engine along with startup script
-        command = "ipengine --url tcp://" + master_ip + ":10101 -s " + startup_script
+        if args.no_ssh == True:
+            # connect directly
+            print("Connecting to DrQueue master at " + master_ip + ".")
+            command = "ipengine --url tcp://" + master_ip + ":10101 -s " + startup_script
+        else:
+            # create SSH tunnel
+            print("Connecting to DrQueue master at " + master_ip + " via SSH tunnel.")
+            command = "ipengine --url tcp://127.0.0.1:10101 --ssh " + master_ip + " -s " + startup_script
         ipengine_daemon = run_command(command, ipengine_logfile)
         global IPENGINE_PID
         IPENGINE_PID = ipengine_daemon.pid
