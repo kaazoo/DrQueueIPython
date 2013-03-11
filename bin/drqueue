@@ -22,6 +22,7 @@ SIGTERM_SENT = False
 SIGINT_SENT = False
 MONGODB_PID = None
 IPCONTROLLER_PID = None
+SSH_PID = None
 IPENGINE_PID = None
 CACHE_TIME = 60
 ADMIN_USER = "root"
@@ -33,6 +34,7 @@ def main():
     # create parent parser for global options
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument("-v", "--verbose", action="store_true", dest="verbose", default=False, help="verbose output")
+    parent_parser.add_argument("--no-ssh", action="store_true", dest="no_ssh", help="don't use SSH tunnel to connect to master")
 
     # create the top-level parser
     parser = argparse.ArgumentParser(parents=[parent_parser])
@@ -174,7 +176,6 @@ def main():
 
     # options for slave command
     parser_slave.add_argument("-n", "--no-restart", action="store_true", dest="no_restart", help="don't restart engine process automatically")
-    parser_slave.add_argument("--no-ssh", action="store_true", dest="no_ssh", help="don't use SSH tunnel to connect to master")
 
 
     # parse arguments
@@ -182,6 +183,13 @@ def main():
 
     # debug parsed arguments
     print args
+
+    # start SSH tunnel for MongoDB connection
+    if (args.no_ssh != True) and (args.func != master_daemon):
+        start_ssh_tunnel()
+    else:
+        # deactivate signal handling for SSH
+        SSH_PID = 0
 
     # execute function bound to chosen subparser
     args.func(args)
@@ -841,27 +849,6 @@ def slave_daemon(args):
     pid = os.getpid()
     print("Running DrQueue slave on " + slave_ip + " with PID " + str(pid) + ".")
 
-    global SSH_PID
-
-    # start SSH tunnel for MongoDB connection
-    if args.no_ssh != True:
-        command = "/usr/bin/ssh -f -L 127.0.0.1:27017:127.0.0.1:27017 " + master_ip + " sleep 60"
-        ssh_tunnel_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ssh_tunnel_logfile_" + slave_ip + ".log")
-        ssh_tunnel_logfile = open(ssh_tunnel_logpath, "ab")
-        ssh_tunnel_client = run_command(command, ssh_tunnel_logfile)
-        SSH_PID = ssh_tunnel_client.pid
-        print("SSH tunnel started with PID " + str(ssh_tunnel_client.pid) + ". Logging to " + ssh_tunnel_logpath + ".")
-
-        # wait until port 27017 of MongoDB is available
-        mongodb_available = False
-        while mongodb_available == False:
-            mongodb_available = is_port_open("127.0.0.1", 27017)
-            time.sleep(2)
-            print("Waiting for SSH tunnel to start up . . . ")
-    else:
-        # deactivate signal handling for SSH
-        SSH_PID = 0
-
     # restart ipengine if it was shut down by IPython
     while True:
         # start IPython engine along with startup script
@@ -872,7 +859,7 @@ def slave_daemon(args):
         else:
             # create SSH tunnel
             print("Connecting to DrQueue master at " + master_ip + " via SSH tunnel.")
-            command = "ipengine --url tcp://127.0.0.1:10101 --ssh " + master_ip + " -s " + startup_script
+            command = "ipengine -s " + startup_script
         ipengine_daemon = run_command(command, ipengine_logfile)
         global IPENGINE_PID
         IPENGINE_PID = ipengine_daemon.pid
@@ -887,6 +874,40 @@ def slave_daemon(args):
         else:
             print("IPython was shut down. Restarting ...")
             time.sleep(5)
+
+
+def start_ssh_tunnel():
+    global SSH_PID
+
+    # register signal handler for SIGINT & SIGTERM
+    signal.signal(signal.SIGTERM, slave_sig_handler)
+    signal.signal(signal.SIGINT, slave_sig_handler)
+
+    if "DRQUEUE_MASTER" not in os.environ:
+        sys.stderr.write("DRQUEUE_MASTER environment variable is not set!\n")
+        sys.exit(-1)
+    else:
+        master_ip = os.environ["DRQUEUE_MASTER"]
+
+    if "DRQUEUE_SLAVE" in os.environ:
+        slave_ip = os.environ["DRQUEUE_SLAVE"]
+    else:
+        slave_ip = socket.gethostbyname(socket.getfqdn())
+
+    # start SSH tunnel for MongoDB connection
+    command = "/usr/bin/ssh -f -L 127.0.0.1:27017:127.0.0.1:27017 " + master_ip + " sleep 60"
+    ssh_tunnel_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ssh_tunnel_logfile_" + slave_ip + ".log")
+    ssh_tunnel_logfile = open(ssh_tunnel_logpath, "ab")
+    ssh_tunnel_client = run_command(command, ssh_tunnel_logfile)
+    SSH_PID = ssh_tunnel_client.pid
+    print("SSH tunnel started with PID " + str(ssh_tunnel_client.pid) + ". Logging to " + ssh_tunnel_logpath + ".")
+
+    # wait until port 27017 of MongoDB is available
+    mongodb_available = False
+    while mongodb_available == False:
+        mongodb_available = is_port_open("127.0.0.1", 27017)
+        time.sleep(2)
+        print("Waiting for SSH tunnel to start up . . . ")
 
 
 if __name__ == "__main__":
