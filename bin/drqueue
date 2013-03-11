@@ -787,8 +787,13 @@ def master_daemon(args):
         sys.stderr.write("IPYTHONDIR environment variable is not set!\n")
         sys.exit(-1)
 
-    # start MongoDB daemon
-    command = "mongod --dbpath $IPYTHONDIR/db --rest"
+    if master_ip == "127.0.0.1":
+        # start MongoDB daemon on localhost
+        command = "mongod --dbpath $IPYTHONDIR/db --rest --bind_ip 127.0.0.1"
+    else:
+        # start MongoDB daemon on locahost and master IP
+        command = "mongod --dbpath $IPYTHONDIR/db --rest --bind_ip 127.0.0.1," + master_ip
+
     mongodb_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "mongodb.log")
     mongodb_logfile = open(mongodb_logpath, "ab")
     mongodb_daemon = run_command(command, mongodb_logfile)
