@@ -242,7 +242,7 @@ class Computer(dict):
     def query_all():
         import pymongo
         """query all computer entries from MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
         db = connection['ipythondb']
         computers = db['drqueue_computers']
         entries = []
@@ -255,7 +255,7 @@ class Computer(dict):
     def query_db_by_engine_id(engine_id):
         import pymongo
         """query computer information from MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
         db = connection['ipythondb']
         computers = db['drqueue_computers']
         computer = computers.find_one({"engine_id" : engine_id})
@@ -266,7 +266,7 @@ class Computer(dict):
     def query_db_by_hostname(hostname):
         import pymongo
         """query computer information from MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
         db = connection['ipythondb']
         computers = db['drqueue_computers']
         computer = computers.find_one({"hostname" : hostname})
@@ -277,7 +277,7 @@ class Computer(dict):
     def store_db(engine):
         import pymongo
         """store computer information in MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
         db = connection['ipythondb']
         computers = db['drqueue_computers']
         # remove old entry by hostname
@@ -292,7 +292,7 @@ class Computer(dict):
         import pymongo
         import bson
         """delete comouter information from MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
         db = connection['ipythondb']
         computers = db['drqueue_computers']
         ret = computers.remove({"engine_id" : engine_id})
@@ -304,7 +304,7 @@ class Computer(dict):
         import pymongo
         import bson
         """delete comouter information from MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
         db = connection['ipythondb']
         computers = db['drqueue_computers']
         ret = computers.remove({"hostname" : hostname})

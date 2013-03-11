@@ -34,7 +34,7 @@ class ComputerPool(dict):
     def store_db(pool):
         import pymongo
         """store pool information in MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
         db = connection['ipythondb']
         pools = db['drqueue_pools']
         pool_id = pools.insert(pool)
@@ -46,7 +46,7 @@ class ComputerPool(dict):
     def update_db(pool):
         import pymongo
         """update pool information in MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
         db = connection['ipythondb']
         pools = db['drqueue_pools']
         pool_id = pools.save(pool)
@@ -59,7 +59,7 @@ class ComputerPool(dict):
         import pymongo
         import bson
         """query pool information from MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
         db = connection['ipythondb']
         pools = db['drqueue_pools']
         pool = pools.find_one({"_id": bson.ObjectId(pool_id)})
@@ -71,7 +71,7 @@ class ComputerPool(dict):
         import pymongo
         import bson
         """delete pool information from MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
         db = connection['ipythondb']
         pools = db['drqueue_pools']
         return pools.remove({"_id": bson.ObjectId(pool_id)})
@@ -81,7 +81,7 @@ class ComputerPool(dict):
     def query_poolnames():
         import pymongo
         """query pool names from MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
         db = connection['ipythondb']
         pools = db['drqueue_pools']
         names = []
@@ -94,7 +94,7 @@ class ComputerPool(dict):
     def query_pool_by_name(pool_name):
         import pymongo
         """query pool information from MongoDB by name"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
         db = connection['ipythondb']
         pools = db['drqueue_pools']
         pool = pools.find_one({"name": pool_name})
@@ -105,7 +105,7 @@ class ComputerPool(dict):
     def query_pool_list():
         import pymongo
         """query list of pools from MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
         db = connection['ipythondb']
         pools = db['drqueue_pools']
         pool_arr = []
@@ -118,7 +118,7 @@ class ComputerPool(dict):
     def query_pool_members(pool_name):
         import pymongo
         """query list of members of pool from MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MASTER'))
+        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
         db = connection['ipythondb']
         pools = db['drqueue_pools']
         pool = pools.find_one({"name": pool_name})
