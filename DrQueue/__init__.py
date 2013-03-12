@@ -30,6 +30,8 @@ if os.getenv('DRQUEUE_ROOT') is None:
     raise ValueError("DRQUEUE_ROOT environment variable not set!")
 if os.getenv('DRQUEUE_MASTER') is None:
     raise ValueError("DRQUEUE_MASTER environment variable not set!")
+if os.getenv('DRQUEUE_MONGODB') is None:
+    raise ValueError("DRQUEUE_MONGODB environment variable not set!")
 if os.getenv('IPYTHONDIR') is None:
     raise ValueError("IPYTHONDIR environment variable is not set!")
 
