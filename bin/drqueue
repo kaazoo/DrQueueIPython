@@ -881,6 +881,20 @@ def slave_daemon(args):
             time.sleep(5)
 
 
+def process_exists(process_name):
+    ps = subprocess.Popen("ps -A", shell=True, stdout=subprocess.PIPE)
+    ps_pid = ps.pid
+    output = ps.stdout.read()
+    ps.stdout.close()
+    ps.wait()
+
+    for line in output.split("\n"):
+        if line != "" and line != None:
+            if process_name in line:
+                return True
+    return False
+
+
 def start_ssh_tunnel():
     global SSH_PID
 
@@ -901,6 +915,11 @@ def start_ssh_tunnel():
 
     # start SSH tunnel for MongoDB connection
     command = "/usr/bin/ssh -f -L 127.0.0.1:27017:127.0.0.1:27017 " + master_ip + " sleep 60"
+
+    if process_exists(command):
+        print "SSH tunnel process is already running."
+        return
+
     ssh_tunnel_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ssh_tunnel_logfile_" + slave_ip + ".log")
     ssh_tunnel_logfile = open(ssh_tunnel_logpath, "ab")
     ssh_tunnel_client = run_command(command, ssh_tunnel_logfile)
