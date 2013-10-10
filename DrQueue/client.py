@@ -203,6 +203,8 @@ class Client():
                 env_dict['DRQUEUE_CTYPE'] = job['ctype']
             if 'skipframes' in job:
                 env_dict['DRQUEUE_SKIPFRAMES'] = job['skipframes']
+            if 'custom_command' in job:
+                env_dict['DRQUEUE_CUSTOM_COMMAND'] = job['custom_command']
 
             # set dependencies
             dep_dict = {}

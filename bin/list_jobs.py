@@ -56,12 +56,13 @@ def main():
             else:
                 result_header = task['result_header']
                 result_content = task['result_content']
-                status = result_header['status']
+                print(result_header)
+                status = result_content['status']
                 cpl = task['completed']
                 print("%s\t%i\t%s\t%s\t%i-%02i-%02i %02i:%02i:%02i" % (tmsg_id, frame, status, username, cpl.year, cpl.month, cpl.day, cpl.hour, cpl.minute, cpl.second))
 
-                if result_header['status'] == 'error':
-                	print("  Error was: " + result_content['evalue'])
+                if result_content['status'] == 'error':
+                	print("  Error was: " + result_content['evalue'] + "\n" + str(result_content['traceback']))
             if int(job['blocksize']) > 1:
             	frame += int(job['blocksize'])
             else:

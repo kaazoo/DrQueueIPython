@@ -184,8 +184,14 @@ def main():
     # debug parsed arguments
     print args
 
+    if "DRQUEUE_MASTER" in os.environ:
+        master_ip = os.environ["DRQUEUE_MASTER"]
+    else:
+        master_ip = None
+
     # start SSH tunnel for MongoDB connection
-    if (args.no_ssh != True) and (args.func != master_daemon):
+    # skip for master daemon and connections to localhost
+    if (args.no_ssh != True) and (args.func != master_daemon) and (master_ip != "127.0.0.1"):
         start_ssh_tunnel()
     else:
         # deactivate signal handling for SSH
@@ -280,7 +286,7 @@ def job_add(args):
     options_var = eval(args.options)
     options_var['send_email'] = args.send_email
     options_var['email_recipients'] = args.email_recipients
-    options_var['custom_command'] = custom_command
+    options_var['custom_command'] = args.custom_command
 
     # add standard Blender option
     if (args.renderer == "blender") and ("rendertype" not in options_var):

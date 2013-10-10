@@ -21,9 +21,12 @@ from .job import Job
 from .computer import Computer
 
 
-supported_renderers = ['3delight', '3dsmax', 'aftereffects', 'aqsis', 'blender', 'cinema4d', 'general', 'lightwave', 'luxrender', 'mantra', 'maya', 'mentalray', 'nuke', 'shake', 'terragen', 'turtle', 'vray', 'xsi']
+supported_renderers = ['3delight', '3dsmax', 'aftereffects', 'aqsis', \
+'blender', 'cinema4d', 'general', 'lightwave', 'luxrender', 'mantra', \
+'maya', 'mentalray', 'nuke', 'shake', 'terragen', 'turtle', 'vray', 'xsi']
 
-supported_os = ['Windows', 'Mac OSX', 'Linux', 'FreeBSD', 'NetBSD', 'OpenBSD', 'AIX', 'Solaris']
+supported_os = ['Windows', 'Mac OSX', 'Linux', 'FreeBSD', 'NetBSD', 'OpenBSD', \
+'AIX', 'Solaris']
 
 # check DrQueue environment
 if os.getenv('DRQUEUE_ROOT') is None:
@@ -100,7 +103,8 @@ def run_script_with_env(render_script, env_dict):
     # set some variables on target machine
     env_dict['DRQUEUE_OS'] = platform.system()
     env_dict['DRQUEUE_ETC'] = os.path.join(os.getenv('DRQUEUE_ROOT'), "etc")
-    env_dict['DRQUEUE_LOGFILE'] = os.path.join(os.getenv('DRQUEUE_ROOT'), "logs", env_dict['DRQUEUE_LOGFILE'])
+    env_dict['DRQUEUE_LOGFILE'] = os.path.join(os.getenv('DRQUEUE_ROOT'),
+        "logs", env_dict['DRQUEUE_LOGFILE'])
     # import specific render template
     sys.path.append(env_dict['DRQUEUE_ETC'])
     impmod = render_script.replace('.py', '')

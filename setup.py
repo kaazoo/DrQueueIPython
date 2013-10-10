@@ -44,7 +44,7 @@ class CreateDrQueueWorkDirs(Command):
 
         # Windows lacks Unix functionality
         if sys.platform.startswith("win"):
-            print("Sorry, but creating paths on Windows is curently not supported.")
+            print("Sorry, but creating paths on Windows is currently not supported.")
             sys.exit(1)
 
         # set to user-supplied path is available
@@ -97,7 +97,7 @@ allscripts.append(os.path.join('bin', 'get_slave_information.py'))
 
 setup(
     name = "DrQueueIPython",
-    version = "0.2.0",
+    version = "0.2.1",
     author = "Andreas Schroeder",
     author_email = "andreas@drqueue.org",
     description = ("This is a port of DrQueue to Python. IPython is used for network communication and task management."),
@@ -113,5 +113,6 @@ setup(
         "Topic :: Utilities",
         "License :: OSI Approved :: GNU General Public License (GPL)",
     ],
-    cmdclass = cmdclass
+    cmdclass = cmdclass,
+    zip_safe = False
 )

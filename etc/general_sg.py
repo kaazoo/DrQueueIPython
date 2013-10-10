@@ -25,6 +25,7 @@ def run_renderer(env_dict):
     global DRQUEUE_BLOCKSIZE
     global DRQUEUE_ENDFRAME
     global DRQUEUE_LOGFILE
+    global DRQUEUE_CUSTOM_COMMAND
 
     # initialize helper object
     helper = engine_helpers.Helper(env_dict['DRQUEUE_LOGFILE'])
@@ -36,7 +37,7 @@ def run_renderer(env_dict):
     if DRQUEUE_OS in ["Windows", "Win32"]:
         DRQUEUE_SCENEFILE = helper.replace_stdpath_with_driveletter(DRQUEUE_SCENEFILE, 'n:')
 
-    command = DRQUEUE_SCENEFILE + " " + DRQUEUE_FRAME
+    command = DRQUEUE_CUSTOM_COMMAND + " " + DRQUEUE_SCENEFILE + " " + str(block)
 
     # log command line
     helper.log_write(command + "\n")
