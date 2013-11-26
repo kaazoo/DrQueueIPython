@@ -947,7 +947,7 @@ def start_ssh_tunnel(verbose):
         ssh_user = 'drqueue'
 
     # start SSH tunnel for MongoDB connection
-    command = "/usr/bin/ssh -f -L 127.0.0.1:27017:127.0.0.1:27017 " + ssh_user + "@" + master_ip + " sleep 60"
+    command = "/usr/bin/ssh -o ServerAliveInterval=30 -L 127.0.0.1:27017:127.0.0.1:27017 " + ssh_user + "@" + master_ip + " cat -"
 
     if verbose:
         print command
