@@ -55,21 +55,41 @@ class CreateDrQueueWorkDirs(Command):
 
         print("Creating DrQueue work directories in '" + drqueue_root + "'.")
 
-        # create directory structure
+        # create DrQueue directory structure
         if not os.path.exists(drqueue_root):
             os.makedirs(drqueue_root)
         drqueue_etc = os.path.join(drqueue_root, "etc")
         if not os.path.exists(drqueue_etc):
             os.mkdir(drqueue_etc)
-        drqueue_ipython = os.path.join(drqueue_root, "ipython")
-        if not os.path.exists(drqueue_ipython):
-            os.mkdir(drqueue_ipython)
         drqueue_logs = os.path.join(drqueue_root, "logs")
         if not os.path.exists(drqueue_logs):
             os.mkdir(drqueue_logs)
         drqueue_tmp = os.path.join(drqueue_root, "tmp")
         if not os.path.exists(drqueue_tmp):
             os.mkdir(drqueue_tmp)
+
+        # create IPython subdirectories
+        drqueue_ipython = os.path.join(drqueue_root, 'ipython')
+        if not os.path.exists(drqueue_ipython):
+            os.mkdir(drqueue_ipython)
+        drqueue_ipython_db = os.path.join(drqueue_ipython, 'db')
+        if not os.path.exists(drqueue_ipython_db):
+            os.mkdir(drqueue_ipython_db)
+        drqueue_ipython_profile = os.path.join(drqueue_ipython, 'profile_default')
+        if not os.path.exists(drqueue_ipython_profile):
+            os.mkdir(drqueue_ipython_profile)
+        drqueue_ipython_profile_log = os.path.join(drqueue_ipython_profile, 'log')
+        if not os.path.exists(drqueue_ipython_profile_log):
+            os.mkdir(drqueue_ipython_profile_log)
+        drqueue_ipython_profile_pid = os.path.join(drqueue_ipython_profile, 'pid')
+        if not os.path.exists(drqueue_ipython_profile_pid):
+            os.mkdir(drqueue_ipython_profile_pid)
+        drqueue_ipython_profile_security = os.path.join(drqueue_ipython_profile, 'security')
+        if not os.path.exists(drqueue_ipython_profile_security):
+            os.mkdir(drqueue_ipython_profile_security)
+        drqueue_ipython_profile_startup = os.path.join(drqueue_ipython_profile, 'startup')
+        if not os.path.exists(drqueue_ipython_profile_startup):
+            os.mkdir(drqueue_ipython_profile_startup)
 
         # copy template files
         templates = os.path.join(self._dir, "etc", "*.py")
