@@ -794,6 +794,11 @@ def master_daemon(args):
         sys.stderr.write("IPYTHONDIR environment variable is not set!\n")
         sys.exit(-1)
 
+    if 'DRQUEUE_SSH_USER' in os.environ:
+        ssh_user = os.environ['DRQUEUE_SSH_USER']
+    else:
+        ssh_user = 'drqueue'
+
     if master_ip == "127.0.0.1":
         # start MongoDB daemon on localhost
         command = "mongod --dbpath $IPYTHONDIR/db --rest --bind_ip 127.0.0.1"
@@ -816,7 +821,16 @@ def master_daemon(args):
         print("Waiting for MongoDB to start up . . . ")
 
     # start IPython controller
-    command = "ipcontroller --url tcp://" + master_ip + ":10101 --mongodb"
+    if args.no_ssh == True:
+        # clients and engines have to connect directly
+        command = "ipcontroller --url tcp://" + master_ip + ":10101 --mongodb"
+    else:
+        # clients and engines have to connect through SSH tunnels
+        command = "ipcontroller --ssh=" + ssh_user + "@" + master_ip + " --enginessh=" + ssh_user + "@" + master_ip + " --mongodb"
+
+    if args.verbose:
+        print command
+
     ipcontroller_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipcontroller.log")
     ipcontroller_logfile = open(ipcontroller_logpath, "ab")
     ipcontroller_daemon = run_command(command, ipcontroller_logfile)
