@@ -182,7 +182,8 @@ def main():
     args = parser.parse_args()
 
     # debug parsed arguments
-    print args
+    if args.verbose:
+        print args
 
     if "DRQUEUE_MASTER" in os.environ:
         master_ip = os.environ["DRQUEUE_MASTER"]
@@ -192,7 +193,7 @@ def main():
     # start SSH tunnel for MongoDB connection
     # skip for master daemon and connections to localhost
     if (args.no_ssh != True) and (args.func != master_daemon) and (master_ip != "127.0.0.1"):
-        start_ssh_tunnel()
+        start_ssh_tunnel(args.verbose)
     else:
         # deactivate signal handling for SSH
         SSH_PID = 0
@@ -848,6 +849,11 @@ def slave_daemon(args):
     else:
         slave_ip = socket.gethostbyname(socket.getfqdn())
 
+    if 'DRQUEUE_SSH_USER' in os.environ:
+        ssh_user = os.environ['DRQUEUE_SSH_USER']
+    else:
+        ssh_user = 'drqueue'
+
     ipengine_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipengine_" + slave_ip + ".log")
     ipengine_logfile = open(ipengine_logpath, "ab")
     dist_egg = pkg_resources.get_distribution("DrQueueIPython")
@@ -870,7 +876,11 @@ def slave_daemon(args):
         else:
             # create SSH tunnel
             print("Connecting to DrQueue master at " + master_ip + " via SSH tunnel.")
-            command = "ipengine -s " + startup_script
+            command = "ipengine --ssh=" + ssh_user + "@" + master_ip + " -s " + startup_script
+
+        if args.verbose:
+            print command
+
         ipengine_daemon = run_command(command, ipengine_logfile)
         global IPENGINE_PID
         IPENGINE_PID = ipengine_daemon.pid
@@ -901,7 +911,7 @@ def process_exists(process_name):
     return False
 
 
-def start_ssh_tunnel():
+def start_ssh_tunnel(verbose):
     global SSH_PID
 
     # register signal handler for SIGINT & SIGTERM
@@ -919,8 +929,16 @@ def start_ssh_tunnel():
     else:
         slave_ip = socket.gethostbyname(socket.getfqdn())
 
+    if 'DRQUEUE_SSH_USER' in os.environ:
+        ssh_user = os.environ['DRQUEUE_SSH_USER']
+    else:
+        ssh_user = 'drqueue'
+
     # start SSH tunnel for MongoDB connection
-    command = "/usr/bin/ssh -f -L 127.0.0.1:27017:127.0.0.1:27017 " + master_ip + " sleep 60"
+    command = "/usr/bin/ssh -f -L 127.0.0.1:27017:127.0.0.1:27017 " + ssh_user + "@" + master_ip + " sleep 60"
+
+    if verbose:
+        print command
 
     if process_exists(command):
         print "SSH tunnel process is already running."
