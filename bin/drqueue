@@ -799,19 +799,24 @@ def master_daemon(args):
     else:
         ssh_user = 'drqueue'
 
-    if master_ip == "127.0.0.1":
+    if 'DRQUEUE_MONGODB' in os.environ:
+        mongo_ip = os.environ['DRQUEUE_MONGODB']
+    else:
+        mongo_ip = '127.0.0.1'
+
+    if mongo_ip == "127.0.0.1":
         # start MongoDB daemon on localhost
         command = "mongod --dbpath $IPYTHONDIR/db --rest --bind_ip 127.0.0.1"
     else:
         # start MongoDB daemon on locahost and master IP
-        command = "mongod --dbpath $IPYTHONDIR/db --rest --bind_ip 127.0.0.1," + master_ip
+        command = "mongod --dbpath $IPYTHONDIR/db --rest --bind_ip 127.0.0.1," + mongo_ip
 
     mongodb_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "mongodb.log")
     mongodb_logfile = open(mongodb_logpath, "ab")
     mongodb_daemon = run_command(command, mongodb_logfile)
     global MONGODB_PID
     MONGODB_PID = mongodb_daemon.pid
-    print("MongoDB started with PID " + str(mongodb_daemon.pid) + ". Logging to " + mongodb_logpath + ".")
+    print("MongoDB started on " + mongo_ip + " with PID " + str(mongodb_daemon.pid) + ". Logging to " + mongodb_logpath + ".")
 
     # wait until port 27017 of MongoDB is available
     mongodb_available = False
@@ -826,7 +831,7 @@ def master_daemon(args):
         command = "ipcontroller --url tcp://" + master_ip + ":10101 --mongodb"
     else:
         # clients and engines have to connect through SSH tunnels
-        command = "ipcontroller --ssh=" + ssh_user + "@" + master_ip + " --enginessh=" + ssh_user + "@" + master_ip + " --mongodb"
+        command = "ipcontroller --url tcp://127.0.0.1:10101 --ssh=" + ssh_user + "@" + master_ip + " --enginessh=" + ssh_user + "@" + master_ip + " --mongodb"
 
     if args.verbose:
         print command
@@ -861,12 +866,9 @@ def slave_daemon(args):
     if "DRQUEUE_SLAVE" in os.environ:
         slave_ip = os.environ["DRQUEUE_SLAVE"]
     else:
-        slave_ip = socket.gethostbyname(socket.getfqdn())
-
-    if 'DRQUEUE_SSH_USER' in os.environ:
-        ssh_user = os.environ['DRQUEUE_SSH_USER']
-    else:
-        ssh_user = 'drqueue'
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect((master_ip, 1))
+        slave_ip = s.getsockname()[0]
 
     ipengine_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipengine_" + slave_ip + ".log")
     ipengine_logfile = open(ipengine_logpath, "ab")
@@ -883,14 +885,8 @@ def slave_daemon(args):
     # restart ipengine if it was shut down by IPython
     while True:
         # start IPython engine along with startup script
-        if args.no_ssh == True:
-            # connect directly
-            print("Connecting to DrQueue master at " + master_ip + ".")
-            command = "ipengine --url tcp://" + master_ip + ":10101 -s " + startup_script
-        else:
-            # create SSH tunnel
-            print("Connecting to DrQueue master at " + master_ip + " via SSH tunnel.")
-            command = "ipengine --ssh=" + ssh_user + "@" + master_ip + " -s " + startup_script
+        print("Connecting to DrQueue master at " + master_ip + ".")
+        command = "ipengine -s " + startup_script
 
         if args.verbose:
             print command
@@ -941,7 +937,9 @@ def start_ssh_tunnel(verbose):
     if "DRQUEUE_SLAVE" in os.environ:
         slave_ip = os.environ["DRQUEUE_SLAVE"]
     else:
-        slave_ip = socket.gethostbyname(socket.getfqdn())
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect((master_ip, 1))
+        slave_ip = s.getsockname()[0]
 
     if 'DRQUEUE_SSH_USER' in os.environ:
         ssh_user = os.environ['DRQUEUE_SSH_USER']
