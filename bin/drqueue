@@ -25,11 +25,14 @@ IPCONTROLLER_PID = None
 SSH_PID = None
 IPENGINE_PID = None
 CACHE_TIME = 60
-ADMIN_USER = "root"
-DRQUEUE_USER = "drqueue"
+ADMIN_USER = 'root'
+DRQUEUE_SSH_USER = ''
+DRQUEUE_ROOT_DEFAULT = '/usr/local/drqueue'
 
 
 def main():
+    global DRQUEUE_ROOT_DEFAULT
+    global DRQUEUE_SSH_USER
 
     # create parent parser for global options
     parent_parser = argparse.ArgumentParser(add_help=False)
@@ -185,16 +188,64 @@ def main():
     if args.verbose:
         print args
 
-    if "DRQUEUE_MASTER" in os.environ:
-        master_ip = os.environ["DRQUEUE_MASTER"]
-    else:
-        master_ip = None
+    # check if DRQUEUE_ROOT is set
+    if "DRQUEUE_ROOT" not in os.environ:
+        if args.verbose:
+            print('DEBUG: DRQUEUE_ROOT environment variable is not set. Using default \'' + DRQUEUE_ROOT_DEFAULT + '\'.')
+        os.environ['DRQUEUE_ROOT'] = DRQUEUE_ROOT_DEFAULT
+
+    # set IPYTHONDIR depending on DRQUEUE_ROOT
+    ipython_dir = os.path.join(os.environ['DRQUEUE_ROOT'], 'ipython')
+    if args.verbose:
+        print('DEBUG: setting IPYTHONDIR to ' + ipython_dir)
+    os.environ['IPYTHONDIR'] = ipython_dir
+
+    # only run when not in master daemon mode
+    if args.func != master_daemon:
+        # use DRQUEUE_MASTER if set
+        if "DRQUEUE_MASTER" in os.environ:
+            #master_ip = os.environ["DRQUEUE_MASTER"]
+            localhost = False
+        else:
+            # determine DRQUEUE_MASTER from engine settings file
+            eo_file = os.path.join(os.environ['IPYTHONDIR'], 'profile_default/security/ipcontroller-engine.json')
+            for line in open(eo_file).readlines():
+                if 'ssh' in line:
+                    # extract master IP
+                    master = line.split(':')[1].split('@')[1].split('\"')[0]
+                    if args.verbose:
+                        print('DEBUG: master from ipcontroller-engine.json: ' + master)
+                    # set DRQUEUE_MASTER in environment
+                    os.environ["DRQUEUE_MASTER"] = master
+                    conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    conn.connect((master, 1))
+                    conn_ip = conn.getsockname()[0]
+                    if args.verbose:
+                        print('DEBUG: IP for connecting to master: ' + conn_ip)
+                    # skip creation of SSH tunnel when on same host
+                    if conn_ip == master:
+                        localhost = True
+                    else:
+                        localhost = False
+
+        # determine DRQUEUE_SSH_USER from engine settings file
+        eo_file = os.path.join(os.environ['IPYTHONDIR'], 'profile_default/security/ipcontroller-engine.json')
+        for line in open(eo_file).readlines():
+            if 'ssh' in line:
+                # extract SSH user
+                DRQUEUE_SSH_USER = line.split(':')[1].split('@')[0].split('\"')[1]
+                if args.verbose:
+                    print('DEBUG: SSH user from ipcontroller-engine.json: ' + DRQUEUE_SSH_USER)
 
     # start SSH tunnel for MongoDB connection
-    # skip for master daemon and connections to localhost
-    if (args.no_ssh != True) and (args.func != master_daemon) and (master_ip != "127.0.0.1"):
+    # skip if requested, if running master daemon or when on same host
+    if (args.no_ssh != True) and (args.func != master_daemon) and (localhost == False):
+        if args.verbose:
+            print('DEBUG: start_ssh_tunnel()')
         start_ssh_tunnel(args.verbose)
     else:
+        if args.verbose:
+            print('DEBUG: not starting SSH tunnel because either requested or running as master or running on same host')
         # deactivate signal handling for SSH
         SSH_PID = 0
 
@@ -536,10 +587,10 @@ def task_show(args):
 
 
 def computer_list(args):
+    global CACHE_TIME
+
     # initialize DrQueue client
     client = DrQueueClient()
-
-    global CACHE_TIME
 
     computer_id = args.id
 
@@ -570,7 +621,10 @@ def computer_list(args):
             print(" memory: " + str(comp['memory']) + " GB")
             print(" load: " + comp['load'])
             print(" pools: " + ','.join(comp['pools']))
-            status = client.ip_client.queue_status(comp_id, verbose=True)
+            try:
+                status = client.ip_client.queue_status(comp_id, verbose=True)
+            except IndexError:
+                status = {'queue': 'ERROR', 'completed': 'ERROR', 'tasks': 'ERROR'}
             print(" status:")
             print("  in queue: " + str(status['queue']))
             print("  completed: " + str(status['completed']))
@@ -598,10 +652,10 @@ def computer_stop(args):
 
 
 def computer_pool(args):
+    global CACHE_TIME
+
     # initialize DrQueue client
     client = DrQueueClient()
-
-    global CACHE_TIME
 
     computer_id = args.id
 
@@ -654,28 +708,18 @@ def recursive_permissions(path, filemode, dirmode, uid=-1, gid=-1):
 
 
 def security_lock(args):
-
-    if "DRQUEUE_ROOT" not in os.environ:
-        sys.stderr.write("DRQUEUE_ROOT environment variable is not set!\n")
-        sys.exit(-1)
+    global ADMIN_USER
 
     sec_dir = os.path.join(os.environ["DRQUEUE_ROOT"], "ipython", "profile_default", "security")
-
     print("Will lock " + sec_dir)
-    global ADMIN_USER
     recursive_permissions(sec_dir, 644, 755, ADMIN_USER, ADMIN_USER)
 
 
 def security_unlock(args):
-
-    if "DRQUEUE_ROOT" not in os.environ:
-        sys.stderr.write("DRQUEUE_ROOT environment variable is not set!\n")
-        sys.exit(-1)
+    global DRQUEUE_USER
 
     sec_dir = os.path.join(os.environ["DRQUEUE_ROOT"], "ipython", "profile_default", "security")
-
     print("Will unlock " + sec_dir)
-    global DRQUEUE_USER
     recursive_permissions(sec_dir, 644, 755, DRQUEUE_USER, DRQUEUE_USER)
 
 
@@ -774,7 +818,10 @@ def run_command(command, logfile):
 
 
 def master_daemon(args):
+    global MONGODB_PID
+    global IPCONTROLLER_PID
 
+    # run on specific IP if requested
     if "DRQUEUE_MASTER" in os.environ:
         master_ip = os.environ["DRQUEUE_MASTER"]
     else:
@@ -786,18 +833,12 @@ def master_daemon(args):
     pid = os.getpid()
     print("Running DrQueue master on " + master_ip + " with PID " + str(pid) + ".")
 
-    if "DRQUEUE_ROOT" not in os.environ:
-        sys.stderr.write("DRQUEUE_ROOT environment variable is not set!\n")
-        sys.exit(-1)
-
-    if "IPYTHONDIR" not in os.environ:
-        sys.stderr.write("IPYTHONDIR environment variable is not set!\n")
-        sys.exit(-1)
-
+    # SSH user engines and clients should use
     if 'DRQUEUE_SSH_USER' in os.environ:
         ssh_user = os.environ['DRQUEUE_SSH_USER']
     else:
-        ssh_user = 'drqueue'
+        # use current user
+        ssh_user = os.environ['USER']
 
     if 'DRQUEUE_MONGODB' in os.environ:
         mongo_ip = os.environ['DRQUEUE_MONGODB']
@@ -814,7 +855,6 @@ def master_daemon(args):
     mongodb_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "mongodb.log")
     mongodb_logfile = open(mongodb_logpath, "ab")
     mongodb_daemon = run_command(command, mongodb_logfile)
-    global MONGODB_PID
     MONGODB_PID = mongodb_daemon.pid
     print("MongoDB started on " + mongo_ip + " with PID " + str(mongodb_daemon.pid) + ". Logging to " + mongodb_logpath + ".")
 
@@ -839,7 +879,6 @@ def master_daemon(args):
     ipcontroller_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipcontroller.log")
     ipcontroller_logfile = open(ipcontroller_logpath, "ab")
     ipcontroller_daemon = run_command(command, ipcontroller_logfile)
-    global IPCONTROLLER_PID
     IPCONTROLLER_PID = ipcontroller_daemon.pid
     print("IPython controller started with PID " + str(ipcontroller_daemon.pid) + ". Logging to " + ipcontroller_logpath + ".")
 
@@ -848,21 +887,16 @@ def master_daemon(args):
 
 
 def slave_daemon(args):
+    global IPENGINE_PID
 
-    if "DRQUEUE_ROOT" not in os.environ:
-        sys.stderr.write("DRQUEUE_ROOT environment variable is not set!\n")
-        sys.exit(-1)
-
-    if "IPYTHONDIR" not in os.environ:
-        sys.stderr.write("IPYTHONDIR environment variable is not set!\n")
-        sys.exit(-1)
-
+    # connect to specific master if requested
     if "DRQUEUE_MASTER" not in os.environ:
-        sys.stderr.write("DRQUEUE_MASTER environment variable is not set!\n")
+        sys.stderr.write("slave_daemon: DRQUEUE_MASTER environment variable is not set!\n")
         sys.exit(-1)
     else:
         master_ip = os.environ["DRQUEUE_MASTER"]
 
+    # connect from specific slave IP if requested
     if "DRQUEUE_SLAVE" in os.environ:
         slave_ip = os.environ["DRQUEUE_SLAVE"]
     else:
@@ -892,7 +926,6 @@ def slave_daemon(args):
             print command
 
         ipengine_daemon = run_command(command, ipengine_logfile)
-        global IPENGINE_PID
         IPENGINE_PID = ipengine_daemon.pid
         print("IPython engine started with PID " + str(IPENGINE_PID) + ". Logging to " + ipengine_logpath + ".")
 
@@ -923,13 +956,14 @@ def process_exists(process_name):
 
 def start_ssh_tunnel(verbose):
     global SSH_PID
+    global DRQUEUE_SSH_USER
 
     # register signal handler for SIGINT & SIGTERM
     signal.signal(signal.SIGTERM, slave_sig_handler)
     signal.signal(signal.SIGINT, slave_sig_handler)
 
     if "DRQUEUE_MASTER" not in os.environ:
-        sys.stderr.write("DRQUEUE_MASTER environment variable is not set!\n")
+        sys.stderr.write("start_ssh_tunnel: DRQUEUE_MASTER environment variable is not set!\n")
         sys.exit(-1)
     else:
         master_ip = os.environ["DRQUEUE_MASTER"]
@@ -941,10 +975,11 @@ def start_ssh_tunnel(verbose):
         s.connect((master_ip, 1))
         slave_ip = s.getsockname()[0]
 
+    # overwrite if requested
     if 'DRQUEUE_SSH_USER' in os.environ:
         ssh_user = os.environ['DRQUEUE_SSH_USER']
     else:
-        ssh_user = 'drqueue'
+        ssh_user = DRQUEUE_SSH_USER
 
     # start SSH tunnel for MongoDB connection
     command = "/usr/bin/ssh -o ServerAliveInterval=30 -L 127.0.0.1:27017:127.0.0.1:27017 " + ssh_user + "@" + master_ip + " cat -"
