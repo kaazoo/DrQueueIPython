@@ -28,15 +28,6 @@ supported_renderers = ['3delight', '3dsmax', 'aftereffects', 'aqsis', \
 supported_os = ['Windows', 'Mac OSX', 'Linux', 'FreeBSD', 'NetBSD', 'OpenBSD', \
 'AIX', 'Solaris']
 
-# check DrQueue environment
-if os.getenv('DRQUEUE_ROOT') is None:
-    raise ValueError("DRQUEUE_ROOT environment variable not set!")
-if os.getenv('DRQUEUE_MASTER') is None:
-    raise ValueError("DRQUEUE_MASTER environment variable not set!")
-if os.getenv('DRQUEUE_MONGODB') is None:
-    raise ValueError("DRQUEUE_MONGODB environment variable not set!")
-if os.getenv('IPYTHONDIR') is None:
-    raise ValueError("IPYTHONDIR environment variable is not set!")
 
 def check_renderer_support(renderer):
     """Check if renderer is supported."""
