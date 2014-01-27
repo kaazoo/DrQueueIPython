@@ -427,7 +427,7 @@ class Client():
         tasks_to_stop = []
         for task in tasks:
             print("Task " + task["msg_id"] + ": ")
-            if ("result_header" in task) and (task["result_header"] != None) and (task["result_header"]["status"] == "ok"):
+            if ("result_content" in task) and (task["result_content"] != None) and (task["result_content"]["status"] == "ok"):
                 print("  finished at " + str(task["completed"]))
             else:
                 # get task stats of all computers
@@ -527,7 +527,7 @@ class Client():
         tasks_to_resubmit = []
         for task in tasks:
             print("Task " + task["msg_id"] + ": ")
-            if ("result_header" in task) and (task["result_header"] != None) and (task["result_header"]["status"] == "ok"):
+            if ("result_content" in task) and (task["result_content"] != None) and (task["result_content"]["status"] == "ok"):
                 print("  finished at " + str(task["completed"]))
             else:
                 print("  not finished yet. will resubmit.")
@@ -756,9 +756,9 @@ class Client():
         # get spent time for each finished task
         for task in tasks:
             if task['completed'] != None:
-                if 'result_header' in list(task.keys()):
-                    result_header = task['result_header']
-                    if ('status' in list(result_header.keys())) and (result_header['status'] == "ok"):
+                if 'result_content' in list(task.keys()):
+                    result_content = task['result_content']
+                    if ('status' in list(result_content.keys())) and (result_content['status'] == "ok"):
                         timediff = task['completed'] - task['started']
                         spent_times.append(timediff)
         if len(spent_times) > 0:
