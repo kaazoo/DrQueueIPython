@@ -575,7 +575,6 @@ def task_show(args):
     client = DrQueueClient()
     from IPython.parallel import error
     from IPython.utils import pickleutil
-    from IPython.utils import newserialized
 
     # work on task id
     if args.tid != None:
