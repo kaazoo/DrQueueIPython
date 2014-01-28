@@ -273,6 +273,10 @@ def job_list(args):
         jobs = client.query_job_list()
         print "Listing all jobs"
 
+    if len(jobs) == 0:
+        print('No jobs found')
+        sys.exit(-1)
+
     # run action on every job
     for job in jobs:
         # walk through tasks of every job
@@ -459,8 +463,13 @@ def job_delete(args):
 
     # run action on every job
     for job in jobs:
-        client.job_delete(job['_id'])
-        print("Job %s has been deleted.\n" % job['name'])
+        if job == None:
+            print('ERROR: No such job')
+            sys.exit(-1)
+        if client.job_delete(job['_id']) == True:
+            print("Job %s has been deleted.\n" % job['name'])
+        else:
+            print("Job %s could not be deleted.\n" % job['name'])
 
 
 def job_continue(args):
