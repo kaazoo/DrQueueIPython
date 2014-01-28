@@ -506,19 +506,39 @@ class Client():
         """Delete job and all of it's tasks"""
         tasks = self.query_task_list(job_id)
         engines = self.query_computer_list()
+        error = False
+        pending_tasks = []
         # abort and delete all queued tasks
         for task in tasks:
             if len(engines) > 0:
-                self.ip_client.abort(task['msg_id'])
-            self.ip_client.purge_results(task['msg_id'])
-        # delete job itself
-        DrQueueJob.delete_from_db(job_id)
-        return True
+                # abort outstanding tasks which are already queued to engine
+                print('aborting task ' + str(task['msg_id']))
+                try:
+                    self.ip_client.abort(task['msg_id'], engines)
+                except Exception, e:
+                    print('Error: ' + str(e))
+                    error = True
+            # purge all tasks which are not pending
+            print('purging task ' + str(task['msg_id']))
+            try:
+                self.ip_client.purge_hub_results(task['msg_id'], engines)
+            except Exception:
+                print('Warning: ' + str(task['msg_id']) + ' is pending. Try to kill job before.')
+                pending_tasks.append(task)
+                error = True
+        # delete job if no error occured
+        if error == False:
+            # delete job itself
+            DrQueueJob.delete_from_db(job_id)
+            return True
+        else:
+            return False
 
 
     def job_continue(self, job_id):
         """Continue stopped job and all of it's tasks"""
         job = self.query_job_by_id(job_id)
+        engines = self.query_computer_list()
 
         # enable job
         self.job_enable(job_id)
@@ -546,10 +566,11 @@ class Client():
                 print("got new msg_id: " + msg_id)
 
             # delete old tasks which now have a resubmitted clone
-            try:
-                self.ip_client.purge_results(tasks_to_resubmit)
-            except Exception as e:
-                print("ERROR: " + str(e))
+            for task in tasks_to_resubmit:
+                try:
+                    self.ip_client.purge_hub_results(task, engines)
+                except Exception as e:
+                    print("ERROR: " + str(e))
 
         return True
 
@@ -557,6 +578,7 @@ class Client():
     def job_rerun(self, job_id):
         """Run all tasks of job another time"""
         job = self.query_job_by_id(job_id)
+        engines = self.query_computer_list()
 
         # enable job
         job['enabled'] = True
@@ -582,7 +604,7 @@ class Client():
 
         # delete old tasks which now have a resubmitted clone
         try:
-            self.ip_client.purge_results(tasks_to_resubmit)
+            self.ip_client.purge_hub_results(tasks_to_resubmit, engines)
         except Exception as e:
             print("ERROR: " + str(e))
 
@@ -606,6 +628,7 @@ class Client():
     def task_rerun(self, task_id):
         """Run task another time"""
         task = self.query_task(task_id)
+        engines = self.query_computer_list()
 
         #print(task)
 
@@ -627,7 +650,7 @@ class Client():
 
         # delete old tasks which now have a resubmitted clone
         try:
-            self.ip_client.purge_results(task["msg_id"])
+            self.ip_client.purge_hub_results(task["msg_id"], engines)
         except Exception as e:
             print("ERROR: " + str(e))
 
@@ -650,6 +673,7 @@ class Client():
     def job_rerun_interrupted_tasks(self, job_id):
         """Run interrupted tasks of job another time"""
         job = self.query_job_by_id(job_id)
+        engines = self.query_computer_list()
 
         # enable job
         job['enabled'] = True
@@ -679,7 +703,7 @@ class Client():
 
         # delete old tasks which now have a resubmitted clone
         try:
-            self.ip_client.purge_results(tasks_to_resubmit)
+            self.ip_client.purge_hub_results(tasks_to_resubmit, engines)
         except Exception as e:
             print("ERROR: " + str(e))
 
