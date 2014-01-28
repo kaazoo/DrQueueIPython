@@ -2,7 +2,7 @@
 
 """
 DrQueue render template for Cinema4D
-Copyright (C) 2011 Andreas Schroeder
+Copyright (C) 2011-2014 Andreas Schröder
 
 This file is part of DrQueue.
 
@@ -38,11 +38,11 @@ def run_renderer(env_dict):
         # renderer path/executable
       	engine_path = "C:\Program\ Files\MAXON\CINEMA\ 4D\ R12\CINEMA\ 4D.exe"
 
-    if DRQUEUE_OS == "Mac OSX":
+    elif DRQUEUE_OS in ["Mac OSX", "Darwin"]:
         # renderer path/executable
       	engine_path = "/Applications/MAXON/CINEMA\ 4D\ R12/CINEMA\ 4D.app/Contents/MacOS/CINEMA\ 4D"
 
-    if DRQUEUE_OS == "Linux":
+    elif DRQUEUE_OS == "Linux":
       	# we use wine on linux (this is a hack, but works)
       	# there is a tightvnc server running on display :1
       	# see wine bug #8069
@@ -62,7 +62,11 @@ def run_renderer(env_dict):
       	# set env variable, so wine can access the xserver even though we are rendering headless
       	os.environ["DISPLAY"] = ":1"
 
-    command = engine_path + " -nogui -render " + DRQUEUE_SCENEFILE + " -oimage " + DRQUEUE_RENDERDIR + " -frame " + DRQUEUE_FRAME + " -omultipass " + DRQUEUE_RENDERDIR + " -threads 0"
+    else:
+        helper.log_write('ERROR: Unsupported operating system ' + str(DRQUEUE_OS))
+        return helper.return_to_ipython(1)
+
+    command = engine_path + " -nogui -render " + DRQUEUE_SCENEFILE + " -oimage " + DRQUEUE_RENDERDIR + " -frame " + str(DRQUEUE_FRAME) + " -omultipass " + DRQUEUE_RENDERDIR + " -threads 0"
 
     # log command line
     helper.log_write(command + "\n")
