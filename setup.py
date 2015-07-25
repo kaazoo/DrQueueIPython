@@ -41,12 +41,6 @@ class CreateDrQueueWorkDirs(Command):
         pass
 
     def run(self):
-
-        # Windows lacks Unix functionality
-        if sys.platform.startswith("win"):
-            print("Sorry, but creating paths on Windows is currently not supported.")
-            sys.exit(1)
-
         # set to user-supplied path is available
         if self.basepath != None:
             drqueue_root = self.basepath
@@ -96,13 +90,15 @@ class CreateDrQueueWorkDirs(Command):
         for template in glob.glob(templates):
             shutil.copy(template, drqueue_etc)
 
-        # set to user-supplied user / group
-        if self.owner != None:
-            uid = pwd.getpwnam(self.owner)[2]
-            recursive_chown(drqueue_root, uid, -1)
-        if self.group != None:
-            gid = grp.getgrnam(self.group)[2]
-            recursive_chown(drqueue_root, -1, gid)
+        # Windows lacks Unix functionality
+        if not sys.platform.startswith("win"):
+            # set to user-supplied user / group
+            if self.owner != None:
+                uid = pwd.getpwnam(self.owner)[2]
+                recursive_chown(drqueue_root, uid, -1)
+            if self.group != None:
+                gid = grp.getgrnam(self.group)[2]
+                recursive_chown(drqueue_root, -1, gid)
 
         print("\nAdd the following environment variables to your user profile:")
         print("DRQUEUE_ROOT=" + drqueue_root)
