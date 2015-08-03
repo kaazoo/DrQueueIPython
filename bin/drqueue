@@ -204,38 +204,54 @@ def main():
     if args.func != master_daemon:
         # use DRQUEUE_MASTER if set
         if "DRQUEUE_MASTER" in os.environ:
-            #master_ip = os.environ["DRQUEUE_MASTER"]
-            localhost = False
+            if os.environ["DRQUEUE_MASTER"] in ['127.0.0.1', 'localhost']:
+                localhost = True
+            else:
+                localhost = False
         else:
             # determine DRQUEUE_MASTER from engine settings file
             eo_file = os.path.join(os.environ['IPYTHONDIR'], 'profile_default/security/ipcontroller-engine.json')
             for line in open(eo_file).readlines():
                 if 'ssh' in line:
                     # extract master IP
-                    master = line.split(':')[1].split('@')[1].split('\"')[0]
-                    if args.verbose:
-                        print('DEBUG: master from ipcontroller-engine.json: ' + master)
-                    # set DRQUEUE_MASTER in environment
-                    os.environ["DRQUEUE_MASTER"] = master
-                    conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                    conn.connect((master, 1))
-                    conn_ip = conn.getsockname()[0]
-                    if args.verbose:
-                        print('DEBUG: IP for connecting to master: ' + conn_ip)
-                    # skip creation of SSH tunnel when on same host
-                    if conn_ip == master:
-                        localhost = True
+                    ssh_conn = line.split(':')[1].split('@')
+                    if len(ssh_conn) == 2:
+                        master = ssh_conn[1].split('\"')[0]
+                        if args.verbose:
+                            print('DEBUG: master address from ipcontroller-engine.json: ' + master)
+                        DRQUEUE_SSH_USER = ssh_conn[0].split('\"')[1]
+                        if args.verbose:
+                            print('DEBUG: SSH user from ipcontroller-engine.json: ' + DRQUEUE_SSH_USER)
+                        break
                     else:
-                        localhost = False
-
-        # determine DRQUEUE_SSH_USER from engine settings file
-        eo_file = os.path.join(os.environ['IPYTHONDIR'], 'profile_default/security/ipcontroller-engine.json')
-        for line in open(eo_file).readlines():
-            if 'ssh' in line:
-                # extract SSH user
-                DRQUEUE_SSH_USER = line.split(':')[1].split('@')[0].split('\"')[1]
+                        continue
+                if 'interface' in line:
+                    # extract master IP
+                    tcp_conn = line.split(':')
+                    if len(tcp_conn) == 3:
+                        master = tcp_conn[2].split('//')[1].split('\"')[0]
+                        if args.verbose:
+                            print('DEBUG: master from ipcontroller-engine.json: ' + master)
+                        break
+                    else:
+                        master = '127.0.0.1'
+                        if args.verbose:
+                            print('DEBUG: master not found in ipcontroller-engine.json. Using ' + master + ' instead.')
+            # set DRQUEUE_MASTER in environment
+            os.environ["DRQUEUE_MASTER"] = master
+            # check if master IP is configured on this machine
+            conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            conn.connect((master, 1))
+            conn_ip = conn.getsockname()[0]
+            if args.verbose:
+                print('DEBUG: IP for connecting to master: ' + conn_ip)
+            # skip creation of SSH tunnel when on same host
+            if conn_ip == master:
+                localhost = True
                 if args.verbose:
-                    print('DEBUG: SSH user from ipcontroller-engine.json: ' + DRQUEUE_SSH_USER)
+                    print('DEBUG: running on the same IP as DRQUEUE_MASTER')
+            else:
+                localhost = False
 
     # start SSH tunnel for MongoDB connection
     # skip if requested, if running master daemon or when on same host
@@ -936,6 +952,9 @@ def slave_daemon(args):
         # start IPython engine along with startup script
         print("Connecting to DrQueue master at " + master_ip + ".")
         command = "ipengine -s " + startup_script
+
+        if args.no_ssh == True:
+            command += " --ssh="
 
         if args.verbose:
             print command
