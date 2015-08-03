@@ -102,7 +102,7 @@ class CreateDrQueueWorkDirs(Command):
 
         print("\nAdd the following environment variables to your user profile:")
         print("DRQUEUE_ROOT=" + drqueue_root)
-        print("IPYTHON_DIR=" + drqueue_ipython)
+        print("IPYTHONDIR=" + drqueue_ipython)
 
 
 # register extra command
