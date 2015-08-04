@@ -33,21 +33,18 @@ class Job(dict):
               'enabled' : True,
               'limits' : {}
              }
+
         if name == "":
             raise ValueError("No name of job given!")
-            return False
-        if not (endframe >= startframe >= 1):
-            raise ValueError("Startframe and endframe need to be at least 1!")
-            return False
+        if not (endframe > startframe):
+            raise ValueError("Endframe must be bigger than startframe!")
         if blocksize < 1:
             raise ValueError("Blocksize needs to be at least 1!")
-            return False
         if DrQueue.check_renderer_support(renderer) == False:
             raise ValueError("Render called \"%s\" not supported!" % renderer)
-            return False
         if scenefile == "":
             raise ValueError("No scenefile given!")
-            return False
+
         # optional elements
         if 'renderdir' in options:
             jb['renderdir'] = options['renderdir']
