@@ -9,9 +9,37 @@ This file is part of DrQueue.
 Licensed under GNU General Public License version 3. See LICENSE for details.
 """
 
-import os, datetime
+import os
+import datetime
 import getpass
+
+import pymongo
+import bson
+
 import DrQueue
+
+
+def connect_db():
+    """ 
+    :return: MongoDB connection object
+    """
+    host=os.getenv('DRQUEUE_MONGODB', None)
+    if not host:
+        raise RuntimeError("Error: DRQUEUE_MONGODB not set!")
+    
+    print("Connect MongoDB on %s" % host)
+    connection = pymongo.Connection(host)
+    db = connection['ipythondb']
+    return db
+
+
+def get_jobs():
+    """
+    :return: return 'drqueue_jobs'
+    """
+    db = connect_db()
+    jobs = db['drqueue_jobs']
+    return jobs
 
 
 class Job(dict):
@@ -104,11 +132,8 @@ class Job(dict):
 
     @staticmethod
     def store_db(job):
-        import pymongo
         """store job information in MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
-        db = connection['ipythondb']
-        jobs = db['drqueue_jobs']
+        jobs = get_jobs()
         job_id = jobs.insert(job)
         job['_id'] = str(job['_id'])
         return job_id
@@ -116,11 +141,8 @@ class Job(dict):
 
     @staticmethod
     def update_db(job):
-        import pymongo
         """update job information in MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
-        db = connection['ipythondb']
-        jobs = db['drqueue_jobs']
+        jobs = get_jobs()
         job_id = jobs.save(job)
         job['_id'] = str(job['_id'])
         return job_id
@@ -128,12 +150,8 @@ class Job(dict):
 
     @staticmethod
     def query_db(job_id):
-        import pymongo
-        import bson
         """query job information from MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
-        db = connection['ipythondb']
-        jobs = db['drqueue_jobs']
+        jobs = get_jobs()
         try:
             job = jobs.find_one({"_id": bson.ObjectId(job_id)})
         except bson.errors.InvalidId:
@@ -144,22 +162,15 @@ class Job(dict):
 
     @staticmethod
     def delete_from_db(job_id):
-        import pymongo
-        import bson
         """query job information from MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
-        db = connection['ipythondb']
-        jobs = db['drqueue_jobs']
+        jobs = get_jobs()
         return jobs.remove({"_id": bson.ObjectId(job_id)})
 
 
     @staticmethod
     def query_jobnames():
-        import pymongo
         """query job names from MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
-        db = connection['ipythondb']
-        jobs = db['drqueue_jobs']
+        jobs = get_jobs()
         names = []
         for job in jobs.find():
             names.append(job['name'])
@@ -168,21 +179,15 @@ class Job(dict):
 
     @staticmethod
     def query_job_by_name(job_name):
-        import pymongo
         """query job information from MongoDB by name"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
-        db = connection['ipythondb']
-        jobs = db['drqueue_jobs']
+        jobs = get_jobs()
         job = jobs.find_one({"name": job_name})
         return job
 
 
     @staticmethod
     def query_job_list():
-        import pymongo
         """query list of jobs from MongoDB"""
-        connection = pymongo.Connection(os.getenv('DRQUEUE_MONGODB'))
-        db = connection['ipythondb']
-        jobs = db['drqueue_jobs']
+        jobs = get_jobs()
         return list(jobs.find())
         
