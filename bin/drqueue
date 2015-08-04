@@ -28,11 +28,13 @@ CACHE_TIME = 60
 ADMIN_USER = 'root'
 DRQUEUE_SSH_USER = ''
 DRQUEUE_ROOT_DEFAULT = '/usr/local/drqueue'
+LOCALHOST = False
 
 
 def main():
     global DRQUEUE_ROOT_DEFAULT
     global DRQUEUE_SSH_USER
+    global LOCALHOST
 
     # create parent parser for global options
     parent_parser = argparse.ArgumentParser(add_help=False)
@@ -205,9 +207,9 @@ def main():
         # use DRQUEUE_MASTER if set
         if "DRQUEUE_MASTER" in os.environ:
             if os.environ["DRQUEUE_MASTER"] in ['127.0.0.1', 'localhost']:
-                localhost = True
+                LOCALHOST = True
             else:
-                localhost = False
+                LOCALHOST = False
         else:
             # determine DRQUEUE_MASTER from engine settings file
             eo_file = os.path.join(os.environ['IPYTHONDIR'], 'profile_default/security/ipcontroller-engine.json')
@@ -247,15 +249,15 @@ def main():
                 print('DEBUG: IP for connecting to master: ' + conn_ip)
             # skip creation of SSH tunnel when on same host
             if conn_ip == master:
-                localhost = True
+                LOCALHOST = True
                 if args.verbose:
                     print('DEBUG: running on the same IP as DRQUEUE_MASTER')
             else:
-                localhost = False
+                LOCALHOST = False
 
     # start SSH tunnel for MongoDB connection
     # skip if requested, if running master daemon or when on same host
-    if (args.no_ssh != True) and (args.func != master_daemon) and (localhost == False):
+    if (args.no_ssh != True) and (args.func != master_daemon) and (LOCALHOST == False):
         if args.verbose:
             print('DEBUG: start_ssh_tunnel()')
         start_ssh_tunnel(args.verbose)
@@ -919,6 +921,7 @@ def master_daemon(args):
 
 def slave_daemon(args):
     global IPENGINE_PID
+    global LOCALHOST
 
     # connect to specific master if requested
     if "DRQUEUE_MASTER" not in os.environ:
@@ -953,7 +956,7 @@ def slave_daemon(args):
         print("Connecting to DrQueue master at " + master_ip + ".")
         command = "ipengine -s " + startup_script
 
-        if args.no_ssh == True:
+        if (args.no_ssh == True) or LOCALHOST:
             command += " --ssh="
 
         if args.verbose:
@@ -981,7 +984,7 @@ def process_exists(process_name):
         except psutil.NoSuchProcess:
             pass
         else:
-            if pinfo['cmdline'] != None:
+            if pinfo['cmdline'] is not None:
                 cmdline = " ".join(pinfo['cmdline'])
                 if process_name in cmdline:
                     return True
