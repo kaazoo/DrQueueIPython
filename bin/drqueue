@@ -969,14 +969,16 @@ def slave_daemon(args):
         print("IPython engine started with PID " + str(IPENGINE_PID) + ". Logging to " + ipengine_logpath + ".")
 
         # wait for process to exit
-        os.waitpid(IPENGINE_PID, 0)
+        ret = ipengine_daemon.wait()
+        print("IPython was shut down with returncode: %s" % ret)
 
         # run only once if option given
         if args.no_restart == True:
             break
         else:
-            print("IPython was shut down. Restarting ...")
-            time.sleep(5)
+            sec = 5
+            print("Restarting IPython after %s sec..." % sec)
+            time.sleep(sec)
 
 
 def process_exists(process_name):
