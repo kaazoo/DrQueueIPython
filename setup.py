@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os, glob, shutil, sys, pwd, grp
 from setuptools import setup
 from distutils.core import setup, Command
