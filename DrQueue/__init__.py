@@ -21,20 +21,15 @@ from .job import Job
 from .computer import Computer
 
 
-supported_renderers = ['3delight', '3dsmax', 'aftereffects', 'aqsis', \
-'blender', 'cinema4d', 'general', 'lightwave', 'luxrender', 'mantra', \
-'maya', 'mentalray', 'nuke', 'shake', 'terragen', 'turtle', 'vray', 'xsi']
-
 supported_os = ['Windows', 'Mac OSX', 'Linux', 'FreeBSD', 'NetBSD', 'OpenBSD', \
 'AIX', 'Solaris']
 
 
 def check_renderer_support(renderer):
     """Check if renderer is supported."""
-    if renderer in supported_renderers:
-        return True
-    else:
-        return False
+    sg_file = os.path.join(os.getenv('DRQUEUE_ROOT'), 'etc', renderer + '_sg.py')
+    return os.path.isfile(sg_file)
+
 
 def get_rendertemplate(renderer):
     """Return template filename from renderer name"""
