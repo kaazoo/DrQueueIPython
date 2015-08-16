@@ -10,6 +10,8 @@ This file is part of DrQueue.
 Licensed under GNU General Public License version 3. See LICENSE for details.
 """
 
+from __future__ import print_function
+
 import string, argparse, getpass, os, signal, subprocess, pkg_resources, sys
 import platform, time, socket, datetime, glob, pickle, psutil
 from collections import deque
@@ -189,7 +191,7 @@ def main():
 
     # debug parsed arguments
     if args.verbose:
-        print args
+        print('DEBUG: args:', args)
 
     # check if DRQUEUE_ROOT is set
     if "DRQUEUE_ROOT" not in os.environ:
@@ -282,15 +284,15 @@ def job_list(args):
     if (job_id != None) and (job_name == None):
         # fetch information about single job
         jobs = [client.query_job_by_id(job_id)]
-        print "Listing job with id " + str(job_id)
+        print("Listing job with id:", job_id)
     elif (job_id == None) and (job_name != None):
         # fetch information about single job
         jobs = [client.query_job_by_name(job_name)]
-        print "Listing job with name " + str(job_name)
+        print("Listing job with name:", job_name)
     else:
         # fetch a list of all jobs
         jobs = client.query_job_list()
-        print "Listing all jobs"
+        print("Listing all jobs")
 
     if len(jobs) == 0:
         print('No jobs found')
@@ -418,15 +420,15 @@ def job_stop(args):
     if (job_id != None) and (job_name == None):
         # fetch information about single job
         jobs = [client.query_job_by_id(job_id)]
-        print "Stopping job with id " + str(job_id)
+        print("Stopping job with id:", job_id)
     elif (job_id == None) and (job_name != None):
         # fetch information about single job
         jobs = [client.query_job_by_name(job_name)]
-        print "Stopping job with name " + str(job_name)
+        print("Stopping job with name:", job_name)
     else:
         # fetch a list of all jobs
         jobs = client.query_job_list()
-        print "Stopping all jobs"
+        print("Stopping all jobs")
 
     # run action on every job
     for job in jobs:
@@ -444,15 +446,15 @@ def job_kill(args):
     if (job_id != None) and (job_name == None):
         # fetch information about single job
         jobs = [client.query_job_by_id(job_id)]
-        print "Killing job with id " + str(job_id)
+        print("Killing job with id:", job_id)
     elif (job_id == None) and (job_name != None):
         # fetch information about single job
         jobs = [client.query_job_by_name(job_name)]
-        print "Killing job with name " + str(job_name)
+        print("Killing job with name:", job_name)
     else:
         # fetch a list of all jobs
         jobs = client.query_job_list()
-        print "Killing all jobs"
+        print("Killing all jobs")
 
     # run action on every job
     for job in jobs:
@@ -470,15 +472,15 @@ def job_delete(args):
     if (job_id != None) and (job_name == None):
         # fetch information about single job
         jobs = [client.query_job_by_id(job_id)]
-        print "Deleting job with id " + str(job_id)
+        print("Deleting job with id:", job_id)
     elif (job_id == None) and (job_name != None):
         # fetch information about single job
         jobs = [client.query_job_by_name(job_name)]
-        print "Deleting job with name " + str(job_name)
+        print("Deleting job with name:", job_name)
     else:
         # fetch a list of all jobs
         jobs = client.query_job_list()
-        print "Deleting all jobs"
+        print("Deleting all jobs")
 
     # run action on every job
     for job in jobs:
@@ -501,15 +503,15 @@ def job_continue(args):
     if (job_id != None) and (job_name == None):
         # fetch information about single job
         jobs = [client.query_job_by_id(job_id)]
-        print "Continuing job with id " + str(job_id)
+        print("Continuing job with id:", job_id)
     elif (job_id == None) and (job_name != None):
         # fetch information about single job
         jobs = [client.query_job_by_name(job_name)]
-        print "Continuing job with name " + str(job_name)
+        print("Continuing job with name:", job_name)
     else:
         # fetch a list of all jobs
         jobs = client.query_job_list()
-        print "Continuing all jobs"
+        print("Continuing all jobs")
 
     # run action on every job
     for job in jobs:
@@ -527,15 +529,15 @@ def job_rerun(args):
     if (job_id != None) and (job_name == None):
         # fetch information about single job
         jobs = [client.query_job_by_id(job_id)]
-        print "Rerunning job with id " + str(job_id)
+        print("Rerunning job with id:", job_id)
     elif (job_id == None) and (job_name != None):
         # fetch information about single job
         jobs = [client.query_job_by_name(job_name)]
-        print "Rerunning job with name " + str(job_name)
+        print("Rerunning job with name:", job_name)
     else:
         # fetch a list of all jobs
         jobs = client.query_job_list()
-        print "Rerunning all jobs"
+        print("Rerunning all jobs")
 
     # run action on every job
     for job in jobs:
@@ -553,15 +555,15 @@ def job_rerun_interrupted_tasks(args):
     if (job_id != None) and (job_name == None):
         # fetch information about single job
         jobs = [client.query_job_by_id(job_id)]
-        print "Rerunning interrupted tasks of job with id " + str(job_id)
+        print("Rerunning interrupted tasks of job with id:", job_id)
     elif (job_id == None) and (job_name != None):
         # fetch information about single job
         jobs = [client.query_job_by_name(job_name)]
-        print "Rerunning interrupted tasks of job with name " + str(job_name)
+        print("Rerunning interrupted tasks of job with name:", job_name)
     else:
         # fetch a list of all jobs
         jobs = client.query_job_list()
-        print "Rerunning interrupted tasks of all jobs"
+        print("Rerunning interrupted tasks of all jobs")
 
     # run action on every job
     for job in jobs:
@@ -579,15 +581,15 @@ def task_rerun(args):
     if (job_id != None) and (job_name == None):
         # fetch information about single job
         jobs = [client.query_job_by_id(job_id)]
-        print "Rerunning interrupted tasks of job with id " + str(job_id)
+        print("Rerunning interrupted tasks of job with id:", job_id)
     elif (job_id == None) and (job_name != None):
         # fetch information about single job
         jobs = [client.query_job_by_name(job_name)]
-        print "Rerunning interrupted tasks of job with name " + str(job_name)
+        print("Rerunning interrupted tasks of job with name:", job_name)
     else:
         # fetch a list of all jobs
         jobs = client.query_job_list()
-        print "Rerunning interrupted tasks of all jobs"
+        print("Rerunning interrupted tasks of all jobs")
 
     # work on task id
     if args.tid != 0:
@@ -631,14 +633,14 @@ def computer_list(args):
     if computer_id != None:
         # fetch information about single computer
         computers = [computer_id]
-        print "Listing computer with id " + str(computer_id)
+        print("Listing computer with id:", computer_id)
     else:
         # fetch a list of all computers
         computers = client.ip_client.ids
-        print "Listing all computers"
+        print("Listing all computers")
 
     for comp_id in computers:
-        print("Engine " + str(comp_id) + ":")
+        print("Engine %s:" % comp_id)
         comp = client.identify_computer(comp_id, CACHE_TIME)
         if comp == None:
             print(" Engine is blocked. Try again later.")
@@ -674,15 +676,15 @@ def computer_stop(args):
     if computer_id != None:
         # fetch information about single computer
         computers = [computer_id]
-        print "Stopping computer with id " + str(computer_id)
+        print("Stopping computer with id:", computer_id)
     else:
         # fetch a list of all computers
         computers = client.ip_client.ids
-        print "Stopping all computers"
+        print("Stopping all computers")
 
     for computer in computers:
         client.engine_stop(computer)
-        print("Computer %s has been stopped." % str(computer))
+        print("Computer %s has been stopped." % computer)
 
 
 def computer_pool(args):
@@ -696,18 +698,18 @@ def computer_pool(args):
     if computer_id != None:
         # fetch information about single computer
         computers = [computer_id]
-        print "Setting pools for computer with id " + str(computer_id)
+        print("Setting pools for computer with id:", computer_id)
     else:
         # fetch a list of all computers
         computers = client.ip_client.ids
-        print "Setting pools for all computers"
+        print("Setting pools for all computers")
 
     if args.pools == None:
         print("Please specify one or more pools.")
         sys.exit(-1)
 
     for comp_id in computers:
-        print("Engine " + str(comp_id) + ":")
+        print("Engine %s:" % comp_id)
         comp = client.identify_computer(comp_id, CACHE_TIME)
         if comp == None:
             print(" Engine is blocked. Try again later.")
@@ -908,7 +910,7 @@ def master_daemon(args):
         command = "ipcontroller --url tcp://127.0.0.1:10101 --ssh=" + ssh_user + "@" + master_ip + " --enginessh=" + ssh_user + "@" + master_ip + " --mongodb"
 
     if args.verbose:
-        print command
+        print('DEBUG: command:', command)
 
     ipcontroller_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ipcontroller.log")
     ipcontroller_logfile = open(ipcontroller_logpath, "ab")
@@ -961,7 +963,7 @@ def slave_daemon(args):
             command += " --ssh="
 
         if args.verbose:
-            print command
+            print('DEBUG: command:', command)
 
         ipengine_daemon = run_command(command, ipengine_logfile)
         IPENGINE_PID = ipengine_daemon.pid
@@ -1023,10 +1025,10 @@ def start_ssh_tunnel(verbose):
     command = "/usr/bin/ssh -o ServerAliveInterval=30 -L 127.0.0.1:27017:127.0.0.1:27017 " + ssh_user + "@" + master_ip + " cat -"
 
     if verbose:
-        print command
+        print('DEBUG: command:', command)
 
     if process_exists(command):
-        print "SSH tunnel process is already running."
+        print("SSH tunnel process is already running.")
         return
 
     ssh_tunnel_logpath = os.path.join(os.environ["DRQUEUE_ROOT"], "logs", "ssh_tunnel_logfile_" + slave_ip + ".log")
